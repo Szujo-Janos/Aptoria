@@ -1,0 +1,32 @@
+DirectoryIndex index.php
+Options -Indexes
+
+RedirectMatch 403 ^/(?:app|bootstrap|config|database|resources|routes|storage|tests|vendor)(?:/|$)
+RedirectMatch 403 (^|/)\.(?!well-known/)
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "^(\.env|composer\.(json|lock)|artisan|phpunit\.xml|VERSION|CHANGELOG\.md|README\.md)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^(\.env|composer\.(json|lock)|artisan|phpunit\.xml|VERSION|CHANGELOG\.md|README\.md)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Keep the project root and Apache's DirectoryIndex subrequest on the
+    # lightweight installer welcome screen.
+    RewriteRule ^(?:index\.php)?$ - [L]
+
+    # Requests already targeting public/ must not be prefixed a second time.
+    RewriteRule ^public(?:/|$) - [L]
+
+    # Let the Laravel public front controller handle application routes.
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

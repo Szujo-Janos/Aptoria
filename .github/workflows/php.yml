@@ -1,0 +1,137 @@
+name: Aptoria Public QA Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  public-qa-gate:
+    name: Public repository QA gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify public release hygiene
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          forbidden_paths=(
+            ".env"
+            "vendor"
+            "node_modules"
+            "database/database.sqlite"
+            "storage/app/installed.lock"
+            "storage/app/setup-token.txt"
+            "composer.phar"
+            "composer-setup.php"
+          )
+
+          for path in "${forbidden_paths[@]}"; do
+            if [ -e "$path" ]; then
+              echo "Forbidden runtime/local file is committed: $path"
+              exit 1
+            fi
+          done
+
+          if git ls-files | grep -E '(^|/)(database\.sqlite|installed\.lock|setup-token\.txt)$'; then
+            echo "Forbidden runtime file pattern found in tracked files."
+            exit 1
+          fi
+
+          required_files=(
+            "README.md"
+            "LICENSE"
+            "NOTICE.md"
+            "CREDITS.md"
+            "THIRD_PARTY_NOTICES.md"
+            ".env.example"
+            ".env.testing"
+            "composer.json"
+            "composer.lock"
+            "artisan"
+            "VERSION"
+          )
+
+          for path in "${required_files[@]}"; do
+            if [ ! -f "$path" ]; then
+              echo "Required public repository file is missing: $path"
+              exit 1
+            fi
+          done
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, sqlite, pdo_sqlite, fileinfo, openssl, xml, ctype, tokenizer
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --no-check-publish --no-check-lock
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHP syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app bootstrap config database public resources routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Prepare Laravel writable runtime directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bootstrap/cache
+          mkdir -p storage/app/public
+          mkdir -p storage/app/private
+          mkdir -p storage/framework/cache/data
+          mkdir -p storage/framework/sessions
+          mkdir -p storage/framework/testing
+          mkdir -p storage/framework/views
+          mkdir -p storage/logs
+          chmod -R 775 bootstrap/cache storage
+
+      - name: Prepare Laravel testing environment
+        run: |
+          cp .env.testing .env
+          php artisan key:generate --force
+          php artisan config:clear
+
+      - name: Run database migrations in testing mode
+        run: php artisan migrate --force --env=testing
+
+      - name: Run PHPUnit suite
+        run: php artisan test
+
+      - name: Prepare CI security audit state
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p storage/app
+          php -r "file_put_contents('storage/app/installed.lock', json_encode(['installed_at' => date('c'), 'created_by' => 'github-actions', 'version' => trim(file_get_contents('VERSION')), 'app_url' => 'http://localhost'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);"
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+          if grep -q '^APTORIA_SETUP_TOKEN=' .env; then
+            sed -i 's/^APTORIA_SETUP_TOKEN=.*/APTORIA_SETUP_TOKEN=ci-generated-aptoria-security-audit-token-0123456789abcdef0123456789abcdef/' .env
+          else
+            echo 'APTORIA_SETUP_TOKEN=ci-generated-aptoria-security-audit-token-0123456789abcdef0123456789abcdef' >> .env
+          fi
+          test -f storage/app/installed.lock
+          grep -q '^APP_DEBUG=false$' .env
+          grep -q '^APTORIA_SETUP_TOKEN=ci-generated-aptoria-security-audit-token-0123456789abcdef0123456789abcdef$' .env
+          php artisan optimize:clear
+
+      - name: Verify Aptoria security audit preconditions
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r "echo file_exists('storage/app/installed.lock') ? 'installed.lock OK'.PHP_EOL : 'installed.lock missing'.PHP_EOL; exit(file_exists('storage/app/installed.lock') ? 0 : 1);"
+          php artisan aptoria:security-audit

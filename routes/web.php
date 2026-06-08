@@ -1,0 +1,158 @@
+<?php
+
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\AuthProfileController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\AssertionRuleController;
+use App\Http\Controllers\ApiMonitorController;
+use App\Http\Controllers\ContractValidationController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EnvironmentController;
+use App\Http\Controllers\HelpController;
+use App\Http\Controllers\EndpointController;
+use App\Http\Controllers\EndpointPathParameterController;
+use App\Http\Controllers\FindingController;
+use App\Http\Controllers\FindingEvidenceController;
+use App\Http\Controllers\FullQaReportBuilderController;
+use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectWizardController;
+use App\Http\Controllers\ProjectSettingsController;
+use App\Http\Controllers\QaEvidencePackController;
+use App\Http\Controllers\QaCoverageMatrixController;
+use App\Http\Controllers\QaReleaseGateController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReleaseReadinessController;
+use App\Http\Controllers\ScanController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SetupController;
+use App\Http\Controllers\SnapshotController;
+use App\Http\Controllers\TestCaseController;
+use App\Http\Controllers\TestExecutionDashboardController;
+use App\Http\Controllers\TestSuiteController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', LandingPageController::class)->name('landing');
+Route::get('/language/{locale}', [LocaleController::class, 'switch'])->name('language.switch');
+
+Route::prefix('setup')->name('setup.')->middleware('setup.access')->group(function (): void {
+    Route::get('/', [SetupController::class, 'index'])->name('index');
+    Route::post('/env', [SetupController::class, 'createEnv'])->name('env');
+    Route::post('/sqlite', [SetupController::class, 'createSqlite'])->name('sqlite');
+    Route::post('/key', [SetupController::class, 'generateKey'])->name('key');
+    Route::post('/migrate', [SetupController::class, 'migrate'])->name('migrate');
+    Route::post('/admin', [SetupController::class, 'createAdmin'])->name('admin');
+    Route::post('/demo', [SetupController::class, 'importDemo'])->name('demo');
+    Route::post('/finish', [SetupController::class, 'finish'])->name('finish');
+});
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
+});
+
+Route::middleware('auth')->group(function (): void {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+Route::middleware(['auth', 'admin'])->group(function (): void {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/how-it-works', [HelpController::class, 'howItWorks'])->name('how-it-works');
+    Route::get('/help', [HelpController::class, 'index'])->name('help.index');
+    Route::get('/monitors', [ApiMonitorController::class, 'globalIndex'])->name('monitors.index');
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::get('/calendar/day', [CalendarController::class, 'day'])->name('calendar.day');
+    Route::get('/calendar/create', [CalendarController::class, 'create'])->name('calendar.create');
+    Route::post('/calendar', [CalendarController::class, 'store'])->name('calendar.store');
+    Route::get('/calendar/feed.json', [CalendarController::class, 'feed'])->name('calendar.feed');
+    Route::get('/calendar/export.ics', [CalendarController::class, 'ics'])->name('calendar.ics');
+    Route::get('/calendar/{calendarEvent}/edit', [CalendarController::class, 'edit'])->name('calendar.edit');
+    Route::put('/calendar/{calendarEvent}', [CalendarController::class, 'update'])->name('calendar.update');
+    Route::delete('/calendar/{calendarEvent}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
+    Route::patch('/calendar/{calendarEvent}/complete', [CalendarController::class, 'complete'])->name('calendar.complete');
+    Route::get('/release-readiness', [ReleaseReadinessController::class, 'index'])->name('release-readiness.index');
+    Route::get('projects/wizard/create', [ProjectWizardController::class, 'create'])->name('projects.wizard.create');
+    Route::post('projects/wizard', [ProjectWizardController::class, 'store'])->name('projects.wizard.store');
+    Route::resource('projects', ProjectController::class);
+    Route::resource('projects.environments', EnvironmentController::class)
+        ->except(['index', 'show'])
+        ->parameters(['environments' => 'environment']);
+    Route::resource('projects.auth-profiles', AuthProfileController::class)
+        ->except(['index', 'show'])
+        ->parameters(['auth-profiles' => 'authProfile']);
+    Route::post('projects/{project}/auth-profiles/{authProfile}/test', [AuthProfileController::class, 'test'])->name('projects.auth-profiles.test');
+    Route::get('projects/{project}/settings', [ProjectSettingsController::class, 'edit'])->name('projects.settings.edit');
+    Route::post('projects/{project}/settings', [ProjectSettingsController::class, 'update'])->name('projects.settings.update');
+    Route::post('projects/{project}/settings/reset', [ProjectSettingsController::class, 'reset'])->name('projects.settings.reset');
+    Route::get('projects/{project}/settings/export', [ProjectSettingsController::class, 'export'])->name('projects.settings.export');
+    Route::get('projects/{project}/assertion-rules/create', [AssertionRuleController::class, 'create'])->name('projects.assertion-rules.create');
+    Route::post('projects/{project}/assertion-rules', [AssertionRuleController::class, 'store'])->name('projects.assertion-rules.store');
+    Route::get('projects/{project}/assertion-rules/{assertionRule}/edit', [AssertionRuleController::class, 'edit'])->name('projects.assertion-rules.edit');
+    Route::put('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'update'])->name('projects.assertion-rules.update');
+    Route::delete('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'destroy'])->name('projects.assertion-rules.destroy');
+    Route::get('projects/{project}/calendar', [CalendarController::class, 'project'])->name('projects.calendar.index');
+    Route::get('projects/{project}/monitors', [ApiMonitorController::class, 'index'])->name('projects.monitors.index');
+    Route::get('projects/{project}/monitors/create', [ApiMonitorController::class, 'create'])->name('projects.monitors.create');
+    Route::post('projects/{project}/monitors', [ApiMonitorController::class, 'store'])->name('projects.monitors.store');
+    Route::get('projects/{project}/monitors/{monitor}/edit', [ApiMonitorController::class, 'edit'])->name('projects.monitors.edit');
+    Route::put('projects/{project}/monitors/{monitor}', [ApiMonitorController::class, 'update'])->name('projects.monitors.update');
+    Route::delete('projects/{project}/monitors/{monitor}', [ApiMonitorController::class, 'destroy'])->name('projects.monitors.destroy');
+    Route::get('projects/{project}/monitors/{monitor}/alerts', [ApiMonitorController::class, 'alerts'])->name('projects.monitors.alerts');
+    Route::post('projects/{project}/monitors/{monitor}/alerts/{alert}/acknowledge', [ApiMonitorController::class, 'acknowledge'])->name('projects.monitors.alerts.acknowledge');
+    Route::post('projects/{project}/monitors/{monitor}/alerts/{alert}/follow-up', [CalendarController::class, 'storeAlertFollowUp'])->name('projects.monitors.alerts.follow-up');
+    Route::post('projects/{project}/monitors/{monitor}/run', [ApiMonitorController::class, 'run'])->name('projects.monitors.run');
+    Route::resource('projects.test-suites', TestSuiteController::class)->parameters(['test-suites' => 'testSuite']);
+    Route::resource('projects.test-cases', TestCaseController::class)->parameters(['test-cases' => 'testCase']);
+    Route::post('projects/{project}/test-cases/{testCase}/results', [TestCaseController::class, 'markResult'])->name('projects.test-cases.results.store');
+    Route::get('projects/{project}/test-execution', [TestExecutionDashboardController::class, 'index'])->name('projects.test-execution.index');
+    Route::get('projects/{project}/qa-coverage', [QaCoverageMatrixController::class, 'index'])->name('projects.qa-coverage.index');
+    Route::get('projects/{project}/qa-evidence', [QaEvidencePackController::class, 'index'])->name('projects.qa-evidence.index');
+    Route::get('projects/{project}/qa-evidence/notes.md', [QaEvidencePackController::class, 'notes'])->name('projects.qa-evidence.notes');
+    Route::get('projects/{project}/qa-evidence/summary.json', [QaEvidencePackController::class, 'summary'])->name('projects.qa-evidence.summary');
+    Route::get('projects/{project}/qa-evidence/pack.zip', [QaEvidencePackController::class, 'zip'])->name('projects.qa-evidence.zip');
+    Route::get('projects/{project}/release-gates', [QaReleaseGateController::class, 'index'])->name('projects.release-gates.index');
+    Route::get('projects/{project}/release-gates/create', [QaReleaseGateController::class, 'create'])->name('projects.release-gates.create');
+    Route::post('projects/{project}/release-gates', [QaReleaseGateController::class, 'store'])->name('projects.release-gates.store');
+    Route::get('projects/{project}/release-gates/{releaseGate}.md', [QaReleaseGateController::class, 'markdown'])->name('projects.release-gates.markdown');
+    Route::get('projects/{project}/release-gates/{releaseGate}', [QaReleaseGateController::class, 'show'])->name('projects.release-gates.show');
+    Route::patch('projects/{project}/release-gates/{releaseGate}/decision', [QaReleaseGateController::class, 'updateDecision'])->name('projects.release-gates.decision.update');
+    Route::post('projects/{project}/test-execution/test-cases/{testCase}/results', [TestExecutionDashboardController::class, 'markResult'])->name('projects.test-execution.results.store');
+    Route::resource('projects.contract-validations', ContractValidationController::class)
+        ->only(['index', 'create', 'store', 'show'])
+        ->parameters(['contract-validations' => 'contractValidation']);
+    Route::resource('projects.findings', FindingController::class)->parameters(['findings' => 'finding']);
+    Route::post('projects/{project}/findings/{finding}/evidence', [FindingEvidenceController::class, 'store'])->name('projects.findings.evidence.store');
+    Route::delete('projects/{project}/findings/{finding}/evidence/{evidence}', [FindingEvidenceController::class, 'destroy'])->name('projects.findings.evidence.destroy');
+    Route::get('projects/{project}/scans', [ScanController::class, 'index'])->name('projects.scans.index');
+    Route::get('projects/{project}/scans/create', [ScanController::class, 'create'])->name('projects.scans.create');
+    Route::post('projects/{project}/scans', [ScanController::class, 'store'])->name('projects.scans.store');
+    Route::get('projects/{project}/scans/{scanRun}', [ScanController::class, 'show'])->name('projects.scans.show');
+    Route::get('projects/{project}/snapshots', [SnapshotController::class, 'index'])->name('projects.snapshots.index');
+    Route::post('projects/{project}/scans/{scanRun}/snapshots', [SnapshotController::class, 'store'])->name('projects.scans.snapshots.store');
+    Route::get('projects/{project}/snapshots/{snapshot}', [SnapshotController::class, 'show'])->name('projects.snapshots.show');
+    Route::post('projects/{project}/snapshots/compare', [SnapshotController::class, 'compare'])->name('projects.snapshots.compare');
+    Route::get('projects/{project}/snapshot-compares/{compareRun}', [SnapshotController::class, 'showCompare'])->name('projects.snapshots.compares.show');
+    Route::post('projects/{project}/endpoints/{endpoint}/probe', [ScanController::class, 'probeEndpoint'])->name('projects.endpoints.probe');
+    Route::post('projects/{project}/endpoints/{endpoint}/path-parameters', [EndpointPathParameterController::class, 'update'])->name('projects.endpoints.path-parameters.update');
+    Route::get('projects/{project}/endpoints/import', [EndpointController::class, 'importForm'])->name('projects.endpoints.import.form');
+    Route::post('projects/{project}/endpoints/import/preview', [EndpointController::class, 'previewImport'])->name('projects.endpoints.import.preview');
+    Route::post('projects/{project}/endpoints/import', [EndpointController::class, 'import'])->name('projects.endpoints.import');
+    Route::resource('projects.endpoints', EndpointController::class);
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('projects/{project}/reports', [ReportController::class, 'project'])->name('projects.reports.index');
+    Route::get('projects/{project}/release-readiness', [ReleaseReadinessController::class, 'show'])->name('projects.release-readiness.show');
+    Route::get('projects/{project}/reports/release-readiness.md', [ReleaseReadinessController::class, 'markdown'])->name('projects.reports.release-readiness.markdown');
+    Route::get('projects/{project}/reports/builder', [FullQaReportBuilderController::class, 'create'])->name('projects.reports.builder.create');
+    Route::post('projects/{project}/reports/builder/markdown', [FullQaReportBuilderController::class, 'markdown'])->name('projects.reports.builder.markdown');
+    Route::get('projects/{project}/reports/full-project.md', [ReportController::class, 'fullProjectMarkdown'])->name('projects.reports.full-project.markdown');
+    Route::get('projects/{project}/reports/endpoints.csv', [ReportController::class, 'endpointsCsv'])->name('projects.reports.endpoints.csv');
+    Route::get('projects/{project}/reports/scans/{scanRun}.md', [ReportController::class, 'scanMarkdown'])->name('projects.reports.scans.markdown');
+    Route::get('projects/{project}/reports/snapshots/{snapshot}.json', [ReportController::class, 'snapshotJson'])->name('projects.reports.snapshots.json');
+    Route::get('projects/{project}/reports/compares/{compareRun}.md', [ReportController::class, 'compareMarkdown'])->name('projects.reports.compares.markdown');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
+    Route::post('/settings/reset/{group}', [SettingsController::class, 'resetGroup'])->name('settings.reset-group');
+    Route::get('/settings/export', [SettingsController::class, 'export'])->name('settings.export');
+});
