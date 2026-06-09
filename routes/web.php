@@ -15,6 +15,7 @@ use App\Http\Controllers\FindingController;
 use App\Http\Controllers\FindingEvidenceController;
 use App\Http\Controllers\FullQaReportBuilderController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\NewmanImportController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectWizardController;
@@ -27,6 +28,8 @@ use App\Http\Controllers\ReleaseReadinessController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\SystemDataController;
+use App\Http\Controllers\SystemHealthController;
 use App\Http\Controllers\SnapshotController;
 use App\Http\Controllers\TestCaseController;
 use App\Http\Controllers\TestExecutionDashboardController;
@@ -78,6 +81,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('/release-readiness', [ReleaseReadinessController::class, 'index'])->name('release-readiness.index');
     Route::get('projects/wizard/create', [ProjectWizardController::class, 'create'])->name('projects.wizard.create');
     Route::post('projects/wizard', [ProjectWizardController::class, 'store'])->name('projects.wizard.store');
+    Route::get('projects/{project}/wizard/complete', [ProjectWizardController::class, 'complete'])->name('projects.wizard.complete');
     Route::resource('projects', ProjectController::class);
     Route::resource('projects.environments', EnvironmentController::class)
         ->except(['index', 'show'])
@@ -110,6 +114,9 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::resource('projects.test-cases', TestCaseController::class)->parameters(['test-cases' => 'testCase']);
     Route::post('projects/{project}/test-cases/{testCase}/results', [TestCaseController::class, 'markResult'])->name('projects.test-cases.results.store');
     Route::get('projects/{project}/test-execution', [TestExecutionDashboardController::class, 'index'])->name('projects.test-execution.index');
+    Route::get('projects/{project}/test-execution/newman-import', [NewmanImportController::class, 'create'])->name('projects.newman-import.create');
+    Route::post('projects/{project}/test-execution/newman-import/preview', [NewmanImportController::class, 'preview'])->name('projects.newman-import.preview');
+    Route::post('projects/{project}/test-execution/newman-import', [NewmanImportController::class, 'store'])->name('projects.newman-import.store');
     Route::get('projects/{project}/qa-coverage', [QaCoverageMatrixController::class, 'index'])->name('projects.qa-coverage.index');
     Route::get('projects/{project}/qa-evidence', [QaEvidencePackController::class, 'index'])->name('projects.qa-evidence.index');
     Route::get('projects/{project}/qa-evidence/notes.md', [QaEvidencePackController::class, 'notes'])->name('projects.qa-evidence.notes');
@@ -166,9 +173,14 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('projects/{project}/reports/compares/{compareRun}.md', [ReportController::class, 'compareMarkdown'])->name('projects.reports.compares.markdown');
     Route::get('projects/{project}/reports/compares/{compareRun}.html', [ReportController::class, 'compareHtml'])->name('projects.reports.compares.html');
     Route::get('projects/{project}/reports/compares/{compareRun}.pdf', [ReportController::class, 'comparePdf'])->name('projects.reports.compares.pdf');
+    Route::get('/system/health', [SystemHealthController::class, 'index'])->name('system.health.index');
+    Route::get('/system/health.json', [SystemHealthController::class, 'json'])->name('system.health.json');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
     Route::post('/settings/reset/{group}', [SettingsController::class, 'resetGroup'])->name('settings.reset-group');
     Route::get('/settings/export', [SettingsController::class, 'export'])->name('settings.export');
+    Route::get('/settings/database/export', [SystemDataController::class, 'export'])->name('settings.database.export');
+    Route::post('/settings/database/import', [SystemDataController::class, 'import'])->name('settings.database.import');
+    Route::post('/settings/hard-reset', [SystemDataController::class, 'hardReset'])->name('settings.hard-reset');
 });

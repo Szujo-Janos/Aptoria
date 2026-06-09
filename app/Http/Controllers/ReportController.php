@@ -74,7 +74,7 @@ class ReportController extends Controller
         $markdown = $exports->fullProjectMarkdown($project);
 
         return $this->download(
-            $presentation->htmlFromMarkdown($markdown, 'Aptoria Full Project QA Report', $project),
+            $presentation->htmlFromMarkdown($markdown, 'Full Project QA Report', $project),
             $exports->filename($project, 'full-project-qa-report', 'html'),
             'text/html; charset=UTF-8'
         );
@@ -85,7 +85,7 @@ class ReportController extends Controller
         $markdown = $exports->fullProjectMarkdown($project);
 
         return $this->download(
-            $presentation->pdfFromMarkdown($markdown, 'Aptoria Full Project QA Report', $project),
+            $presentation->pdfFromMarkdown($markdown, 'Full Project QA Report', $project),
             $exports->filename($project, 'full-project-qa-report', 'pdf'),
             'application/pdf'
         );
@@ -117,7 +117,7 @@ class ReportController extends Controller
         $markdown = $exports->scanMarkdown($scanRun);
 
         return $this->download(
-            $presentation->htmlFromMarkdown($markdown, 'Aptoria Scan Report #'.$scanRun->id, $project),
+            $presentation->htmlFromMarkdown($markdown, 'Scan Report #'.$scanRun->id, $project),
             $exports->filename($project, 'scan-'.$scanRun->id, 'html'),
             'text/html; charset=UTF-8'
         );
@@ -129,7 +129,7 @@ class ReportController extends Controller
         $markdown = $exports->scanMarkdown($scanRun);
 
         return $this->download(
-            $presentation->pdfFromMarkdown($markdown, 'Aptoria Scan Report #'.$scanRun->id, $project),
+            $presentation->pdfFromMarkdown($markdown, 'Scan Report #'.$scanRun->id, $project),
             $exports->filename($project, 'scan-'.$scanRun->id, 'pdf'),
             'application/pdf'
         );
@@ -163,7 +163,7 @@ class ReportController extends Controller
         $markdown = $exports->compareMarkdown($compareRun);
 
         return $this->download(
-            $presentation->htmlFromMarkdown($markdown, 'Aptoria Snapshot Compare Report #'.$compareRun->id, $project),
+            $presentation->htmlFromMarkdown($markdown, 'Snapshot Compare Report #'.$compareRun->id, $project),
             $exports->filename($project, 'compare-'.$compareRun->id, 'html'),
             'text/html; charset=UTF-8'
         );
@@ -175,7 +175,7 @@ class ReportController extends Controller
         $markdown = $exports->compareMarkdown($compareRun);
 
         return $this->download(
-            $presentation->pdfFromMarkdown($markdown, 'Aptoria Snapshot Compare Report #'.$compareRun->id, $project),
+            $presentation->pdfFromMarkdown($markdown, 'Snapshot Compare Report #'.$compareRun->id, $project),
             $exports->filename($project, 'compare-'.$compareRun->id, 'pdf'),
             'application/pdf'
         );

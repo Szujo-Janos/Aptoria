@@ -1,5 +1,140 @@
 # Changelog
 
+## v1.1.0 - Postman Compatibility, Globals & Newman Import Pass
+
+- Combined the planned v1.0.99 and v1.1.0 work into one cumulative release.
+- Added Postman Globals JSON support to endpoint import.
+- Added Postman collection compatibility metadata for v2.0/v2.1 schema review, unsupported auth warnings and unsupported script counters.
+- Extended Postman import preview with globals count, schema label and compatibility warnings.
+- Added Newman JSON report import into Aptoria test execution.
+- Added Newman JUnit XML report import into Aptoria test execution.
+- Newman imports create/update test suites, test cases and test case results.
+- Failed Newman assertions can create findings with log evidence.
+- Added Newman import UI under project Test Execution.
+- Added English/Hungarian translations and regression tests for Postman Globals and Newman import.
+
+## v1.0.98 - Postman Import Max Pass
+
+- Expanded Postman import from endpoint-only extraction to collection + environment aware import.
+- Added optional Postman Environment JSON input with variable resolution for `{{baseUrl}}`, auth tokens and request metadata.
+- Added import preview enrichment for detected environment, variables, auth profiles, response examples, assertion candidates and folder-derived test suites.
+- Added optional environment creation from Postman `baseUrl`.
+- Added optional auth profile creation from Postman Bearer, Basic, API key or auth headers when values are complete.
+- Added optional assertion rule creation from response examples and simple `pm.test` scripts.
+- Added optional test suite/test case generation from Postman folder structure.
+- Preserved secret masking for headers, body previews and environment variable previews.
+- Added Postman Environment sample controls and English/Hungarian localization.
+- Updated API collection import regression coverage for environment/auth/assertion/suite creation.
+
+## v1.0.97 - API Collection Import Pass
+
+- Added Postman Collection JSON import beside the existing CSV, JSON endpoint list and OpenAPI/Swagger JSON/YAML import flow.
+- Extended endpoint import preview to show request metadata before saving, including imported header count and request body type.
+- Persisted imported request header/body metadata on endpoints for audit documentation while masking sensitive header values and common token/password fields.
+- Added Postman folder recursion, raw URL and URL object parsing, `:id` to `{id}` path parameter normalization, example response status/content-type extraction and auth-required detection from collection auth or auth headers.
+- Added Postman sample payload buttons to the standalone endpoint import page and the Guided Project Wizard.
+- Kept import safe: preview and confirm import only write endpoint inventory; they do not send API requests.
+- Added regression coverage for Postman preview, confirm import, masking and UI translation output.
+- Updated release documentation, QA checklist and system audit documentation.
+- Bumped VERSION to `1.0.97`.
+
+## v1.0.96 - Auth Profile Tester Pass
+
+- Added a fuller Auth Profile Tester workflow to the auth profile edit screen.
+- Added endpoint-based auth tests using saved GET/HEAD endpoint inventory, environment/base URL resolution and path parameter values.
+- Kept custom URL testing for quick external health/auth checks with GET/HEAD only.
+- Applied Bearer, Basic and Custom header profiles to the test request and displayed masked auth metadata.
+- Added structured test results with HTTP status, duration, content type, masked response headers and masked response preview.
+- Classified 2xx/3xx responses as passed, 401/403 as failed and other 4xx/5xx responses as needs review.
+- Added regression coverage for Bearer header application, unauthorized responses and the auth tester result UI.
+- Updated release documentation, QA checklist and system audit documentation.
+- Bumped VERSION to `1.0.96`.
+
+## v1.0.95 - Project Onboarding Wizard Stabilization Pass
+
+- Consolidated the v1.0.94 onboarding review into a single stabilization release instead of a chain of small hotfixes.
+- Fixed QA Coverage Matrix regression coverage so endpoint filtering assertions are not confused by the global System Health navigation link.
+- Stabilized the System Health diagnostics page title and storage category assertion coverage.
+- Hardened Guided Project Wizard auth validation: Bearer requires token, Basic requires username/password, and Custom header requires header name/value.
+- Added regression coverage for missing Bearer token rollback, keeping the wizard from creating half-configured projects.
+- Updated release documentation, QA checklist and system audit documentation.
+- Bumped VERSION to `1.0.95`.
+
+## v1.0.94 - Project Onboarding Wizard Pass
+
+- Completed the guided project onboarding wizard as the originally selected first roadmap item.
+- Extended the wizard to create a project, first environment, default auth profile, endpoint inventory, default assertion rules, first safe scan, first baseline snapshot and first report readiness check in one flow.
+- Added onboarding completion page with links to the project, first scan, first snapshot and full project Markdown/HTML/PDF report exports.
+- Prevented the wizard from finishing with an empty or invalid endpoint payload, avoiding empty half-configured projects.
+- Stored the selected wizard environment and auth profile as project scan defaults.
+- Kept production safety: environments marked as production are not auto-scanned from the wizard.
+- Added regression coverage for onboarding project creation, scan, snapshot, completion page and invalid endpoint rollback.
+- Updated English/Hungarian UI text, installation notes, QA checklist and system audit documentation.
+- Bumped VERSION to `1.0.94`.
+
+## v1.0.93 - System Health Diagnostics Pass
+
+- Added admin-only System Health diagnostics page at `/system/health` with runtime, application, storage, database, security, maintenance and automation readiness checks.
+- Added machine-readable System Health JSON export at `/system/health.json`.
+- Added `aptoria:health` artisan command for server/deployment diagnostics, with JSON and fail-on-warning options.
+- Added global navigation shortcuts for System Health in the sidebar, top toolbar and user menu.
+- Added regression coverage for the System Health service, web page, JSON export and navigation link.
+- Updated installation, server and QA documentation to include the new health diagnostics workflow.
+- Bumped VERSION to `1.0.93`.
+
+## v1.0.92 - Database Import FK Restore Hotfix
+
+- Fixed full database import/restore failing with SQLite `FOREIGN KEY constraint failed` when child tables such as auth profiles were restored before projects.
+- Added dependency-aware table ordering for database restore: parent tables are imported before child tables, and destructive deletes run in the reverse order.
+- Kept foreign key constraint toggling as a safety layer, then added SQLite `PRAGMA foreign_key_check` verification after restore/reset.
+- Reused the same dependency-aware delete order for hard reset so reset remains safe even when the database driver keeps constraints active.
+- Reset auto-increment counters after import for tables with an `id` column.
+- Updated release documentation and QA checks to v1.0.92.
+- Bumped VERSION to `1.0.92`.
+
+## v1.0.91 - Database Import/Export & Hard Reset Pass
+
+- Added admin-only Settings → Database maintenance tab.
+- Added full database JSON export for all Aptoria database tables and rows.
+- Added full database import/restore with schema hash validation and typed `IMPORT DATABASE` confirmation.
+- Added hard reset with typed `HARD RESET` confirmation.
+- Hard reset deletes application data/users, preserves migration metadata, removes the setup lock, logs the user out and redirects to first-run setup.
+- Added database maintenance documentation and release QA checks.
+- Added regression coverage for export payloads, import restore, import confirmation and hard reset setup-lock removal.
+- Bumped VERSION to `1.0.91`.
+
+## v1.0.90 - First-Run Setup Flow Pass
+
+- Tightened first-run application access so normal pages and login attempts remain behind `/setup` until `storage/app/installed.lock` exists.
+- Kept migrated users without a setup lock in setup-required mode instead of treating the application as fully open.
+- Closed `/setup` after setup is locked; GET requests redirect to login/profile and write attempts return 403.
+- Prevented setup from being finished until at least one admin/user exists.
+- Added one-time first-login redirect to My Profile and login timestamp tracking.
+- Added regression coverage for first login profile redirect and setup finish guard.
+- Updated first-run installation documentation, QA checklist and system audit to v1.0.90.
+- Bumped VERSION to `1.0.90`.
+
+## v1.0.89 - Professional Report Layout Pass
+
+- Reworked generated HTML report presentation into a cleaner professional QA / audit report layout with restrained colors, no dashboard-style gradient header and a more print-friendly structure.
+- Added Organization / client to the HTML metadata bar using the profile Report identity organization field, with a Not configured fallback when blank.
+- Reworked PDF report header metadata to include Organization / client, Prepared by, optional Role / title, project, base URL, generated timestamp and Aptoria version.
+- Removed duplicate leading report titles from HTML/PDF bodies when the Markdown H1 matches the report title.
+- Kept README release history policy clean: README links to CHANGELOG.md instead of embedding changelog entries.
+- Added `docs/SYSTEM_AUDIT_v1.0.89.md` and updated release QA checklist/docs to v1.0.89.
+- Bumped VERSION to `1.0.89`.
+
+## v1.0.88 - Report Branding & Author Profile Polish
+
+- Polished generated HTML report headers so the Aptoria brand appears through the logo without repeated large product-name text.
+- Added separated report metadata bar for project, base URL, generated timestamp and Aptoria version.
+- Added compact structured HTML report footer credit.
+- Added profile-driven Report identity fields used by generated HTML/PDF reports.
+- Added PDF report header metadata for prepared-by, project, base URL, generated timestamp and version.
+- Prevented Markdown credit footers from being duplicated inside HTML/PDF report bodies.
+- Kept README clean of embedded changelog sections and linked release history through CHANGELOG.md.
+- Bumped VERSION to `1.0.88`.
+
 ## v1.0.87 - HTML & PDF Report Export Pass
 
 - Added reusable HTML report rendering for core Markdown reports.

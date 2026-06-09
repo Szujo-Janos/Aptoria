@@ -8,6 +8,7 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
+                    <a href="{{ route('projects.newman-import.create', $project) }}" class="btn btn-xs btn-info"><i class="fa fa-upload"></i> {{ __('messages.newman_import.short_title') }}</a>
                     <a href="{{ route('projects.test-cases.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.test_cases.create') }}</a>
                     <a href="{{ route('projects.test-cases.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.test_cases.view_all') }}</a>
                     <a href="{{ route('projects.show', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>

@@ -4,11 +4,44 @@ use App\Models\CalendarEvent;
 use App\Models\Project;
 use App\Services\Monitors\ScheduledMonitorService;
 use App\Services\Security\SecurityStatusService;
+use App\Services\System\SystemHealthService;
 use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('aptoria:version', function (): void {
     $this->info('Aptoria '.config('aptoria.version'));
 })->purpose('Display the Aptoria version.');
+
+Artisan::command('aptoria:health {--json : Print machine-readable JSON output.} {--fail-on-warning : Return exit code 1 when warnings are present.}', function (): int {
+    $report = app(SystemHealthService::class)->report();
+    $summary = $report['summary'];
+
+    if ($this->option('json')) {
+        $this->line((string) json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    } else {
+        $this->info('Aptoria system health diagnostics');
+        $this->line('Version: '.($report['version'] ?? config('aptoria.version')));
+        $this->line('Status: '.strtoupper((string) ($summary['status'] ?? 'unknown')).' | Score: '.($summary['score'] ?? 0).'% | OK: '.($summary['ok'] ?? 0).' | Warnings: '.($summary['warnings'] ?? 0).' | Failed: '.($summary['failed'] ?? 0).' | Info: '.($summary['info'] ?? 0));
+        $this->newLine();
+
+        foreach (($report['categories'] ?? []) as $category) {
+            $this->line(strtoupper((string) ($category['label'] ?? 'Category')));
+            $this->table(
+                ['Status', 'Check', 'Detail'],
+                array_map(static fn (array $check): array => [strtoupper((string) $check['status']), $check['label'], $check['detail']], $category['checks'] ?? [])
+            );
+        }
+    }
+
+    if (($summary['failed'] ?? 0) > 0) {
+        return 1;
+    }
+
+    if ($this->option('fail-on-warning') && ($summary['warnings'] ?? 0) > 0) {
+        return 1;
+    }
+
+    return 0;
+})->purpose('Run Aptoria system health diagnostics for deployment and server readiness checks.');
 
 Artisan::command('aptoria:security-audit {--fail-on-warning}', function (): int {
     $service = app(SecurityStatusService::class);

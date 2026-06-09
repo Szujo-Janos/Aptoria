@@ -52,7 +52,7 @@ class FullQaReportBuilderController extends Controller
         $options = $request->reportOptions();
         $markdown = $builder->markdown($project, $options);
 
-        return response($presentation->htmlFromMarkdown($markdown, 'Aptoria Custom QA Report', $project), 200, [
+        return response($presentation->htmlFromMarkdown($markdown, 'Custom QA Report', $project), 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$exports->filename($project, 'custom-full-qa-report', 'html').'"',
             'X-Content-Type-Options' => 'nosniff',
@@ -64,7 +64,7 @@ class FullQaReportBuilderController extends Controller
         $options = $request->reportOptions();
         $markdown = $builder->markdown($project, $options);
 
-        return response($presentation->pdfFromMarkdown($markdown, 'Aptoria Custom QA Report', $project), 200, [
+        return response($presentation->pdfFromMarkdown($markdown, 'Custom QA Report', $project), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$exports->filename($project, 'custom-full-qa-report', 'pdf').'"',
             'X-Content-Type-Options' => 'nosniff',

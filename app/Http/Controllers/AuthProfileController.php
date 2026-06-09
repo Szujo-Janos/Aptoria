@@ -6,12 +6,11 @@ use App\Http\Requests\AuthProfileRequest;
 use App\Models\AuthProfile;
 use App\Models\Project;
 use App\Services\Auth\AuthProfileRuntimeService;
-use App\Services\Security\NetworkTargetGuard;
+use App\Services\Auth\AuthProfileTestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Throwable;
 
 class AuthProfileController extends Controller
 {
@@ -21,6 +20,7 @@ class AuthProfileController extends Controller
             'project' => $project,
             'authProfile' => new AuthProfile(['type' => AuthProfile::TYPE_NONE]),
             'types' => AuthProfile::TYPES,
+            'probeableEndpoints' => collect(),
         ]);
     }
 
@@ -45,10 +45,18 @@ class AuthProfileController extends Controller
     {
         $this->ensureProfileBelongsToProject($project, $authProfile);
 
+        $project->loadMissing(['endpoints' => fn ($query) => $query
+            ->where('is_active', true)
+            ->where('excluded_from_scan', false)
+            ->whereIn('method', ['GET', 'HEAD'])
+            ->orderBy('method')
+            ->orderBy('path')]);
+
         return view('auth_profiles.edit', [
             'project' => $project,
             'authProfile' => $authProfile,
             'types' => AuthProfile::TYPES,
+            'probeableEndpoints' => $project->endpoints,
         ]);
     }
 
@@ -82,54 +90,35 @@ class AuthProfileController extends Controller
     }
 
 
-    public function test(Request $request, Project $project, AuthProfile $authProfile, AuthProfileRuntimeService $authRuntime, NetworkTargetGuard $networkGuard): RedirectResponse
+    public function test(Request $request, Project $project, AuthProfile $authProfile, AuthProfileTestService $tester): RedirectResponse
     {
         $this->ensureProfileBelongsToProject($project, $authProfile);
 
         $validated = $request->validate([
-            'test_method' => ['required', 'in:GET,HEAD'],
-            'test_url' => ['required', 'url', 'max:1000'],
+            'test_target' => ['required', Rule::in(['endpoint', 'custom'])],
+            'test_endpoint_id' => [
+                Rule::requiredIf(fn (): bool => $request->input('test_target') === 'endpoint'),
+                'nullable',
+                Rule::exists('endpoints', 'id')->where('project_id', $project->id),
+            ],
+            'test_method' => [
+                Rule::requiredIf(fn (): bool => $request->input('test_target') === 'custom'),
+                'nullable',
+                Rule::in(['GET', 'HEAD']),
+            ],
+            'test_url' => [
+                Rule::requiredIf(fn (): bool => $request->input('test_target') === 'custom'),
+                'nullable',
+                'url',
+                'max:1000',
+            ],
         ]);
 
-        $url = (string) $validated['test_url'];
-        if ($networkGuard->isBlocked($url, false, false)) {
-            return back()->withErrors(['test_url' => __('messages.auth_profiles.test_private_blocked')]);
-        }
+        $result = $tester->run($project, $authProfile, $validated);
 
-        if (! $authRuntime->isComplete($authProfile)) {
-            return back()->withErrors(['test_url' => __('messages.auth_profiles.test_incomplete')]);
-        }
-
-        try {
-            $pendingRequest = Http::timeout(10)
-                ->connectTimeout(5)
-                ->acceptJson()
-                ->withUserAgent('Aptoria/'.config('aptoria.version').' Auth Profile Test')
-                ->withOptions([
-                    'allow_redirects' => [
-                        'max' => 3,
-                        'on_redirect' => function ($request, $response, $uri) use ($networkGuard): void {
-                            $networkGuard->assertAllowed((string) $uri, false, false);
-                        },
-                    ],
-                    'verify' => true,
-                    'http_errors' => false,
-                ]);
-
-            $pendingRequest = $authRuntime->applyToRequest($pendingRequest, $authProfile);
-            $started = microtime(true);
-            $response = $pendingRequest->send((string) $validated['test_method'], $url);
-            $durationMs = (int) round((microtime(true) - $started) * 1000);
-
-            return back()->with('success', __('messages.auth_profiles.test_success', [
-                'status' => $response->status(),
-                'time' => $durationMs,
-            ]));
-        } catch (Throwable $exception) {
-            return back()->withErrors(['test_url' => __('messages.auth_profiles.test_failed', [
-                'message' => $authRuntime->maskValue($exception->getMessage()),
-            ])]);
-        }
+        return back()
+            ->with('auth_profile_test_result', $result)
+            ->with($result['ok'] ? 'success' : 'warning', (string) $result['message']);
     }
 
     private function buildProfileData(AuthProfileRequest $request, AuthProfile $profile): array

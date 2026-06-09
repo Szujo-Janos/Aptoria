@@ -3,30 +3,37 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Services\Setup\SetupStateService;
 use App\Services\Settings\SettingsRuntimeService;
 use Illuminate\Http\RedirectResponse as HttpRedirectResponse;
 use Illuminate\View\View;
+use Throwable;
 
 class AuthController extends Controller
 {
     public function showLogin(SetupStateService $setupState): View|HttpRedirectResponse
     {
-        if (! $setupState->isInstalled()) {
+        if (! $setupState->canUseApplication()) {
             return redirect()->route('setup.index')->with('warning', __('messages.setup.required_before_login'));
         }
 
         return view('auth.login');
     }
 
-    public function login(Request $request, SettingsRuntimeService $runtime): RedirectResponse
+    public function login(Request $request, SettingsRuntimeService $runtime, SetupStateService $setupState): RedirectResponse
     {
+        if (! $setupState->canUseApplication()) {
+            return redirect()->route('setup.index')->with('warning', __('messages.setup.required_before_login'));
+        }
+
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
@@ -46,9 +53,18 @@ class AuthController extends Controller
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
-            $locale = Auth::user()?->locale;
+            $user = Auth::user();
+            $locale = $user?->locale;
             if (is_string($locale) && in_array($locale, array_keys(config('aptoria.supported_locales', ['en' => 'English'])), true)) {
                 $request->session()->put('locale', $locale);
+            }
+
+            $shouldShowProfile = $this->recordSuccessfulLoginAndShouldShowProfile($user);
+
+            if ($shouldShowProfile) {
+                return redirect()->route('profile.show')
+                    ->with('success', __('messages.auth.login_success'))
+                    ->with('info', __('messages.auth.first_login_profile_redirect'));
             }
 
             return redirect()->intended(route($runtime->defaultLandingRouteName()))->with('success', __('messages.auth.login_success'));
@@ -68,6 +84,31 @@ class AuthController extends Controller
         return back()
             ->withErrors(['email' => __('messages.auth.login_failed')])
             ->onlyInput('email');
+    }
+
+    private function recordSuccessfulLoginAndShouldShowProfile(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        try {
+            if (! Schema::hasColumn('users', 'first_login_at')) {
+                return false;
+            }
+
+            $isFirstSuccessfulLogin = $user->first_login_at === null;
+            $now = now();
+
+            $user->forceFill([
+                'first_login_at' => $user->first_login_at ?: $now,
+                'last_login_at' => $now,
+            ])->save();
+
+            return $isFirstSuccessfulLogin;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public function logout(Request $request): RedirectResponse

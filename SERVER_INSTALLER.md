@@ -1,6 +1,6 @@
 # Aptoria Server First-Run Installer
 
-Current version: **v1.0.87**
+Current version: **v1.1.0**
 
 Aptoria contains a first-run setup flow for fresh deployments. Until the application is installed and locked, normal web pages redirect to `/setup`.
 
@@ -19,6 +19,8 @@ The setup flow can help with:
 - optional demo QA project import;
 - setup lock creation.
 
+After setup and migrations, open **System Health** or run `php artisan aptoria:health` to verify runtime, storage, database, security and automation readiness. Then use **Projects → Guided Project** to create the first project, environment, auth profile, endpoint, safe scan, snapshot and report readiness flow in one guided pass.
+
 The setup lock is stored locally at:
 
 ```text
@@ -32,15 +34,15 @@ This file must never be included in release ZIPs or committed to Git.
 ## Windows/XAMPP recommended update flow
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.0.87.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.0.87"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.0.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.0"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.0.87\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.0\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -53,6 +55,7 @@ C:\xampp\php\php.exe artisan config:clear
 C:\xampp\php\php.exe artisan route:clear
 C:\xampp\php\php.exe artisan migrate
 
+C:\xampp\php\php.exe artisan aptoria:health
 C:\xampp\php\php.exe artisan test
 C:\xampp\php\php.exe artisan aptoria:security-audit
 
@@ -60,6 +63,10 @@ C:\xampp\php\php.exe artisan serve
 ```
 
 ---
+
+## Maintenance backup recommendation
+
+Before server moves, hard resets or major upgrades, sign in as admin and use **Settings → Database maintenance → Export full database**. Keep the downloaded JSON together with the server `.env` backup, because encrypted auth profile values require the same APP_KEY after restore.
 
 ## Security notes
 
@@ -103,3 +110,14 @@ Safe dry-run verification:
 ```powershell
 C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --dry-run
 ```
+
+
+## System health diagnostics
+
+Run this after migration and before real QA work:
+
+```powershell
+C:\xampp\php\php.exe artisan aptoria:health
+```
+
+Admin users can also open **System Health** in the sidebar. The JSON endpoint is available at `/system/health.json` for machine-readable checks.

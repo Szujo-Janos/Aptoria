@@ -18,6 +18,13 @@ class User extends Authenticatable
         'role',
         'locale',
         'timezone',
+        'report_display_name',
+        'report_role_title',
+        'report_organization',
+        'report_github_url',
+        'report_website_url',
+        'first_login_at',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -29,6 +36,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'first_login_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

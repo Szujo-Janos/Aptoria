@@ -155,6 +155,10 @@ class SetupController extends Controller
             return back()->withErrors(['setup' => __('messages.setup.finish_confirm_required')]);
         }
 
+        if (! Schema::hasTable('users') || ! User::query()->exists()) {
+            return back()->withErrors(['setup' => __('messages.setup.admin_required_before_finish')]);
+        }
+
         $this->setupState->writeLock('web-setup');
 
         return redirect()->route('login')->with('success', __('messages.setup.finished'));

@@ -84,7 +84,7 @@ class QaReleaseGateController extends Controller
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.html';
         $markdown = $gates->markdown($releaseGate);
 
-        return response($presentation->htmlFromMarkdown($markdown, 'Aptoria QA Release Gate #'.$releaseGate->id, $project), 200, [
+        return response($presentation->htmlFromMarkdown($markdown, 'QA Release Gate #'.$releaseGate->id, $project), 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Content-Type-Options' => 'nosniff',
@@ -97,7 +97,7 @@ class QaReleaseGateController extends Controller
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.pdf';
         $markdown = $gates->markdown($releaseGate);
 
-        return response($presentation->pdfFromMarkdown($markdown, 'Aptoria QA Release Gate #'.$releaseGate->id, $project), 200, [
+        return response($presentation->pdfFromMarkdown($markdown, 'QA Release Gate #'.$releaseGate->id, $project), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Content-Type-Options' => 'nosniff',

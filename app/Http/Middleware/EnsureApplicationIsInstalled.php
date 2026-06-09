@@ -19,7 +19,7 @@ class EnsureApplicationIsInstalled
             return $next($request);
         }
 
-        if ($this->setupState->isInstalled()) {
+        if ($this->setupState->canUseApplication()) {
             return $next($request);
         }
 
@@ -29,7 +29,7 @@ class EnsureApplicationIsInstalled
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'Aptoria setup is required before using the application.',
+                'message' => 'Aptoria setup must be completed and locked before using the application.',
                 'setup_url' => url('/setup'),
             ], 503);
         }

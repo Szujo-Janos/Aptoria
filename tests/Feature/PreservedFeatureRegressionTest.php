@@ -39,7 +39,7 @@ class PreservedFeatureRegressionTest extends TestCase
         $this->post('/login', [
             'email' => 'admin@example.com',
             'password' => 'change-me-now',
-        ])->assertRedirect('/dashboard');
+        ])->assertRedirect('/profile');
 
         $this->get('/dashboard')
             ->assertOk()

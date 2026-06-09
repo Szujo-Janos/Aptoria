@@ -8,31 +8,53 @@ class SimplePdfReportRenderer
     private const PAGE_HEIGHT = 841.89;
     private const MARGIN_X = 54.0;
     private const TOP_Y = 790.0;
-    private const BOTTOM_Y = 62.0;
+    private const BOTTOM_Y = 70.0;
     private const FOOTER_Y = 38.0;
 
     /** @var array<int, array<int, array{font: string, size: float, x: float, y: float, text: string}>> */
     private array $pages = [];
 
+    /** @param array<int, string> $footerLines @param array<string, string> $identity */
     public function __construct(
         private readonly string $productName,
         private readonly string $version,
-        private readonly string $footer
+        private readonly array $footerLines = [],
+        private readonly array $identity = [],
+        private readonly string $generatedAt = ''
     ) {
     }
 
-    public function render(string $markdown, string $title, ?string $projectName = null): string
+    public function render(string $markdown, string $title, ?string $projectName = null, ?string $baseUrl = null): string
     {
         $this->pages = [[]];
         $y = self::TOP_Y;
-        $this->addLine($y, $title, 'F2', 17);
-        $y -= 22;
-        $subtitle = $this->productName.' v'.$this->version;
-        if ($projectName !== null && $projectName !== '') {
-            $subtitle .= ' - '.$projectName;
+        $this->addLine($y, 'Professional QA / audit report', 'F1', 8.5);
+        $y -= 15;
+        $this->addLine($y, $title, 'F2', 18);
+        $y -= 24;
+
+        $preparedBy = (string) ($this->identity['prepared_by'] ?? '');
+        $organization = (string) ($this->identity['organization'] ?? '');
+        $roleTitle = (string) ($this->identity['role_title'] ?? '');
+
+        $metaRows = [
+            'Project' => $projectName !== null && $projectName !== '' ? $projectName : 'Report export',
+            'Organization / client' => $organization !== '' ? $organization : 'Not configured',
+            'Base URL' => $baseUrl !== null && $baseUrl !== '' ? $baseUrl : 'Not configured',
+            'Prepared by' => $preparedBy !== '' ? $preparedBy : 'Not configured',
+        ];
+
+        if ($roleTitle !== '') {
+            $metaRows['Role / title'] = $roleTitle;
         }
-        $this->addLine($y, $subtitle, 'F1', 10);
-        $y -= 20;
+
+        foreach ($metaRows as $label => $value) {
+            $this->addLine($y, $label.': '.$value, 'F1', 9);
+            $y -= 13;
+        }
+
+        $this->addLine($y, 'Generated: '.$this->generatedAt.' | '.$this->productName.' version: '.$this->version, 'F1', 8.5);
+        $y -= 24;
 
         foreach ($this->markdownToTextLines($markdown) as $line) {
             [$text, $font, $size, $spacingBefore, $spacingAfter] = $line;
@@ -195,13 +217,26 @@ class SimplePdfReportRenderer
     /** @param array<int, array{font: string, size: float, x: float, y: float, text: string}> $lines */
     private function pageStream(array $lines, int $page, int $pages): string
     {
-        $commands = [];
+        $commands = [
+            'q 0.35 w 54 766 m 541 766 l S Q',
+            'q 0.25 w 54 55 m 541 55 l S Q',
+        ];
         foreach ($lines as $line) {
             $commands[] = 'BT /'.$line['font'].' '.$line['size'].' Tf 1 0 0 1 '.sprintf('%.2F %.2F', $line['x'], $line['y']).' Tm ('.$this->escapePdfString($line['text']).') Tj ET';
         }
-        $footer = $this->footer !== '' ? $this->footer : $this->productName.' v'.$this->version;
-        $footer .= ' - Page '.$page.' / '.$pages;
-        $commands[] = 'BT /F1 7 Tf 1 0 0 1 '.sprintf('%.2F %.2F', self::MARGIN_X, self::FOOTER_Y).' Tm ('.$this->escapePdfString($this->pdfSafeText($footer)).') Tj ET';
+
+        $footerPrimary = $this->footerLines[0] ?? $this->productName.' v'.$this->version;
+        $footerSecondary = 'Page '.$page.' / '.$pages;
+        if (($this->footerLines[2] ?? '') !== '') {
+            $footerSecondary = $this->footerLines[2].' | '.$footerSecondary;
+        }
+        $preparedBy = (string) ($this->identity['prepared_by'] ?? '');
+        if ($preparedBy !== '') {
+            $footerSecondary = 'Prepared by: '.$preparedBy.' | '.$footerSecondary;
+        }
+
+        $commands[] = 'BT /F1 7 Tf 1 0 0 1 '.sprintf('%.2F %.2F', self::MARGIN_X, self::FOOTER_Y + 10).' Tm ('.$this->escapePdfString($this->pdfSafeText($this->truncate($footerPrimary, 125))).') Tj ET';
+        $commands[] = 'BT /F1 6.6 Tf 1 0 0 1 '.sprintf('%.2F %.2F', self::MARGIN_X, self::FOOTER_Y).' Tm ('.$this->escapePdfString($this->pdfSafeText($this->truncate($footerSecondary, 145))).') Tj ET';
 
         return implode("\n", $commands)."\n";
     }
@@ -220,10 +255,17 @@ class SimplePdfReportRenderer
         return trim($text);
     }
 
+    private function truncate(string $text, int $length): string
+    {
+        return strlen($text) > $length ? substr($text, 0, max(0, $length - 3)).'...' : $text;
+    }
+
     private function pdfSafeText(string $text): string
     {
         $map = [
             'ő' => 'o', 'Ő' => 'O', 'ű' => 'u', 'Ű' => 'U',
+            'á' => 'a', 'Á' => 'A', 'é' => 'e', 'É' => 'E', 'í' => 'i', 'Í' => 'I',
+            'ó' => 'o', 'Ó' => 'O', 'ö' => 'o', 'Ö' => 'O', 'ü' => 'u', 'Ü' => 'U',
             '–' => '-', '—' => '-', '·' => '-', '•' => '-',
             '“' => '"', '”' => '"', '„' => '"', '’' => "'", '‘' => "'",
             '…' => '...', '×' => 'x', '✓' => 'OK', '✗' => 'X',

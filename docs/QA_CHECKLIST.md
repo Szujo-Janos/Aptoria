@@ -1,62 +1,44 @@
-# Aptoria v1.0.87 QA Checklist
+# Aptoria v1.1.0 QA Checklist
 
-Release: **v1.0.87 - HTML & PDF Report Export Pass**
-ZIP: `aptoria-1.0.87.zip`
+Release: **v1.1.0 - Postman Compatibility, Globals & Newman Import Pass**
+ZIP: `aptoria-1.1.0.zip`
 
-## Export Credit Checks
+## Install / update
 
-- [ ] Generate a full project QA Markdown report and confirm the footer contains Aptoria, version, repository, author and license summary.
-- [ ] Generate a custom QA report and confirm the same Aptoria attribution footer appears.
-- [ ] Generate a release readiness Markdown report and confirm the attribution footer appears.
-- [ ] Generate a QA release gate Markdown report and confirm the attribution footer appears.
-- [ ] Generate a snapshot compare Markdown report and confirm the attribution footer appears.
-- [ ] Export snapshot JSON and confirm the `generated_by` metadata block is present.
-- [ ] Export global Settings JSON and confirm the `generated_by` metadata block is present.
-- [ ] Export project Settings JSON and confirm the `generated_by` metadata block is present.
-- [ ] Export QA Evidence Pack ZIP and confirm `APTORIA_CREDITS.txt` is included.
-- [ ] Export calendar `.ics` and confirm the calendar metadata references Aptoria.
-- [ ] Export endpoint inventory CSV and confirm the Aptoria attribution columns are present.
+- [ ] Install from `aptoria-1.1.0.zip` using the documented PowerShell template.
+- [ ] Run `php artisan optimize:clear`.
+- [ ] Run `php artisan migrate`.
+- [ ] Run `php artisan aptoria:health`.
+- [ ] Run `php artisan test`.
 
+## Postman Globals / compatibility
 
-## HTML / PDF Report Checks
+- [ ] Open a project.
+- [ ] Go to **Endpoints → Import Endpoints**.
+- [ ] Select **Postman Collection JSON**.
+- [ ] Use the Postman collection, environment and globals samples.
+- [ ] Preview import.
+- [ ] Confirm that globals count, schema, variables and warnings render without raw translation keys.
+- [ ] Confirm secrets are masked.
+- [ ] Confirm unsupported auth/script warnings appear when applicable.
 
-- [ ] Open a project Reports center and confirm Full Project export buttons show Markdown, HTML and PDF options.
-- [ ] Download Full Project HTML and confirm it opens with Aptoria header, readable tables and footer credit.
-- [ ] Download Full Project PDF and confirm it opens in a PDF viewer with readable text and Aptoria footer.
-- [ ] Download Release Readiness HTML and PDF.
-- [ ] Download a QA Release Gate as Markdown, HTML and PDF.
-- [ ] Download a Scan report as Markdown, HTML and PDF.
-- [ ] Download a Snapshot Compare report as Markdown, HTML and PDF.
-- [ ] Use the custom report builder and generate Markdown, HTML and PDF from the same selected sections.
+## Newman import
 
-## Regression Checks
+- [ ] Open **Test Execution** for a project.
+- [ ] Click **Import Newman results**.
+- [ ] Preview the Newman JSON sample.
+- [ ] Confirm import.
+- [ ] Confirm test suite, test cases and test results are created.
+- [ ] Confirm failed assertions can create findings and evidence.
+- [ ] Repeat with the JUnit XML sample.
 
-- [ ] Dashboard loads without JavaScript console errors.
-- [ ] Profile page still loads and saves profile data.
-- [ ] Settings page still saves and exports.
-- [ ] Reports, QA Evidence, Release Readiness and Calendar pages still load.
-- [ ] Favicon and Aptoria logo still render correctly.
+## Hygiene
 
-## PowerShell Validation
-
-- [ ] Run `C:\xampp\php\php.exe artisan optimize:clear`.
-- [ ] Run `C:\xampp\php\php.exe artisan view:clear`.
-- [ ] Run `C:\xampp\php\php.exe artisan config:clear`.
-- [ ] Run `C:\xampp\php\php.exe artisan route:clear`.
-- [ ] Run `C:\xampp\php\php.exe artisan migrate`.
-- [ ] Run `C:\xampp\php\php.exe artisan test`.
-- [ ] Start the app with `C:\xampp\php\php.exe artisan serve --host=127.0.0.1 --port=8000`.
-
-## Release Package Hygiene
-
-- [ ] ZIP root folder is `aptoria-1.0.87/`.
-- [ ] ZIP contains `VERSION` with `1.0.87`.
-- [ ] ZIP contains `docs/SYSTEM_AUDIT_v1.0.87.md`.
-- [ ] ZIP contains `.github/workflows/php.yml`.
-- [ ] ZIP contains Windows/XAMPP PowerShell scripts.
-- [ ] ZIP contains `public/assets/aptoria-ui/vendor`.
+- [ ] ZIP root folder is `aptoria-1.1.0/`.
+- [ ] ZIP contains `VERSION` with `1.1.0`.
 - [ ] ZIP does not contain root `vendor/`.
 - [ ] ZIP does not contain `.env`.
 - [ ] ZIP does not contain `database/database.sqlite`.
 - [ ] ZIP does not contain `storage/app/installed.lock`.
 - [ ] ZIP does not contain `storage/app/setup-token.txt`.
+- [ ] ZIP keeps `public/assets/aptoria-ui/vendor`.

@@ -51,7 +51,7 @@ class ReleaseReadinessController extends Controller
             .'-release-readiness-'.now()->format('Ymd-His').'.html';
         $markdown = $readiness->markdown($project);
 
-        return response($presentation->htmlFromMarkdown($markdown, 'Aptoria Release Readiness Report', $project), 200, [
+        return response($presentation->htmlFromMarkdown($markdown, 'Release Readiness Report', $project), 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Content-Type-Options' => 'nosniff',
@@ -64,7 +64,7 @@ class ReleaseReadinessController extends Controller
             .'-release-readiness-'.now()->format('Ymd-His').'.pdf';
         $markdown = $readiness->markdown($project);
 
-        return response($presentation->pdfFromMarkdown($markdown, 'Aptoria Release Readiness Report', $project), 200, [
+        return response($presentation->pdfFromMarkdown($markdown, 'Release Readiness Report', $project), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Content-Type-Options' => 'nosniff',

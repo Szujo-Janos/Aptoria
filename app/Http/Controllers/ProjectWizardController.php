@@ -5,14 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\AuthProfile;
 use App\Models\EndpointAssertionRule;
 use App\Models\Project;
+use App\Models\ScanRun;
+use App\Models\Snapshot;
 use App\Services\Endpoints\EndpointImportService;
+use App\Services\Reports\ReportExportService;
+use App\Services\SafeProbeService;
 use App\Services\Settings\ProjectSettingService;
+use App\Services\Snapshots\SnapshotService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ProjectWizardController extends Controller
 {
@@ -23,11 +30,19 @@ class ProjectWizardController extends Controller
             'samplePayload' => $this->samplePayload(),
             'sampleOpenApiPayload' => $this->sampleOpenApiPayload(),
             'sampleOpenApiYamlPayload' => $this->sampleOpenApiYamlPayload(),
+            'samplePostmanPayload' => $this->samplePostmanPayload(),
+            'samplePostmanEnvironmentPayload' => $this->samplePostmanEnvironmentPayload(),
         ]);
     }
 
-    public function store(Request $request, EndpointImportService $importer, ProjectSettingService $projectSettings): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        EndpointImportService $importer,
+        ProjectSettingService $projectSettings,
+        SafeProbeService $safeProbeService,
+        SnapshotService $snapshotService,
+        ReportExportService $reports
+    ): RedirectResponse {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -38,16 +53,19 @@ class ProjectWizardController extends Controller
             'environment_is_production' => ['nullable', 'boolean'],
             'auth_name' => ['required', 'string', 'max:100'],
             'auth_type' => ['required', Rule::in(AuthProfile::TYPES)],
-            'token' => ['nullable', 'string', 'max:2000'],
-            'username' => ['nullable', 'string', 'max:255'],
-            'password' => ['nullable', 'string', 'max:2000'],
-            'header_name' => ['nullable', 'string', 'max:255'],
-            'header_value' => ['nullable', 'string', 'max:2000'],
+            'token' => ['nullable', 'required_if:auth_type,'.AuthProfile::TYPE_BEARER, 'string', 'max:2000'],
+            'username' => ['nullable', 'required_if:auth_type,'.AuthProfile::TYPE_BASIC, 'string', 'max:255'],
+            'password' => ['nullable', 'required_if:auth_type,'.AuthProfile::TYPE_BASIC, 'string', 'max:2000'],
+            'header_name' => ['nullable', 'required_if:auth_type,'.AuthProfile::TYPE_CUSTOM_HEADER, 'string', 'max:255'],
+            'header_value' => ['nullable', 'required_if:auth_type,'.AuthProfile::TYPE_CUSTOM_HEADER, 'string', 'max:2000'],
             'auth_notes' => ['nullable', 'string', 'max:2000'],
-            'format' => ['required', Rule::in(['csv', 'json', 'openapi'])],
+            'format' => ['required', Rule::in(['csv', 'json', 'openapi', 'postman'])],
             'import_source' => ['required', Rule::in(['paste', 'url'])],
             'source_url' => ['nullable', 'required_if:import_source,url', 'url', 'max:1000'],
             'payload' => ['nullable', 'required_if:import_source,paste', 'string', 'max:200000'],
+            'postman_environment_payload' => ['nullable', 'string', 'max:200000'],
+            'postman_create_assertions' => ['nullable', 'boolean'],
+            'postman_create_test_suites' => ['nullable', 'boolean'],
             'assert_status_code' => ['nullable', 'boolean'],
             'assert_status_code_value' => ['nullable', 'integer', 'min:100', 'max:599'],
             'assert_response_time' => ['nullable', 'boolean'],
@@ -56,11 +74,20 @@ class ProjectWizardController extends Controller
             'assert_https' => ['nullable', 'boolean'],
             'assert_max_risk' => ['nullable', 'boolean'],
             'assert_max_risk_value' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'run_initial_scan' => ['nullable', 'boolean'],
+            'create_initial_snapshot' => ['nullable', 'boolean'],
+            'generate_initial_report' => ['nullable', 'boolean'],
+        ], [
+            'token.required_if' => __('messages.wizard.validation_bearer_token_required'),
+            'username.required_if' => __('messages.wizard.validation_basic_username_required'),
+            'password.required_if' => __('messages.wizard.validation_basic_password_required'),
+            'header_name.required_if' => __('messages.wizard.validation_header_name_required'),
+            'header_value.required_if' => __('messages.wizard.validation_header_value_required'),
         ]);
 
-        if (($validated['import_source'] ?? 'paste') === 'url' && $validated['format'] !== 'openapi') {
+        if (($validated['import_source'] ?? 'paste') === 'url' && ! in_array($validated['format'], ['openapi', 'postman'], true)) {
             return back()
-                ->withErrors(['format' => __('messages.import_preview.reason_url_openapi_only')])
+                ->withErrors(['format' => __('messages.import_preview.reason_url_collection_only')])
                 ->withInput();
         }
 
@@ -68,7 +95,7 @@ class ProjectWizardController extends Controller
             $validated['payload'] = $importer->fetchRemotePayload((string) ($validated['source_url'] ?? ''));
         }
 
-        $project = DB::transaction(function () use ($validated, $request, $importer, $projectSettings): Project {
+        $result = DB::transaction(function () use ($validated, $request, $importer, $projectSettings): array {
             $project = Project::query()->create([
                 'user_id' => Auth::id(),
                 'name' => $validated['name'],
@@ -98,23 +125,139 @@ class ProjectWizardController extends Controller
             $environment->update(['auth_profile_id' => $authProfile->id]);
 
             $projectSettings->seedDefaults($project);
+            $projectSettings->set($project, 'scan.default_environment_id', (string) $environment->id);
+            $projectSettings->set($project, 'scan.default_auth_profile_id', (string) $authProfile->id);
 
-            $importer->import(
+            $importSummary = $importer->import(
                 $project,
                 $validated['format'],
                 $validated['payload'],
                 $environment->id,
-                $authProfile->id
+                $authProfile->id,
+                $validated['postman_environment_payload'] ?? null,
+                [
+                    'postman_create_environment' => false,
+                    'postman_create_auth_profile' => false,
+                    'postman_create_assertions' => $request->boolean('postman_create_assertions', true),
+                    'postman_create_test_suites' => $request->boolean('postman_create_test_suites'),
+                ]
             );
+
+            if (($importSummary['valid'] ?? 0) < 1) {
+                throw ValidationException::withMessages([
+                    'payload' => __('messages.wizard.validation_at_least_one_endpoint'),
+                ]);
+            }
 
             $this->seedAssertionRules($project, $request);
 
-            return $project;
+            return [
+                'project' => $project->refresh(),
+                'environment' => $environment->refresh(),
+                'importSummary' => $importSummary,
+            ];
         });
 
-        return redirect()
-            ->route('projects.show', $project)
-            ->with('success', __('messages.wizard.created'));
+        /** @var Project $project */
+        $project = $result['project'];
+        $environment = $result['environment'];
+        $importSummary = $result['importSummary'];
+        $scanRun = null;
+        $snapshot = null;
+        $reportGenerated = false;
+        $warnings = [];
+
+        if ($request->boolean('run_initial_scan', true)) {
+            if ($environment->is_production) {
+                $warnings[] = __('messages.wizard.production_scan_skipped');
+            } else {
+                try {
+                    $scanRun = $safeProbeService->runProject($project, $environment, $request->user(), 'safe');
+                } catch (Throwable $exception) {
+                    $warnings[] = __('messages.wizard.initial_scan_failed', ['message' => $exception->getMessage()]);
+                }
+            }
+        }
+
+        if ($scanRun instanceof ScanRun && $request->boolean('create_initial_snapshot', true)) {
+            if ($scanRun->status === ScanRun::STATUS_COMPLETED && $project->endpoints()->exists()) {
+                try {
+                    $snapshot = $snapshotService->createFromScanRun(
+                        $scanRun,
+                        $request->user(),
+                        __('messages.wizard.initial_snapshot_name', ['project' => $project->name]),
+                        __('messages.wizard.initial_snapshot_description')
+                    );
+                } catch (Throwable $exception) {
+                    $warnings[] = __('messages.wizard.initial_snapshot_failed', ['message' => $exception->getMessage()]);
+                }
+            } else {
+                $warnings[] = __('messages.wizard.initial_snapshot_skipped');
+            }
+        }
+
+        if ($request->boolean('generate_initial_report', true)) {
+            try {
+                $reports->fullProjectMarkdown($project->refresh());
+                $reportGenerated = true;
+            } catch (Throwable $exception) {
+                $warnings[] = __('messages.wizard.initial_report_failed', ['message' => $exception->getMessage()]);
+            }
+        }
+
+        $redirect = redirect()->route('projects.wizard.complete', [
+            'project' => $project,
+            'scanRun' => $scanRun?->id,
+            'snapshot' => $snapshot?->id,
+            'report' => $reportGenerated ? '1' : '0',
+            'imported' => (string) ($importSummary['valid'] ?? 0),
+        ]);
+
+        if ($warnings !== []) {
+            return $redirect->with('warning', __('messages.wizard.created').' '.implode(' ', $warnings));
+        }
+
+        return $redirect->with('success', __('messages.wizard.created'));
+    }
+
+    public function complete(Request $request, Project $project): View
+    {
+        $project->load(['environments', 'authProfiles', 'endpoints']);
+        $project->loadCount(['endpoints', 'scanRuns', 'snapshots']);
+
+        $scanRun = null;
+        if ($request->integer('scanRun') > 0) {
+            $scanRun = $project->scanRuns()
+                ->with(['environment', 'results.endpoint', 'snapshot'])
+                ->whereKey($request->integer('scanRun'))
+                ->first();
+        }
+
+        $scanRun ??= $project->scanRuns()
+            ->with(['environment', 'results.endpoint', 'snapshot'])
+            ->latest()
+            ->first();
+
+        $snapshot = null;
+        if ($request->integer('snapshot') > 0) {
+            $snapshot = $project->snapshots()
+                ->with(['environment', 'scanRun'])
+                ->whereKey($request->integer('snapshot'))
+                ->first();
+        }
+
+        $snapshot ??= $project->snapshots()
+            ->with(['environment', 'scanRun'])
+            ->latest()
+            ->first();
+
+        return view('projects.wizard-complete', [
+            'project' => $project,
+            'scanRun' => $scanRun,
+            'snapshot' => $snapshot,
+            'reportGenerated' => $request->boolean('report', false),
+            'importedEndpoints' => $request->integer('imported'),
+        ]);
     }
 
     private function seedAssertionRules(Project $project, Request $request): void
@@ -183,6 +326,75 @@ class ProjectWizardController extends Controller
             ."GET,/users,List users,review,false,200,application/json,users,List users";
     }
 
+
+    private function samplePostmanPayload(): string
+    {
+        return <<<'JSON'
+{
+  "info": {
+    "name": "Demo Postman Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Content",
+      "item": [
+        {
+          "name": "List posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            }
+          },
+          "response": [
+            {"name": "OK", "code": 200, "header": [{"key": "Content-Type", "value": "application/json"}]}
+          ]
+        },
+        {
+          "name": "Create post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"demo\",\"body\":\"qa\"}"
+            },
+            "url": "{{baseUrl}}/posts"
+          },
+          "response": [
+            {"name": "Created", "code": 201, "header": [{"key": "Content-Type", "value": "application/json"}]}
+          ]
+        }
+      ]
+    }
+  ]
+}
+JSON;
+    }
+
+    private function samplePostmanEnvironmentPayload(): string
+    {
+        return <<<'JSON'
+{
+  "name": "Demo Postman Environment",
+  "values": [
+    {"key": "baseUrl", "value": "https://jsonplaceholder.typicode.com", "enabled": true},
+    {"key": "token", "value": "demo-postman-token", "enabled": true},
+    {"key": "userId", "value": "1", "enabled": true}
+  ]
+}
+JSON;
+    }
+
+
     private function sampleOpenApiPayload(): string
     {
         return <<<'JSON'
@@ -231,7 +443,6 @@ class ProjectWizardController extends Controller
 JSON;
     }
 
-
     private function sampleOpenApiYamlPayload(): string
     {
         return <<<'YAML'
@@ -264,6 +475,4 @@ paths:
             application/json: {}
 YAML;
     }
-
-
 }

@@ -80,6 +80,7 @@ class QaCoverageMatrixTest extends TestCase
         $this->actingAs($user)
             ->get(route('projects.qa-coverage.index', ['project' => $project, 'gap' => 'missing_test_cases']))
             ->assertOk()
-            ->assertDontSee('/health');
+            ->assertSee('No endpoints match the current coverage filters.')
+            ->assertDontSee('<code>GET /health</code>', false);
     }
 }

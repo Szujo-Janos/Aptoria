@@ -40,6 +40,15 @@ class SetupStateService
         }
     }
 
+    public function canUseApplication(): bool
+    {
+        if (app()->runningUnitTests()) {
+            return true;
+        }
+
+        return $this->hasLockFile();
+    }
+
     public function installationHint(): string
     {
         if ($this->isLocked()) {
@@ -76,5 +85,12 @@ class SetupStateService
             $this->lockPath(),
             json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL
         );
+    }
+
+    public function clearLock(): void
+    {
+        if ($this->hasLockFile()) {
+            unlink($this->lockPath());
+        }
     }
 }

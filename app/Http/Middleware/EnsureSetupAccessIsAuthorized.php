@@ -19,7 +19,14 @@ class EnsureSetupAccessIsAuthorized
     public function handle(Request $request, Closure $next): Response
     {
         if ($this->setupState->isLocked()) {
-            return $next($request);
+            if ($request->isMethod('GET')) {
+                $route = auth()->check() ? 'profile.show' : 'login';
+
+                return redirect()->route($route)
+                    ->with('info', __('messages.setup.locked_redirect'));
+            }
+
+            abort(403, __('messages.setup.locked'));
         }
 
         if ($this->setupAccess->authorizeRequest($request)) {

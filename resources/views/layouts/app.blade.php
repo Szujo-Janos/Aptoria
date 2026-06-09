@@ -167,6 +167,11 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{{ route('system.health.index') }}" title="{{ __('messages.nav.system_health') }}">
+                        <i class="fa fa-heartbeat"></i>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('settings.index') }}" title="{{ __('messages.nav.settings') }}">
                         <i class="fa fa-cog"></i>
                     </a>
@@ -206,6 +211,7 @@
                         <li><a href="{{ route('release-readiness.index') }}"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness') }}</a></li>
                         <li><a href="{{ route('help.index') }}"><i class="fa fa-question-circle"></i> {{ __('messages.nav.help') }}</a></li>
                         <li><a href="{{ route('profile.show') }}"><i class="fa fa-user"></i> {{ __('messages.nav.my_profile') }}</a></li>
+                        <li><a href="{{ route('system.health.index') }}"><i class="fa fa-heartbeat"></i> {{ __('messages.nav.system_health') }}</a></li>
                         <li><a href="{{ route('settings.index') }}"><i class="fa fa-cog"></i> {{ __('messages.nav.settings') }}</a></li>
                         <li class="divider"></li>
                         <li>
@@ -286,6 +292,9 @@
             </li>
             <li class="{{ request()->routeIs('help.*') ? 'active' : '' }}">
                 <a href="{{ route('help.index') }}"><i class="fa fa-life-ring"></i> <span class="nav-label">{{ __('messages.nav.help') }}</span></a>
+            </li>
+            <li class="{{ request()->routeIs('system.health.*') ? 'active' : '' }}">
+                <a href="{{ route('system.health.index') }}"><i class="fa fa-heartbeat"></i> <span class="nav-label">{{ __('messages.nav.system_health') }}</span></a>
             </li>
             <li class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <a href="{{ route('settings.index') }}"><i class="fa fa-cog"></i> <span class="nav-label">{{ __('messages.nav.settings') }}</span></a>

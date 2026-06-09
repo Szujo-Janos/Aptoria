@@ -47,6 +47,7 @@
                         @endforeach
                         <li><a data-toggle="tab" href="#settings-security-status">{{ __('messages.security_status.title') }}</a></li>
                         <li><a data-toggle="tab" href="#settings-system">{{ __('messages.settings.groups.system_info') }}</a></li>
+                        <li><a data-toggle="tab" href="#settings-database-maintenance">{{ __('messages.data_maintenance.title') }}</a></li>
                     </ul>
 
                     <div class="tab-content m-t-lg">
@@ -177,6 +178,77 @@
                                 </table>
                             </div>
                         </div>
+
+                        <div id="settings-database-maintenance" class="tab-pane">
+                            <div class="row m-b-md">
+                                <div class="col-sm-8">
+                                    <h4 class="m-t-none">{{ __('messages.data_maintenance.title') }}</h4>
+                                    <p class="text-muted">{{ __('messages.data_maintenance.intro') }}</p>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    <a href="{{ route('settings.database.export') }}" class="btn btn-primary btn-sm">
+                                        <i class="fa fa-download"></i> {{ __('messages.data_maintenance.export_button') }}
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="hpanel hblue">
+                                        <div class="panel-heading hbuilt">{{ __('messages.data_maintenance.export_title') }}</div>
+                                        <div class="panel-body">
+                                            <p>{{ __('messages.data_maintenance.export_help') }}</p>
+                                            <ul class="m-b-md">
+                                                <li>{{ __('messages.data_maintenance.driver') }}: <strong>{{ $databaseSummary['driver'] }}</strong></li>
+                                                <li>{{ __('messages.data_maintenance.tables') }}: <strong>{{ $databaseSummary['table_count'] }}</strong></li>
+                                                <li>{{ __('messages.data_maintenance.rows') }}: <strong>{{ $databaseSummary['row_count'] }}</strong></li>
+                                                <li>{{ __('messages.data_maintenance.schema_hash') }}: <code>{{ substr($databaseSummary['schema_hash'], 0, 16) }}</code></li>
+                                            </ul>
+                                            <a href="{{ route('settings.database.export') }}" class="btn btn-primary">{{ __('messages.data_maintenance.export_button') }}</a>
+                                            <p class="help-block m-t-sm">{{ __('messages.data_maintenance.export_note') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="hpanel hyellow">
+                                        <div class="panel-heading hbuilt">{{ __('messages.data_maintenance.import_title') }}</div>
+                                        <div class="panel-body">
+                                            <p>{{ __('messages.data_maintenance.import_help') }}</p>
+                                            <div class="form-group">
+                                                <label>{{ __('messages.data_maintenance.import_file') }}</label>
+                                                <input type="file" name="database_export" class="form-control" form="database-import-form" accept="application/json,.json" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>{{ __('messages.data_maintenance.confirm_import_label') }}</label>
+                                                <input type="text" name="confirm_import" class="form-control" form="database-import-form" placeholder="IMPORT DATABASE" required>
+                                                <span class="help-block">{{ __('messages.data_maintenance.confirm_import_help') }}</span>
+                                            </div>
+                                            <button type="submit" form="database-import-form" class="btn btn-warning">{{ __('messages.data_maintenance.import_button') }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hpanel hred">
+                                <div class="panel-heading hbuilt">{{ __('messages.data_maintenance.hard_reset_title') }}</div>
+                                <div class="panel-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <p>{{ __('messages.data_maintenance.hard_reset_help') }}</p>
+                                            <p class="text-danger"><strong>{{ __('messages.data_maintenance.hard_reset_warning') }}</strong></p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>{{ __('messages.data_maintenance.confirm_hard_reset_label') }}</label>
+                                                <input type="text" name="confirm_hard_reset" class="form-control" form="hard-reset-form" placeholder="HARD RESET" required>
+                                            </div>
+                                            <button type="submit" form="hard-reset-form" class="btn btn-danger btn-block">{{ __('messages.data_maintenance.hard_reset_button') }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <hr>
@@ -232,4 +304,6 @@
 @foreach($sections as $group => $keys)
     <form id="settings-reset-{{ $group }}-form" method="POST" action="{{ route('settings.reset-group', $group) }}" class="hide" data-aptoria-confirm="true" data-aptoria-confirm-title="{{ __('messages.common.confirm_title') }}" data-aptoria-confirm-text="{{ __('messages.settings.confirm_reset_group', ['group' => $groupLabel($group)]) }}" data-aptoria-confirm-type="warning" data-aptoria-confirm-button="{{ __('messages.settings.reset_group_button') }}">@csrf</form>
 @endforeach
+<form id="database-import-form" method="POST" action="{{ route('settings.database.import') }}" enctype="multipart/form-data" class="hide" data-aptoria-confirm="true" data-aptoria-confirm-title="{{ __('messages.common.confirm_title') }}" data-aptoria-confirm-text="{{ __('messages.data_maintenance.confirm_import_dialog') }}" data-aptoria-confirm-type="warning" data-aptoria-confirm-button="{{ __('messages.data_maintenance.import_button') }}">@csrf</form>
+<form id="hard-reset-form" method="POST" action="{{ route('settings.hard-reset') }}" class="hide" data-aptoria-confirm="true" data-aptoria-confirm-title="{{ __('messages.data_maintenance.hard_reset_title') }}" data-aptoria-confirm-text="{{ __('messages.data_maintenance.confirm_hard_reset_dialog') }}" data-aptoria-confirm-type="warning" data-aptoria-confirm-button="{{ __('messages.data_maintenance.hard_reset_button') }}">@csrf</form>
 @endsection

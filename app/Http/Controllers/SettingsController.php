@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Settings\SettingService;
+use App\Services\Database\DatabaseMaintenanceService;
 use App\Services\Exports\ExportCreditService;
 use App\Services\Security\SecurityStatusService;
 use Illuminate\Http\JsonResponse;
@@ -13,7 +14,7 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public function index(SettingService $settings, SecurityStatusService $securityStatus): View
+    public function index(SettingService $settings, SecurityStatusService $securityStatus, DatabaseMaintenanceService $databaseMaintenance): View
     {
         $securityChecks = $securityStatus->checks();
 
@@ -23,6 +24,7 @@ class SettingsController extends Controller
             'systemInfo' => $this->systemInfo(),
             'securityChecks' => $securityChecks,
             'securitySummary' => $securityStatus->summary($securityChecks),
+            'databaseSummary' => $databaseMaintenance->summary(),
         ]);
     }
 

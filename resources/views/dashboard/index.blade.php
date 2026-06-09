@@ -9,7 +9,7 @@
         <div class="hpanel hblue aptoria-project-panel aptoria-dashboard-project-style-panel">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
-                    <a href="{{ route('projects.create') }}" class="btn btn-xs btn-success"><i class="fa fa-plus"></i> {{ __('messages.dashboard.new_project') }}</a>
+                    <a href="{{ route('projects.wizard.create') }}" class="btn btn-xs btn-success"><i class="fa fa-magic"></i> {{ __('messages.wizard.short_title') }}</a>
                     <a href="{{ route('projects.index') }}" class="btn btn-xs btn-info"><i class="fa fa-briefcase"></i> {{ __('messages.nav.projects') }}</a>
                     <a href="{{ route('calendar.index') }}" class="btn btn-xs btn-primary"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a>
                     <a href="{{ route('reports.index') }}" class="btn btn-xs btn-default"><i class="fa fa-file-text-o"></i> {{ __('messages.nav.reports') }}</a>
@@ -517,7 +517,8 @@
                         <div class="aptoria-empty-icon"><i class="fa fa-briefcase"></i></div>
                         <h4>{{ __('messages.dashboard.no_project') }}</h4>
                         <p class="text-muted">{{ __('messages.dashboard.no_project_help') }}</p>
-                        <a href="{{ route('projects.create') }}" class="btn btn-success">{{ __('messages.dashboard.new_project') }}</a>
+                        <a href="{{ route('projects.wizard.create') }}" class="btn btn-success"><i class="fa fa-magic"></i> {{ __('messages.wizard.short_title') }}</a>
+                        <a href="{{ route('projects.create') }}" class="btn btn-default m-l-sm">{{ __('messages.projects.create_title') }}</a>
                     </div>
                 @else
                     <div class="table-responsive">

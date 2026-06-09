@@ -51,6 +51,11 @@ class UserProfileController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'locale' => ['required', Rule::in($supportedLocales)],
             'timezone' => ['nullable', 'timezone', 'max:80'],
+            'report_display_name' => ['nullable', 'string', 'max:120'],
+            'report_role_title' => ['nullable', 'string', 'max:160'],
+            'report_organization' => ['nullable', 'string', 'max:160'],
+            'report_github_url' => ['nullable', 'url', 'max:255'],
+            'report_website_url' => ['nullable', 'url', 'max:255'],
         ]);
 
         $user->update($validated);

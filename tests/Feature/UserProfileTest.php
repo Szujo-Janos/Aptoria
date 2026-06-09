@@ -27,6 +27,7 @@ class UserProfileTest extends TestCase
             ->assertSee('My Profile')
             ->assertSee('Account information')
             ->assertSee('Activity summary')
+            ->assertSee('Report identity')
             ->assertSee('Aptoria v'.config('aptoria.version'));
     }
 
@@ -41,6 +42,11 @@ class UserProfileTest extends TestCase
                 'email' => 'updated-admin@example.com',
                 'locale' => 'hu',
                 'timezone' => 'Europe/Budapest',
+                'report_display_name' => 'János Szujó',
+                'report_role_title' => 'QA-focused digital professional / Developer',
+                'report_organization' => 'Portfolio QA Lab',
+                'report_github_url' => 'https://github.com/Szujo-Janos',
+                'report_website_url' => 'https://example.com',
             ])
             ->assertRedirect(route('profile.show'))
             ->assertSessionHas('locale', 'hu');
@@ -51,6 +57,11 @@ class UserProfileTest extends TestCase
         $this->assertSame('updated-admin@example.com', $admin->email);
         $this->assertSame('hu', $admin->locale);
         $this->assertSame('Europe/Budapest', $admin->timezone);
+        $this->assertSame('János Szujó', $admin->report_display_name);
+        $this->assertSame('QA-focused digital professional / Developer', $admin->report_role_title);
+        $this->assertSame('Portfolio QA Lab', $admin->report_organization);
+        $this->assertSame('https://github.com/Szujo-Janos', $admin->report_github_url);
+        $this->assertSame('https://example.com', $admin->report_website_url);
     }
 
     public function test_password_can_be_changed_from_profile_center(): void

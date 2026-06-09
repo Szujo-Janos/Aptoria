@@ -149,6 +149,7 @@
                                     <option value="csv" @selected(old('format', 'csv') === 'csv')>CSV</option>
                                     <option value="json" @selected(old('format') === 'json')>JSON</option>
                                     <option value="openapi" @selected(old('format') === 'openapi')>{{ __('messages.endpoints.import_format_openapi') }}</option>
+                                    <option value="postman" @selected(old('format') === 'postman')>{{ __('messages.endpoints.import_format_postman') }}</option>
                                 </select>
                             </div>
                         </div>
@@ -161,7 +162,7 @@
                                 <div class="radio radio-info">
                                     <label><input type="radio" name="import_source" value="url" @checked(old('import_source') === 'url')> {{ __('messages.endpoints.import_source_url') }}</label>
                                 </div>
-                                <input type="url" name="source_url" id="source_url" class="form-control" value="{{ old('source_url') }}" placeholder="https://example.com/openapi.yaml">
+                                <input type="url" name="source_url" id="source_url" class="form-control" value="{{ old('source_url') }}" placeholder="https://example.com/openapi.yaml or postman_collection.json">
                                 <span class="help-block">{{ __('messages.endpoints.source_url_help') }}</span>
                             </div>
                         </div>
@@ -169,9 +170,24 @@
                     <div class="form-group">
                         <label for="payload">{{ __('messages.endpoints.import_payload') }}</label>
                         <textarea name="payload" id="payload" class="form-control code-input" rows="12">{{ old('payload', $samplePayload) }}</textarea>
-                        <span class="help-block">{{ __('messages.endpoints.import_help') }} {{ __('messages.endpoints.openapi_import_help') }}</span>
+                        <span class="help-block">{{ __('messages.endpoints.import_help') }} {{ __('messages.endpoints.collection_import_help') }}</span>
                         <button type="button" class="btn btn-xs btn-default" id="wizard-openapi-sample">{{ __('messages.endpoints.use_openapi_sample') }}</button>
                         <button type="button" class="btn btn-xs btn-default" id="wizard-openapi-yaml-sample">{{ __('messages.endpoints.use_openapi_yaml_sample') }}</button>
+                        <button type="button" class="btn btn-xs btn-default" id="wizard-postman-sample">{{ __('messages.endpoints.use_postman_sample') }}</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="postman_environment_payload">{{ __('messages.endpoints.postman_environment_payload') }}</label>
+                        <textarea name="postman_environment_payload" id="postman_environment_payload" class="form-control code-input" rows="5">{{ old('postman_environment_payload') }}</textarea>
+                        <span class="help-block">{{ __('messages.endpoints.postman_environment_help') }}</span>
+                        <button type="button" class="btn btn-xs btn-default" id="wizard-postman-environment-sample">{{ __('messages.endpoints.use_postman_environment_sample') }}</button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="checkbox checkbox-info"><label><input type="checkbox" name="postman_create_assertions" value="1" @checked(old('postman_create_assertions', '1'))> {{ __('messages.endpoints.postman_create_assertions') }}</label></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="checkbox checkbox-info"><label><input type="checkbox" name="postman_create_test_suites" value="1" @checked(old('postman_create_test_suites'))> {{ __('messages.endpoints.postman_create_test_suites') }}</label></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -208,11 +224,29 @@
                 </div>
             </div>
 
+            <div class="hpanel hblue">
+                <div class="panel-heading hbuilt">6. {{ __('messages.wizard.initial_actions') }}</div>
+                <div class="panel-body">
+                    <p class="text-muted">{{ __('messages.wizard.initial_actions_help') }}</p>
+
+                    <div class="checkbox checkbox-success">
+                        <label><input type="checkbox" name="run_initial_scan" value="1" @checked(old('run_initial_scan', '1'))> {{ __('messages.wizard.run_initial_scan') }}</label>
+                    </div>
+                    <div class="checkbox checkbox-info">
+                        <label><input type="checkbox" name="create_initial_snapshot" value="1" @checked(old('create_initial_snapshot', '1'))> {{ __('messages.wizard.create_initial_snapshot') }}</label>
+                    </div>
+                    <div class="checkbox checkbox-warning">
+                        <label><input type="checkbox" name="generate_initial_report" value="1" @checked(old('generate_initial_report', '1'))> {{ __('messages.wizard.generate_initial_report') }}</label>
+                    </div>
+                    <p class="small text-muted m-b-none"><i class="fa fa-shield"></i> {{ __('messages.wizard.production_auto_scan_note') }}</p>
+                </div>
+            </div>
+
             <div class="hpanel hgreen">
-                <div class="panel-heading hbuilt">6. {{ __('messages.wizard.finish') }}</div>
+                <div class="panel-heading hbuilt">7. {{ __('messages.wizard.finish') }}</div>
                 <div class="panel-body">
                     <p>{{ __('messages.wizard.finish_help') }}</p>
-                    <button type="submit" class="btn btn-success btn-block btn-lg">{{ __('messages.wizard.create_button') }}</button>
+                    <button type="submit" class="btn btn-success btn-block btn-lg aptoria-scan-trigger">{{ __('messages.wizard.create_button') }}</button>
                     <a href="{{ route('projects.index') }}" class="btn btn-default btn-block m-t-sm">{{ __('messages.common.cancel') }}</a>
                 </div>
             </div>
@@ -239,7 +273,12 @@
         var payload = document.getElementById('payload');
         var openApiSample = @json($sampleOpenApiPayload);
         var openApiYamlSample = @json($sampleOpenApiYamlPayload);
+        var postmanSample = @json($samplePostmanPayload);
+        var postmanEnvironmentSample = @json($samplePostmanEnvironmentPayload);
         var yamlSampleButton = document.getElementById('wizard-openapi-yaml-sample');
+        var postmanSampleButton = document.getElementById('wizard-postman-sample');
+        var postmanEnvironmentButton = document.getElementById('wizard-postman-environment-sample');
+        var postmanEnvironmentPayload = document.getElementById('postman_environment_payload');
         if (sampleButton && format && payload) {
             sampleButton.addEventListener('click', function () {
                 format.value = 'openapi';
@@ -254,6 +293,24 @@
                 payload.value = openApiYamlSample;
                 document.querySelector('input[name="import_source"][value="paste"]').checked = true;
                 payload.focus();
+            });
+        }
+        if (postmanSampleButton && format && payload) {
+            postmanSampleButton.addEventListener('click', function () {
+                format.value = 'postman';
+                payload.value = postmanSample;
+                if (postmanEnvironmentPayload) {
+                    postmanEnvironmentPayload.value = postmanEnvironmentSample;
+                }
+                document.querySelector('input[name="import_source"][value="paste"]').checked = true;
+                payload.focus();
+            });
+        }
+        if (postmanEnvironmentButton && postmanEnvironmentPayload && format) {
+            postmanEnvironmentButton.addEventListener('click', function () {
+                format.value = 'postman';
+                postmanEnvironmentPayload.value = postmanEnvironmentSample;
+                postmanEnvironmentPayload.focus();
             });
         }
     })();

@@ -58,6 +58,9 @@ class Endpoint extends Model
         'auth_required',
         'expected_status',
         'expected_content_type',
+        'request_headers',
+        'request_body_type',
+        'request_body_preview',
         'risk_level',
         'risk_reason',
         'qa_notes',
@@ -72,6 +75,7 @@ class Endpoint extends Model
             'is_active' => 'boolean',
             'excluded_from_scan' => 'boolean',
             'expected_status' => 'integer',
+            'request_headers' => 'array',
         ];
     }
 

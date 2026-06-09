@@ -43,6 +43,44 @@
     </div>
 </div>
 
+@if(!empty($endpoint->request_headers) || $endpoint->request_body_type || $endpoint->request_body_preview)
+<div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel hblue">
+            <div class="panel-heading hbuilt">{{ __('messages.endpoints.imported_request_metadata') }}</div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>{{ __('messages.endpoints.request_headers') }}</h5>
+                        @if(!empty($endpoint->request_headers))
+                            <table class="table table-condensed table-bordered m-b-none">
+                                <thead><tr><th>{{ __('messages.common.name') }}</th><th>{{ __('messages.common.value') }}</th></tr></thead>
+                                <tbody>
+                                @foreach($endpoint->request_headers as $header)
+                                    <tr><td><code>{{ $header['key'] ?? '' }}</code></td><td><code>{{ $header['value'] ?? '' }}</code></td></tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        @else
+                            <p class="text-muted m-b-none">{{ __('messages.endpoints.no_request_metadata') }}</p>
+                        @endif
+                    </div>
+                    <div class="col-md-6">
+                        <h5>{{ __('messages.endpoints.request_body') }}</h5>
+                        @if($endpoint->request_body_type || $endpoint->request_body_preview)
+                            @if($endpoint->request_body_type)<p><span class="label label-default">{{ $endpoint->request_body_type }}</span></p>@endif
+                            @if($endpoint->request_body_preview)<pre class="code-block m-b-none">{{ $endpoint->request_body_preview }}</pre>@endif
+                        @else
+                            <p class="text-muted m-b-none">{{ __('messages.endpoints.no_request_metadata') }}</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 
 <div class="row">
     <div class="col-lg-12">
