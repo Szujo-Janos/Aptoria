@@ -13,6 +13,7 @@ use App\Models\Snapshot;
 use App\Models\SnapshotItem;
 use App\Models\TestCase;
 use App\Services\AssertionEvaluationService;
+use App\Services\Exports\ExportCreditService;
 use App\Services\Auth\AuthProfileRuntimeService;
 use App\Services\QaCoverageMatrixService;
 use App\Services\RegressionEvaluationService;
@@ -31,7 +32,8 @@ class ReportExportService
         private readonly AuthProfileRuntimeService $authRuntime,
         private readonly QaCoverageMatrixService $coverageMatrix,
         private readonly SettingService $settings,
-        private readonly SettingsRuntimeService $runtime
+        private readonly SettingsRuntimeService $runtime,
+        private readonly ExportCreditService $credits
     ) {
     }
 
@@ -478,10 +480,8 @@ class ReportExportService
         $lines[] = '- Secrets and authentication material are masked in UI and exports by design.';
         $lines[] = '- This report is generated from stored GET/HEAD safe probe evidence and does not execute new requests.';
 
-        if ($this->settings->boolean('report.include_copyright_footer', true)) {
-            $lines[] = '';
-            $lines[] = '_© 2026 János Szujó · Aptoria source-available report._';
-        }
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'full_project_qa_report', $project);
 
         return implode("\n", $lines)."\n";
     }
@@ -513,6 +513,10 @@ class ReportExportService
             'excluded_from_scan',
             'tags',
             'qa_notes',
+            'generated_by',
+            'aptoria_version',
+            'repository',
+            'author',
         ]];
 
         foreach ($project->endpoints->sortBy([['method', 'asc'], ['path', 'asc']]) as $endpoint) {
@@ -548,6 +552,10 @@ class ReportExportService
                 $this->yesNo($endpoint->excluded_from_scan),
                 implode(', ', $endpoint->tag_list),
                 $endpoint->qa_notes,
+                config('aptoria.product_name', 'Aptoria'),
+                config('aptoria.version'),
+                config('aptoria.repository_url'),
+                config('aptoria.author'),
             ];
         }
 
@@ -629,6 +637,8 @@ class ReportExportService
         $lines[] = '- This report is generated from non-destructive GET/HEAD safe probes.';
         $lines[] = '- POST, PUT, PATCH and DELETE endpoints are not executed automatically.';
         $lines[] = '- Risk levels are QA review signals, not exploit confirmations.';
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'scan_report', $scanRun->project);
 
         return implode("\n", $lines)."\n";
     }
@@ -641,6 +651,7 @@ class ReportExportService
             'exported_by' => 'Aptoria',
             'exported_at' => now()->toIso8601String(),
             'version' => config('aptoria.version'),
+            'generated_by' => $this->credits->metadata('snapshot_json', $snapshot->project),
             'snapshot' => [
                 'id' => $snapshot->id,
                 'name' => $snapshot->name,
@@ -731,6 +742,8 @@ class ReportExportService
 
         if ($compareRun->items->isEmpty()) {
             $lines[] = 'No changes detected.';
+            $lines[] = '';
+            $this->credits->appendMarkdownFooter($lines, 'snapshot_compare_report', $compareRun->project);
             return implode("\n", $lines)."\n";
         }
 
@@ -750,6 +763,8 @@ class ReportExportService
         $lines[] = '- New and removed endpoints should be reviewed against the expected API contract.';
         $lines[] = '- Risk/status/content-type changes should be reviewed before release acceptance.';
         $lines[] = '- This compare report is based on saved snapshots and does not execute requests.';
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'snapshot_compare_report', $compareRun->project);
 
         return implode("\n", $lines)."\n";
     }

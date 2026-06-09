@@ -8,6 +8,7 @@ use App\Models\Finding;
 use App\Models\Project;
 use App\Models\Snapshot;
 use App\Services\AssertionEvaluationService;
+use App\Services\Exports\ExportCreditService;
 use App\Services\Auth\AuthProfileRuntimeService;
 use App\Services\RegressionEvaluationService;
 use Illuminate\Support\Collection;
@@ -34,6 +35,7 @@ class QaEvidencePackService
         private readonly RegressionEvaluationService $regressions,
         private readonly ReportExportService $exports,
         private readonly AuthProfileRuntimeService $authRuntime,
+        private readonly ExportCreditService $credits,
     ) {
     }
 
@@ -265,6 +267,8 @@ class QaEvidencePackService
         $lines[] = '- Recovery snapshots confirm that intentionally broken assertions were restored and the project returned to a clean state.';
         $lines[] = '- Response-time-only warnings can be accepted when assertions, HTTP status and critical/high regression counts remain clean.';
         $lines[] = '- This evidence pack is generated from stored Aptoria records and does not execute new requests.';
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'qa_evidence_notes', $project);
 
         return implode("\n", $lines)."\n";
     }
@@ -279,6 +283,7 @@ class QaEvidencePackService
             'exported_by' => 'Aptoria',
             'exported_at' => now()->toIso8601String(),
             'version' => config('aptoria.version'),
+            'generated_by' => $this->credits->metadata('qa_evidence_summary_json', $project),
             'project' => [
                 'id' => $project->id,
                 'name' => $project->name,
@@ -310,6 +315,7 @@ class QaEvidencePackService
             'qa-notes.md' => $this->notesMarkdown($project, $selection),
             'summary.json' => $this->summaryJson($project, $selection),
             'findings/open-findings.md' => $this->openFindingsMarkdown($project),
+            'APTORIA_CREDITS.txt' => $this->credits->textFile('qa_evidence_pack_zip', $project),
         ];
 
         foreach ($context['snapshot_roles'] as $role => $snapshot) {
@@ -613,6 +619,8 @@ class QaEvidencePackService
 
         if ($findings->isEmpty()) {
             $lines[] = 'No open findings.';
+            $lines[] = '';
+            $this->credits->appendMarkdownFooter($lines, 'open_findings_report', $project);
             return implode("\n", $lines)."\n";
         }
 
@@ -622,6 +630,9 @@ class QaEvidencePackService
             $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
             $lines[] = '| '.$this->md($finding->severity).' | '.$this->md($finding->status).' | '.$this->md($finding->source).' | '.$this->md($endpoint).' | '.$this->md($finding->title).' |';
         }
+
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'open_findings_report', $project);
 
         return implode("\n", $lines)."\n";
     }

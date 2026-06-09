@@ -6,6 +6,7 @@ use App\Models\QaReleaseGate;
 use App\Models\QaReleaseGateItem;
 use App\Models\Project;
 use App\Services\ReleaseReadinessService;
+use App\Services\Exports\ExportCreditService;
 use App\Services\Security\SensitiveValueMasker;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -16,6 +17,7 @@ class QaReleaseGateService
     public function __construct(
         private readonly ReleaseReadinessService $readiness,
         private readonly SensitiveValueMasker $masker,
+        private readonly ExportCreditService $credits,
     ) {
     }
 
@@ -193,6 +195,8 @@ class QaReleaseGateService
         $lines = array_merge($lines, $this->itemSection('Evidence Snapshot', $gate->evidence));
         $lines = array_merge($lines, $this->itemSection('Recommendations', $gate->recommendations));
         $lines[] = '_This gate is a saved decision snapshot. It uses stored Aptoria evidence and does not execute new HTTP requests._';
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'qa_release_gate_report', $gate->project);
 
         return implode("\n", $lines)."\n";
     }

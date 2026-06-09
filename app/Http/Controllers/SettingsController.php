@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Settings\SettingService;
+use App\Services\Exports\ExportCreditService;
 use App\Services\Security\SecurityStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -117,11 +118,12 @@ class SettingsController extends Controller
             ->with('success', __('messages.settings.group_reset_done', ['group' => __('messages.settings.groups.'.$group)]));
     }
 
-    public function export(SettingService $settings): JsonResponse
+    public function export(SettingService $settings, ExportCreditService $credits): JsonResponse
     {
         return response()->json([
             'version' => config('aptoria.version'),
             'scope' => 'global',
+            'generated_by' => $credits->metadata('global_settings_export'),
             'settings' => $settings->exportGrouped(),
         ]);
     }

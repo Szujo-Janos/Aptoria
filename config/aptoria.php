@@ -1,12 +1,15 @@
 <?php
 
 $aptoriaVersionFile = base_path('VERSION');
-$aptoriaVersion = is_file($aptoriaVersionFile) ? trim((string) file_get_contents($aptoriaVersionFile)) : '1.0.83';
+$aptoriaVersion = is_file($aptoriaVersionFile) ? trim((string) file_get_contents($aptoriaVersionFile)) : '1.0.84';
 
 return [
-    'version' => $aptoriaVersion !== '' ? $aptoriaVersion : '1.0.83',
+    'version' => $aptoriaVersion !== '' ? $aptoriaVersion : '1.0.84',
     'product_name' => 'Aptoria',
     'positioning' => 'Self-hosted API QA workflow, evidence and release gate platform.',
+    'repository_url' => 'https://github.com/Szujo-Janos/Aptoria',
+    'author' => 'János Szujó',
+    'license_summary' => 'Source-available. Free for local evaluation and portfolio/demo use. Commercial redistribution, hosted resale or derivative product use requires written permission.',
     'default_locale' => env('APTORIA_DEFAULT_LOCALE', 'en'),
     'default_admin' => [
         'email' => env('APTORIA_DEFAULT_ADMIN_EMAIL', 'admin@example.com'),

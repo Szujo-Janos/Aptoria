@@ -1,6 +1,6 @@
 # Aptoria Installation
 
-Current version: **v1.0.83**
+Current version: **v1.0.85**
 
 Aptoria is built for self-hosted Laravel deployment. The primary tested local workflow is Windows/XAMPP, with Linux/VPS scripts provided as helpers.
 
@@ -28,15 +28,15 @@ The update script installs dependencies and prepares local runtime folders.
 Use this exact PowerShell template for ZIP-based local updates:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.0.83.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.0.83"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.0.85.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.0.85"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.0.83\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.0.85\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass

@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\ScanResult;
 use App\Models\TestCase;
 use App\Services\AssertionEvaluationService;
+use App\Services\Exports\ExportCreditService;
 use App\Services\Auth\AuthProfileRuntimeService;
 use App\Services\QaCoverageMatrixService;
 use App\Services\ReleaseReadinessService;
@@ -51,6 +52,7 @@ class FullQaReportBuilderService
         private readonly RiskAnalyzer $riskAnalyzer,
         private readonly AssertionEvaluationService $assertions,
         private readonly AuthProfileRuntimeService $authRuntime,
+        private readonly ExportCreditService $credits,
     ) {
     }
 
@@ -197,6 +199,9 @@ class FullQaReportBuilderService
         if (in_array(self::SECTION_APPENDIX, $sections, true)) {
             $this->appendAppendix($lines);
         }
+
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'custom_qa_report', $project);
 
         return implode("\n", $lines)."\n";
     }

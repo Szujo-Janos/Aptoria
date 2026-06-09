@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiMonitor;
 use App\Models\CalendarEvent;
+use App\Services\Exports\ExportCreditService;
 use App\Models\Endpoint;
 use App\Models\MonitorAlertEvent;
 use App\Models\Project;
@@ -277,7 +278,7 @@ class CalendarController extends Controller
         ]);
     }
 
-    public function ics(Request $request): Response
+    public function ics(Request $request, ExportCreditService $credits): Response
     {
         [$startsAt, $endsAt] = $this->range($request);
         $projectId = $request->integer('project_id') ?: null;
@@ -297,6 +298,8 @@ class CalendarController extends Controller
             'PRODID:-//Aptoria//QA Operations Calendar//EN',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
+            'X-WR-CALNAME:Aptoria QA Operations Calendar',
+            'X-WR-CALDESC:'.$this->icsEscape($credits->shortLine()),
         ];
 
         foreach ($events as $event) {
@@ -308,7 +311,9 @@ class CalendarController extends Controller
                 $lines[] = 'DTEND:'.$this->icsDate($event->ends_at, $event->all_day);
             }
             $lines[] = 'SUMMARY:'.$this->icsEscape($event->display_title);
-            $lines[] = 'DESCRIPTION:'.$this->icsEscape(trim(($event->display_description ?: '').($event->project ? "\nProject: ".$event->project->name : '')));
+            $description = trim(($event->display_description ?: '').($event->project ? "\nProject: ".$event->project->name : ''));
+            $description = trim($description."\n\n".$credits->shortLine());
+            $lines[] = 'DESCRIPTION:'.$this->icsEscape($description);
             $lines[] = 'CATEGORIES:'.$this->icsEscape($event->event_type.','.$event->priority.','.$event->status.','.$event->tone_css);
             $lines[] = 'END:VEVENT';
         }

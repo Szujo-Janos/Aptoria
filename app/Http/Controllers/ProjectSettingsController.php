@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Services\Settings\ProjectSettingService;
+use App\Services\Exports\ExportCreditService;
 use App\Services\Endpoints\PathParameterResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -75,7 +76,7 @@ class ProjectSettingsController extends Controller
             ->with('success', __('messages.project_settings.reset_done'));
     }
 
-    public function export(Project $project, ProjectSettingService $settings, PathParameterResolver $pathParameters): JsonResponse
+    public function export(Project $project, ProjectSettingService $settings, PathParameterResolver $pathParameters, ExportCreditService $credits): JsonResponse
     {
         $project->load(['assertionRules.endpoint']);
 
@@ -86,6 +87,7 @@ class ProjectSettingsController extends Controller
                 'base_url' => $project->base_url,
             ],
             'version' => config('aptoria.version'),
+            'generated_by' => $credits->metadata('project_settings_export', $project),
             'settings' => $settings->export($project),
             'path_parameter_defaults' => $pathParameters->formatText($project),
             'default_assertion_rules' => $project->assertionRules

@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.0.85 - Export Credit Namespace Hotfix
+
+- Fixed `ReleaseReadinessService` so it imports `App\Services\Exports\ExportCreditService` correctly.
+- Resolved dashboard and project detail 500 errors caused by Laravel resolving the wrong `App\Services\ExportCreditService` class name.
+- Kept the v1.0.84 export attribution behavior intact.
+- Updated release documentation to v1.0.85.
+- Bumped VERSION to `1.0.85`.
+
+## v1.0.84 - Export Credits & Attribution Pass
+
+- Added centralized `ExportCreditService` for report/export attribution metadata.
+- Added Aptoria product/version/repository/author/license attribution to Markdown report footers.
+- Added structured `generated_by` metadata to JSON exports.
+- Added `APTORIA_CREDITS.txt` to QA Evidence Pack ZIP exports.
+- Added Aptoria metadata to calendar `.ics` exports.
+- Added Aptoria attribution columns to endpoint inventory CSV exports.
+- Added regression coverage for export credit metadata.
+- Bumped VERSION to 1.0.84.
+
 ## v1.0.83 - User Profile Center
 
 - Added an authenticated user profile center at `/profile`.

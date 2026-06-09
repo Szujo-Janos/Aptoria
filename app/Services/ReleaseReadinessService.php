@@ -10,6 +10,7 @@ use App\Models\ScanResult;
 use App\Models\TestCase;
 use App\Services\Risk\RiskAnalyzer;
 use App\Services\Settings\SettingService;
+use App\Services\Exports\ExportCreditService;
 use Illuminate\Support\Collection;
 
 class ReleaseReadinessService
@@ -25,6 +26,7 @@ class ReleaseReadinessService
         private readonly RegressionEvaluationService $regressions,
         private readonly QaCoverageMatrixService $coverageMatrix,
         private readonly SettingService $settings,
+        private readonly ExportCreditService $credits,
     ) {
     }
 
@@ -314,6 +316,8 @@ class ReleaseReadinessService
         $lines = array_merge($lines, $this->bulletList($summary['recommended_actions'], 'No immediate action required.'));
         $lines[] = '';
         $lines[] = '_This report uses stored safe GET/HEAD probe, snapshot and compare evidence. It does not execute new HTTP requests._';
+        $lines[] = '';
+        $this->credits->appendMarkdownFooter($lines, 'release_readiness_report', $project);
 
         return implode("\n", $lines)."\n";
     }
