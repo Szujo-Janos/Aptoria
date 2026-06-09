@@ -1,7 +1,7 @@
-# Aptoria v1.0.85 QA Checklist
+# Aptoria v1.0.86 QA Checklist
 
-Release: **v1.0.85 - Export Credits & Attribution Pass**
-ZIP: `aptoria-1.0.85.zip`
+Release: **v1.0.86 - Export Credit Setting Runtime Hotfix**
+ZIP: `aptoria-1.0.86.zip`
 
 ## Export Credit Checks
 
@@ -37,9 +37,9 @@ ZIP: `aptoria-1.0.85.zip`
 
 ## Release Package Hygiene
 
-- [ ] ZIP root folder is `aptoria-1.0.85/`.
-- [ ] ZIP contains `VERSION` with `1.0.85`.
-- [ ] ZIP contains `docs/SYSTEM_AUDIT_v1.0.85.md`.
+- [ ] ZIP root folder is `aptoria-1.0.86/`.
+- [ ] ZIP contains `VERSION` with `1.0.86`.
+- [ ] ZIP contains `docs/SYSTEM_AUDIT_v1.0.86.md`.
 - [ ] ZIP contains `.github/workflows/php.yml`.
 - [ ] ZIP contains Windows/XAMPP PowerShell scripts.
 - [ ] ZIP contains `public/assets/aptoria-ui/vendor`.

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.86 - Export Credit Setting Runtime Hotfix
+
+- Wired the visible `report.include_copyright_footer` setting into `ExportCreditService`.
+- Fixed the GitHub Actions failure in `SettingsFunctionalAuditTest` where the setting existed in Settings UI but had no runtime consumer.
+- Kept Aptoria attribution enabled by default while making the existing footer setting functional.
+- Updated release documentation to v1.0.86.
+- Bumped VERSION to `1.0.86`.
+
 ## v1.0.85 - Export Credit Namespace Hotfix
 
 - Fixed `ReleaseReadinessService` so it imports `App\Services\Exports\ExportCreditService` correctly.
