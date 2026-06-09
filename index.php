@@ -9,7 +9,7 @@ $scriptDirectory = $scriptDirectory === '/' ? '' : rtrim($scriptDirectory, '/');
 $publicUrl = $scriptDirectory.'/public/';
 $setupUrl = $scriptDirectory.'/public/setup';
 $assetBase = $scriptDirectory.'/public/assets';
-$version = trim((string) @file_get_contents(__DIR__.'/VERSION')) ?: '1.0.74';
+$version = trim((string) @file_get_contents(__DIR__.'/VERSION')) ?: '1.0.76';
 
 if ($installed) {
     header('Location: '.$publicUrl);

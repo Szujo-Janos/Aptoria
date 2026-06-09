@@ -15,9 +15,9 @@ This audit covers the v1.0.44 cumulative release built from the clean v1.0.42 ba
 
 ## Changes verified
 
-- Moved bundled admin UI runtime assets from public/assets/aptoria-ui to public/assets/aptoria-ui.
+- Confirmed bundled admin UI runtime assets live under public/assets/aptoria-ui.
 - Updated Blade layouts, landing page, release validation and documentation to the new Aptoria UI namespace.
-- Renamed the runtime helper script from aptoria-ui.js to aptoria-ui.js.
+- Confirmed the runtime helper script is aptoria-ui.js.
 
 ## Manual QA checklist
 

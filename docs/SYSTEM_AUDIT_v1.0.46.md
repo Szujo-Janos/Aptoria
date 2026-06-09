@@ -8,7 +8,7 @@ This audit covers the v1.0.46 cumulative release built from v1.0.45 after browse
 | --- | --- | --- |
 | Vendor CSS/JS assets | PASS | `public/assets/aptoria-ui/vendor/` is included in the release ZIP. |
 | Runtime JavaScript syntax | PASS | `initAptoriaProUi()` is syntactically valid and all calls use the same function name. |
-| Old visible template path | PASS | Blade views load from `assets/aptoria-ui/...`; no the old UI asset namespace references are required. |
+| Legacy visible template path | PASS | Blade views load from `assets/aptoria-ui/...`; no legacy UI asset namespace references are required. |
 | Release cleanup | PASS | Root `vendor/`, `.env`, SQLite runtime DB, install lock and setup token remain excluded. |
 
 ## QA target

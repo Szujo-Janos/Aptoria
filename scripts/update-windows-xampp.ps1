@@ -15,6 +15,7 @@ Push-Location -LiteralPath $ProjectRoot
 try {
     Assert-AptoriaProject -ProjectRoot $ProjectRoot
     Assert-PhpExecutable -PhpPath $PhpPath
+    Remove-LegacyRebrandArtifacts -ProjectRoot $ProjectRoot
     Ensure-LaravelDirectories -ProjectRoot $ProjectRoot
     Ensure-EnvironmentFile -ProjectRoot $ProjectRoot
     Remove-LegacyVersionOverride -ProjectRoot $ProjectRoot

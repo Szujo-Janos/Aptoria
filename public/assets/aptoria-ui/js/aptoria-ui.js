@@ -9,15 +9,15 @@ $(document).ready(function () {
     // Add special class to minimalize page elements when screen is less than 768px
     setBodySmall();
 
-    // Check if sidebar scroll is enabled
-    if($('body').hasClass('sidebar-scroll')) {
+    // Check if sidebar scroll is enabled and the optional slimScroll vendor asset is available
+    if ($('body').hasClass('sidebar-scroll') && $.fn.slimScroll && $('#navigation').length) {
         $('#navigation').slimScroll({
             height: '100%',
             opacity: 0.3,
             size : 0,
             wheelStep : 5
         });
-    };
+    }
 
     // Handle minimalize sidebar menu
     $('.hide-menu').on('click', function(event){
@@ -29,8 +29,10 @@ $(document).ready(function () {
         }
     });
 
-    // Initialize metsiMenu plugin to sidebar menu
-    $('#side-menu').metisMenu();
+    // Initialize metisMenu only when the sidebar and optional vendor plugin are available
+    if ($.fn.metisMenu && $('#side-menu').length) {
+        $('#side-menu').metisMenu();
+    }
 
     // Initialize iCheck plugin when the optional Aptoria UI vendor asset is available
     if ($.fn.iCheck) {
@@ -40,8 +42,10 @@ $(document).ready(function () {
         });
     }
 
-    // Initialize animate panel function
-    $('.animate-panel').animatePanel();
+    // Initialize animate panel function when the theme helper is available
+    if ($.fn.animatePanel) {
+        $('.animate-panel').animatePanel();
+    }
 
     // Function for collapse hpanel
     $('.showhide').on('click', function (event) {

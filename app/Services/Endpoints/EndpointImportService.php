@@ -582,7 +582,7 @@ class EndpointImportService
 
             $response = Http::timeout(20)
                 ->connectTimeout(10)
-                ->withHeaders(['User-Agent' => 'Aptoria/'.config('aptoria.version', '1.0.74').' OpenAPI Import'])
+                ->withHeaders(['User-Agent' => 'Aptoria/'.config('aptoria.version', '1.0.76').' OpenAPI Import'])
                 ->withOptions([
                     'allow_redirects' => false,
                     'http_errors' => false,

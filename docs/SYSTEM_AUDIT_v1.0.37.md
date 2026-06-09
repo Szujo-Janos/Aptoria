@@ -20,7 +20,7 @@ v1.0.38 fixes the immutable calendar activity log localization issue. Activity l
 - PHP syntax lint: PASS in the build environment.
 - English/Hungarian translation key parity maintained.
 - Release ZIP excludes root `vendor/`, `.env`, `database/database.sqlite`, `storage/app/installed.lock` and `storage/app/setup-token.txt`.
-- `public/assets/aptoria-ui/vendor` remains included for the current Aptoria UI UI line.
+- `public/assets/aptoria-ui/vendor` remains included for the current Aptoria UI line.
 
 ## Manual QA focus
 

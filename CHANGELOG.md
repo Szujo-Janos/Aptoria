@@ -1,10 +1,89 @@
 # Changelog
 
+## v1.0.82 - Optional Vendor Plugin Guard Hotfix
+
+- Guarded Aptoria UI initialization for optional vendor plugins so public/auth pages do not throw JavaScript errors when sidebar-only plugins are not loaded.
+- `aptoria-ui.js` now checks for `$.fn.metisMenu`, `$.fn.slimScroll`, and `$.fn.animatePanel` before calling those helpers.
+- Added regression coverage for optional Aptoria UI vendor plugin guards.
+- Updated release documentation to v1.0.82.
+- Bumped VERSION to `1.0.82`.
+
+## v1.0.81 - Local HTTPS Force Scheme Hotfix
+
+- Fixed local `artisan serve` asset loading when `.env` still has `APP_ENV=production` but `APP_URL` points to a local HTTP URL.
+- Changed `AppServiceProvider` so `URL::forceScheme('https')` is only applied when the configured application URL itself starts with `https://`.
+- Prevents local HTTP installs from generating HTTPS asset URLs that cause `Invalid request (Unsupported SSL request)` and browser `ERR_CONNECTION_CLOSED` errors.
+- Updated README, installation guide, server installer notes and QA checklist to v1.0.81.
+- Added `docs/SYSTEM_AUDIT_v1.0.81.md`.
+- Bumped VERSION to `1.0.81`.
+
+## v1.0.80 - Windows Cleanup Path Assertion Hotfix
+
+- Fixed `AptoriaRebrandTest` cleanup-path assertions to match the actual PowerShell single-backslash path literals used in `scripts/windows-xampp-common.ps1`.
+- Kept the Windows/XAMPP cleanup behavior unchanged.
+- Updated public release documentation to v1.0.80.
+- Added `docs/SYSTEM_AUDIT_v1.0.80.md`.
+- Bumped VERSION to `1.0.80`.
+
+## v1.0.79 - Rebrand Regression Scope Hotfix
+
+- Fixed the Aptoria rebrand regression test so historical changelog entries are not treated as current product branding.
+- Removed legacy literal path examples from the current public QA checklist while keeping the manual cleanup checks understandable.
+- Kept Windows/XAMPP cleanup coverage for stale pre-rebrand files by checking the cleanup paths in encoded form inside the test.
+- Updated public release documentation to v1.0.79.
+- Added `docs/SYSTEM_AUDIT_v1.0.79.md`.
+- Bumped VERSION to `1.0.79`.
+
+## v1.0.78 - Legacy Rebrand Artifact Cleanup Hotfix
+
+- Added Windows/XAMPP update cleanup for stale files left behind by Copy-Item based upgrades.
+- Removes legacy rebrand artifacts that may remain in an existing project root after upgrading from older API Radar builds:
+  - `docs/RADAR_UI_TEMPLATE_AUDIT.md`
+  - `docs/RADAR_UI_UX_REFRESH.md`
+  - `config/api-radar.php`
+  - `public/assets/api-radar`
+  - `public/assets/radar-ui`
+- Updated rebrand regression coverage so the cleanup remains protected.
+- Updated public release documentation to v1.0.78.
+- Bumped VERSION to `1.0.78`.
+
+## v1.0.77 - Rebrand Test Consistency Hotfix
+
+- Fixed the rebrand regression test so it validates the current `VERSION` dynamically instead of expecting a stale rebrand release version.
+- Hardened release documentation consistency checks so release-facing docs must reference the current short ZIP name only.
+- Updated README, installation guide, server installer notes, QA checklist and system audit references to v1.0.77.
+- Kept the corrected Aptoria logo icon and favicon assets from v1.0.75.
+- Bumped VERSION to 1.0.77.
+
+## v1.0.76 - Aptoria Rebrand Polish Pass
+
+- Aligned README, installation guide, server installer notes and QA checklist with v1.0.76.
+- Updated release ZIP examples to `aptoria-1.0.76.zip` and root folder `aptoria-1.0.76/`.
+- Updated `scripts/build-release.ps1` so required system audit validation follows the current VERSION instead of v1.0.74.
+- Updated `AptoriaRebrandTest` to read the current VERSION dynamically instead of hardcoding v1.0.74.
+- Renamed legacy public UI documentation filenames to the `APTORIA_UI_*` naming pattern.
+- Added `docs/SYSTEM_AUDIT_v1.0.76.md`.
+- Kept the v1.0.75 corrected Aptoria icon assets.
+- Bumped VERSION to 1.0.76.
+
+## v1.0.75 - Logo Icon Crop Hotfix
+
+- Fixed `public/assets/aptoria/img/aptoria-logo-icon.png` so the icon no longer includes the stray bottom of the `A` wordmark.
+- Regenerated related favicon and launcher icon assets from the corrected Aptoria icon:
+  - `favicon.ico`
+  - `favicon-16.png`
+  - `favicon-32.png`
+  - `favicon-64.png`
+  - `apple-touch-icon.png`
+  - `android-chrome-192.png`
+  - `android-chrome-512.png`
+- Bumped VERSION to `1.0.75`.
+
 ## v1.0.74 - Aptoria Rebrand Pass
 
 - Rebranded the application from Aptoria's former API-focused name to **Aptoria** across source code, views, settings, tests, documentation and release metadata.
 - Updated Composer package metadata, environment variable prefixes, Artisan command names, config namespace, session/cache prefixes and public repository URLs to use Aptoria naming.
-- Renamed public asset namespaces from `legacy app asset namespace` and `legacy UI asset namespace` to `assets/aptoria` and `assets/aptoria-ui`.
+- Renamed public asset namespaces to `assets/aptoria` and `assets/aptoria-ui`.
 - Added the new Aptoria logo set, favicon files and app icon assets.
 - Updated Windows/XAMPP, GitHub clone and scheduled monitor commands to use the new `aptoria` naming and repository URL.
 - Added rebrand regression coverage to prevent legacy pre-rebrand naming from returning to public-facing code and documentation.
@@ -180,9 +259,9 @@
 
 ## v1.0.44 - Aptoria UI Asset Namespace Cleanup
 
-- Moved bundled admin UI runtime assets from the old UI asset namespace to `public/assets/aptoria-ui`.
+- Moved bundled admin UI runtime assets to `public/assets/aptoria-ui`.
 - Updated Blade layouts, landing page, release validation and documentation to the new Aptoria UI namespace.
-- Renamed the runtime helper script from the old runtime helper script to `aptoria-ui.js`.
+- Renamed the runtime helper script to `aptoria-ui.js`.
 
 
 ## v1.0.43 - Visible Template Rebrand Pass

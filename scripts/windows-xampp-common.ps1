@@ -54,6 +54,31 @@ function Invoke-Artisan {
     Invoke-PhpCommand -PhpPath $PhpPath -Arguments (@("artisan") + $Arguments)
 }
 
+
+function Remove-LegacyRebrandArtifacts {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectRoot
+    )
+
+    $legacyPaths = @(
+        "docs\RADAR_UI_TEMPLATE_AUDIT.md",
+        "docs\RADAR_UI_UX_REFRESH.md",
+        "config\api-radar.php",
+        "public\assets\api-radar",
+        "public\assets\radar-ui"
+    )
+
+    foreach ($legacyPath in $legacyPaths) {
+        $fullPath = Join-Path $ProjectRoot $legacyPath
+
+        if (Test-Path -LiteralPath $fullPath) {
+            Remove-Item -LiteralPath $fullPath -Recurse -Force
+            Write-Host "Removed legacy Aptoria rebrand artifact: $legacyPath" -ForegroundColor Yellow
+        }
+    }
+}
+
 function Ensure-LaravelDirectories {
     param(
         [Parameter(Mandatory = $true)]

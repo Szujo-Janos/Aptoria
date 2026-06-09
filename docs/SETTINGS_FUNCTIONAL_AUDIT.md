@@ -59,3 +59,8 @@ The v1.0.73 package keeps the v1.0.72 Settings runtime behavior and audit result
 ## v1.0.74 Rebrand Note
 
 The Settings system remains functionally unchanged by the Aptoria rebrand. Labels, defaults, export metadata and documentation references were updated to the Aptoria product identity.
+
+
+## v1.0.76 Rebrand Polish Note
+
+The Settings system remains behaviorally unchanged. This pass aligns release documentation, rebrand tests and current public metadata after the Aptoria rename.

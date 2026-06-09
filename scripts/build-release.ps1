@@ -128,7 +128,7 @@ $requiredEntries = @(
     "$ReleaseRoot/composer.json",
     "$ReleaseRoot/composer.lock",
     "$ReleaseRoot/config/aptoria.php",
-    "$ReleaseRoot/docs/SYSTEM_AUDIT_v1.0.74.md",
+    "$ReleaseRoot/docs/SYSTEM_AUDIT_v$Version.md",
     "$ReleaseRoot/public/assets/aptoria/img/aptoria-logo-horizontal.png",
     "$ReleaseRoot/public/assets/aptoria/img/aptoria-logo-icon.png",
     "$ReleaseRoot/app/Http/Controllers/EndpointController.php",
