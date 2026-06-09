@@ -8,6 +8,7 @@ use App\Services\QaCoverageMatrixService;
 use App\Services\ReleaseReadinessService;
 use App\Services\Reports\FullQaReportBuilderService;
 use App\Services\Reports\ReportExportService;
+use App\Services\Reports\ReportPresentationService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -42,6 +43,30 @@ class FullQaReportBuilderController extends Controller
         return response($builder->markdown($project, $options), 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$exports->filename($project, 'custom-full-qa-report', 'md').'"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function html(Project $project, FullQaReportBuilderRequest $request, FullQaReportBuilderService $builder, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $options = $request->reportOptions();
+        $markdown = $builder->markdown($project, $options);
+
+        return response($presentation->htmlFromMarkdown($markdown, 'Aptoria Custom QA Report', $project), 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$exports->filename($project, 'custom-full-qa-report', 'html').'"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function pdf(Project $project, FullQaReportBuilderRequest $request, FullQaReportBuilderService $builder, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $options = $request->reportOptions();
+        $markdown = $builder->markdown($project, $options);
+
+        return response($presentation->pdfFromMarkdown($markdown, 'Aptoria Custom QA Report', $project), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$exports->filename($project, 'custom-full-qa-report', 'pdf').'"',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }

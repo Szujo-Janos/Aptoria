@@ -1,13 +1,12 @@
 # Aptoria
 
-## Aptoria v1.0.86
+## Aptoria v1.0.87
 
-Export Credit Setting Runtime Hotfix.
-
+HTML & PDF Report Export Pass.
 
 **Aptoria** is a self-hosted Laravel application for API QA, endpoint visibility, regression monitoring, release evidence and lightweight security review.
 
-Current release: **v1.0.86 - Export Credit Setting Runtime Hotfix**  
+Current release: **v1.0.87 - HTML & PDF Report Export Pass**  
 Product status: **post-MVP / early beta**
 
 The application is designed for teams or individual QA engineers who want to keep API endpoint inventories, safe scan evidence, assertions, snapshots, findings, test cases and release readiness decisions in one self-hosted workspace.
@@ -34,51 +33,7 @@ Aptoria helps you answer practical QA questions before a release:
 
 The goal is not to replace Postman, Playwright, OWASP tools or a full test management platform. Aptoria is a self-hosted evidence and workflow layer for API QA and release review.
 
-## v1.0.86 Export Credit Setting Runtime Hotfix
-
-This release adds professional Aptoria attribution metadata to generated reports and downloadable exports. Markdown reports now include a consistent footer with product, version, repository, author and source-available license summary. JSON exports include structured `generated_by` metadata, calendar exports include Aptoria calendar/product metadata, and QA Evidence Pack ZIP exports include `APTORIA_CREDITS.txt`.
-
----
-
-## v1.0.83 User Profile Center
-
-This release adds the first authenticated user profile center to Aptoria. Users can update their name, e-mail, interface language and timezone, and can change their password through a separate current-password verified form. The profile page also includes account information and activity summary panels.
-
----
-
-## v1.0.76 Aptoria Rebrand Polish Pass
-
-This release completes the first public rebrand polish pass after the Aptoria rename. It aligns README, installation notes, server installer notes, QA checklist, release builder validation and rebrand regression tests with the current Aptoria package. It also removes leftover Radar UI documentation filenames so public documentation no longer exposes the old product identity.
-
-No product feature behavior was intentionally changed in this release.
-
----
-
-## v1.0.75 Logo Icon Crop Hotfix
-
-This release fixes the standalone Aptoria icon crop and regenerates the favicon / launcher icon derivatives so the wordmark does not bleed into icon-only assets.
-
----
-
-## v1.0.74 Aptoria Rebrand Pass
-
-This release rebrands the application from its former API-focused identity to Aptoria across source code, views, settings, tests, documentation, public assets and release metadata.
-
----
-
-## v1.0.72 Settings Functional Audit Hotfix
-
-The Settings Center was audited so visible global and project settings are saveable, validated, persisted and consumed at runtime. Non-functional assertion default controls were removed, project notes now appear on the project detail page, UI/session switches have regression coverage, and clean ZIP runtime folders are preserved.
-
-See `docs/SETTINGS_FUNCTIONAL_AUDIT.md` for the current activation notes.
-
----
-
-## v1.0.68 Settings Activation Test Hotfix
-
-The Settings Center still shows product controls only. v1.0.68 fixes the two test regressions found after v1.0.67: endpoints without explicit assertion rules remain `not_configured`, and the SweetAlert runtime asset no longer contains the forbidden literal `window.confirm(` call. Assertion default Settings stay active as rule-creation defaults instead of hidden synthetic runtime rules.
-
-See `docs/SETTINGS_FUNCTIONAL_AUDIT.md` for the current activation notes.
+Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -133,12 +88,14 @@ See `docs/SETTINGS_FUNCTIONAL_AUDIT.md` for the current activation notes.
 
 ### Reporting and exports
 
-- Full project QA Markdown report
-- Custom QA report builder
-- Release readiness Markdown report
-- Endpoint CSV export
+- Full project QA Markdown, HTML and PDF reports
+- Custom QA report builder with Markdown, HTML and PDF exports
+- Release readiness Markdown, HTML and PDF reports
+- QA release gate Markdown, HTML and PDF reports
+- Scan Markdown, HTML and PDF reports
 - Snapshot JSON export
-- Snapshot compare Markdown export
+- Snapshot compare Markdown, HTML and PDF exports
+- Endpoint CSV export
 - QA evidence pack ZIP export
 
 ### User account
@@ -198,18 +155,18 @@ Recommended local development/runtime stack:
 
 The release ZIP intentionally does **not** include `vendor/`, `.env`, `database/database.sqlite` or local setup locks. Dependencies and runtime folders are prepared locally by the Windows/XAMPP helper script.
 
-Use this exact PowerShell template for the v1.0.86 release ZIP:
+Use this exact PowerShell template for the v1.0.87 release ZIP:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.0.86.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.0.86"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.0.87.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.0.87"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.0.86\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.0.87\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -438,7 +395,7 @@ C:\xampp\php\php.exe artisan aptoria:security-audit
 
 ### Public repository
 
-The v1.0.86 line is prepared for public GitHub presentation as a source-available project with aligned installation instructions, automated QA gate metadata, credits and copyright notices. Public visibility is intentional source visibility, not an open-source license grant.
+The v1.0.87 line is prepared for public GitHub presentation as a source-available project with aligned installation instructions, automated QA gate metadata, credits and copyright notices. Public visibility is intentional source visibility, not an open-source license grant.
 
 Before pushing public, review:
 
@@ -458,7 +415,7 @@ Before pushing public, review:
 - `docs/QA_CHECKLIST.md` – current release QA checklist
 - `docs/MVP_PLAN.md` – current product status and roadmap
 - `docs/PORTFOLIO_SHOWCASE.md` – portfolio/showcase overview
-- `docs/SYSTEM_AUDIT_v1.0.86.md` – current system audit
+- `docs/SYSTEM_AUDIT_v1.0.87.md` – current system audit
 - `docs/GITHUB_REPOSITORY_CHECKLIST.md` – GitHub preparation checklist
 - `docs/APTORIA_UI_TEMPLATE_AUDIT.md` – Aptoria UI template integration audit
 - `docs/APTORIA_UI_UX_REFRESH.md` – Aptoria UI/UX refresh notes

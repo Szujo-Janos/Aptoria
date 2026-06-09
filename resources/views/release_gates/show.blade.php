@@ -8,7 +8,9 @@
         <div class="hpanel h{{ $releaseGate->automated_status_css === 'danger' ? 'red' : ($releaseGate->automated_status_css === 'warning' ? 'yellow' : 'green') }}">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
-                    <a href="{{ route('projects.release-gates.markdown', [$project, $releaseGate]) }}" class="btn btn-xs btn-primary">{{ __('messages.release_gates.download_markdown') }}</a>
+                    <a href="{{ route('projects.release-gates.markdown', [$project, $releaseGate]) }}" class="btn btn-xs btn-primary">MD</a>
+                    <a href="{{ route('projects.release-gates.html', [$project, $releaseGate]) }}" class="btn btn-xs btn-default">HTML</a>
+                    <a href="{{ route('projects.release-gates.pdf', [$project, $releaseGate]) }}" class="btn btn-xs btn-default">PDF</a>
                     <a href="{{ route('projects.release-gates.create', $project) }}" class="btn btn-xs btn-danger">{{ __('messages.release_gates.create') }}</a>
                     <a href="{{ route('projects.release-gates.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>
                 </div>

@@ -856,7 +856,9 @@
                 <div class="panel-tools">
                     <a href="{{ route('projects.reports.index', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.reports.open_center') }}</a>
                     <a href="{{ route('projects.reports.builder.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.report_builder.short_title') }}</a>
-                    <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-xs btn-info">{{ __('messages.reports.full_project_report_short') }}</a>
+                    <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-xs btn-info">Full MD</a>
+                    <a href="{{ route('projects.reports.full-project.html', $project) }}" class="btn btn-xs btn-default">Full HTML</a>
+                    <a href="{{ route('projects.reports.full-project.pdf', $project) }}" class="btn btn-xs btn-default">Full PDF</a>
                     <a href="{{ route('projects.reports.endpoints.csv', $project) }}" class="btn btn-xs btn-default">{{ __('messages.reports.endpoint_csv') }}</a>
                 </div>
                 {{ __('messages.reports.title') }}

@@ -140,8 +140,12 @@
                     </div>
                 </div>
                 <div class="panel-footer text-right">
-                    <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-default">{{ __('messages.reports.download_full_project_markdown') }}</a>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> {{ __('messages.report_builder.generate_markdown') }}</button>
+                    <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-default">Full MD</a>
+                    <a href="{{ route('projects.reports.full-project.html', $project) }}" class="btn btn-default">Full HTML</a>
+                    <a href="{{ route('projects.reports.full-project.pdf', $project) }}" class="btn btn-default">Full PDF</a>
+                    <button type="submit" formaction="{{ route('projects.reports.builder.markdown', $project) }}" class="btn btn-primary"><i class="fa fa-download"></i> MD</button>
+                    <button type="submit" formaction="{{ route('projects.reports.builder.html', $project) }}" class="btn btn-info"><i class="fa fa-file-code-o"></i> HTML</button>
+                    <button type="submit" formaction="{{ route('projects.reports.builder.pdf', $project) }}" class="btn btn-danger"><i class="fa fa-file-pdf-o"></i> PDF</button>
                 </div>
             </div>
         </div>

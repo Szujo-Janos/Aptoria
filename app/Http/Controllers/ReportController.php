@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\ScanRun;
 use App\Models\Snapshot;
 use App\Services\Reports\ReportExportService;
+use App\Services\Reports\ReportPresentationService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -68,6 +69,28 @@ class ReportController extends Controller
         );
     }
 
+    public function fullProjectHtml(Project $project, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $markdown = $exports->fullProjectMarkdown($project);
+
+        return $this->download(
+            $presentation->htmlFromMarkdown($markdown, 'Aptoria Full Project QA Report', $project),
+            $exports->filename($project, 'full-project-qa-report', 'html'),
+            'text/html; charset=UTF-8'
+        );
+    }
+
+    public function fullProjectPdf(Project $project, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $markdown = $exports->fullProjectMarkdown($project);
+
+        return $this->download(
+            $presentation->pdfFromMarkdown($markdown, 'Aptoria Full Project QA Report', $project),
+            $exports->filename($project, 'full-project-qa-report', 'pdf'),
+            'application/pdf'
+        );
+    }
+
     public function endpointsCsv(Project $project, ReportExportService $exports): Response
     {
         return $this->download(
@@ -85,6 +108,30 @@ class ReportController extends Controller
             $exports->scanMarkdown($scanRun),
             $exports->filename($project, 'scan-'.$scanRun->id, 'md'),
             'text/markdown; charset=UTF-8'
+        );
+    }
+
+    public function scanHtml(Project $project, ScanRun $scanRun, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $this->ensureScanBelongsToProject($project, $scanRun);
+        $markdown = $exports->scanMarkdown($scanRun);
+
+        return $this->download(
+            $presentation->htmlFromMarkdown($markdown, 'Aptoria Scan Report #'.$scanRun->id, $project),
+            $exports->filename($project, 'scan-'.$scanRun->id, 'html'),
+            'text/html; charset=UTF-8'
+        );
+    }
+
+    public function scanPdf(Project $project, ScanRun $scanRun, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $this->ensureScanBelongsToProject($project, $scanRun);
+        $markdown = $exports->scanMarkdown($scanRun);
+
+        return $this->download(
+            $presentation->pdfFromMarkdown($markdown, 'Aptoria Scan Report #'.$scanRun->id, $project),
+            $exports->filename($project, 'scan-'.$scanRun->id, 'pdf'),
+            'application/pdf'
         );
     }
 
@@ -107,6 +154,30 @@ class ReportController extends Controller
             $exports->compareMarkdown($compareRun),
             $exports->filename($project, 'compare-'.$compareRun->id, 'md'),
             'text/markdown; charset=UTF-8'
+        );
+    }
+
+    public function compareHtml(Project $project, CompareRun $compareRun, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $this->ensureCompareBelongsToProject($project, $compareRun);
+        $markdown = $exports->compareMarkdown($compareRun);
+
+        return $this->download(
+            $presentation->htmlFromMarkdown($markdown, 'Aptoria Snapshot Compare Report #'.$compareRun->id, $project),
+            $exports->filename($project, 'compare-'.$compareRun->id, 'html'),
+            'text/html; charset=UTF-8'
+        );
+    }
+
+    public function comparePdf(Project $project, CompareRun $compareRun, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $this->ensureCompareBelongsToProject($project, $compareRun);
+        $markdown = $exports->compareMarkdown($compareRun);
+
+        return $this->download(
+            $presentation->pdfFromMarkdown($markdown, 'Aptoria Snapshot Compare Report #'.$compareRun->id, $project),
+            $exports->filename($project, 'compare-'.$compareRun->id, 'pdf'),
+            'application/pdf'
         );
     }
 

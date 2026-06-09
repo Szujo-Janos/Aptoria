@@ -9,7 +9,9 @@
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
                     <a href="{{ route('projects.snapshots.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>
-                    <a href="{{ route('projects.reports.compares.markdown', [$project, $compareRun]) }}" class="btn btn-xs btn-primary">{{ __('messages.reports.download_markdown') }}</a>
+                    <a href="{{ route('projects.reports.compares.markdown', [$project, $compareRun]) }}" class="btn btn-xs btn-primary">MD</a>
+                    <a href="{{ route('projects.reports.compares.html', [$project, $compareRun]) }}" class="btn btn-xs btn-default">HTML</a>
+                    <a href="{{ route('projects.reports.compares.pdf', [$project, $compareRun]) }}" class="btn btn-xs btn-default">PDF</a>
                 </div>
                 {{ __('messages.snapshots.compare_details_title') }}
             </div>

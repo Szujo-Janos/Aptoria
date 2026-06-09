@@ -9,7 +9,9 @@
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
                     <a href="{{ route('projects.scans.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>
-                    <a href="{{ route('projects.reports.scans.markdown', [$project, $scanRun]) }}" class="btn btn-xs btn-primary">{{ __('messages.reports.download_markdown') }}</a>
+                    <a href="{{ route('projects.reports.scans.markdown', [$project, $scanRun]) }}" class="btn btn-xs btn-primary">MD</a>
+                    <a href="{{ route('projects.reports.scans.html', [$project, $scanRun]) }}" class="btn btn-xs btn-default">HTML</a>
+                    <a href="{{ route('projects.reports.scans.pdf', [$project, $scanRun]) }}" class="btn btn-xs btn-default">PDF</a>
                     <a href="{{ route('projects.scans.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.scans.new') }}</a>
                 </div>
                 {{ __('messages.scans.details_title') }}

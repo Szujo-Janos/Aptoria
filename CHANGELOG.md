@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.87 - HTML & PDF Report Export Pass
+
+- Added reusable HTML report rendering for core Markdown reports.
+- Added dependency-free PDF report export for full project, release readiness, QA release gate, scan, snapshot compare and custom report builder outputs.
+- Added professional printable HTML layout with Aptoria branding and credit footer.
+- Added PDF page footer with Aptoria version and attribution metadata.
+- Added report center, project detail and report builder links for HTML/PDF exports.
+- Added regression coverage for HTML/PDF report routes and services.
+- Kept README clean by linking to CHANGELOG.md instead of embedding release history.
+- Bumped VERSION to `1.0.87`.
+
 ## v1.0.86 - Export Credit Setting Runtime Hotfix
 
 - Wired the visible `report.include_copyright_footer` setting into `ExportCreditService`.

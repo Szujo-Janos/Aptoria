@@ -7,6 +7,7 @@ use App\Http\Requests\QaReleaseGateRequest;
 use App\Models\Project;
 use App\Models\QaReleaseGate;
 use App\Services\ReleaseGates\QaReleaseGateService;
+use App\Services\Reports\ReportPresentationService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
@@ -72,6 +73,32 @@ class QaReleaseGateController extends Controller
 
         return response($gates->markdown($releaseGate), 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function html(Project $project, QaReleaseGate $releaseGate, QaReleaseGateService $gates, ReportPresentationService $presentation): Response
+    {
+        $this->ensureGateBelongsToProject($project, $releaseGate);
+        $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.html';
+        $markdown = $gates->markdown($releaseGate);
+
+        return response($presentation->htmlFromMarkdown($markdown, 'Aptoria QA Release Gate #'.$releaseGate->id, $project), 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    public function pdf(Project $project, QaReleaseGate $releaseGate, QaReleaseGateService $gates, ReportPresentationService $presentation): Response
+    {
+        $this->ensureGateBelongsToProject($project, $releaseGate);
+        $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.pdf';
+        $markdown = $gates->markdown($releaseGate);
+
+        return response($presentation->pdfFromMarkdown($markdown, 'Aptoria QA Release Gate #'.$releaseGate->id, $project), 200, [
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Content-Type-Options' => 'nosniff',
         ]);

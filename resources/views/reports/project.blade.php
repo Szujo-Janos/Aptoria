@@ -42,9 +42,9 @@
                 <a href="{{ route('projects.release-readiness.show', $project) }}" class="btn btn-danger btn-block">
                     {{ __('messages.release_readiness.open_dashboard') }}
                 </a>
-                <a href="{{ route('projects.reports.release-readiness.markdown', $project) }}" class="btn btn-default btn-block">
-                    {{ __('messages.release_readiness.download_report') }}
-                </a>
+                <a href="{{ route('projects.reports.release-readiness.markdown', $project) }}" class="btn btn-default btn-block">{{ __('messages.release_readiness.download_report') }}</a>
+                <a href="{{ route('projects.reports.release-readiness.html', $project) }}" class="btn btn-default btn-block">HTML report</a>
+                <a href="{{ route('projects.reports.release-readiness.pdf', $project) }}" class="btn btn-default btn-block">PDF report</a>
             </div>
         </div>
     </div>
@@ -74,9 +74,9 @@
             <div class="panel-heading hbuilt">{{ __('messages.reports.full_project_report') }}</div>
             <div class="panel-body">
                 <p class="text-muted">{{ __('messages.reports.full_project_report_help') }}</p>
-                <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-primary btn-block">
-                    {{ __('messages.reports.download_full_project_markdown') }}
-                </a>
+                <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-primary btn-block">{{ __('messages.reports.download_full_project_markdown') }}</a>
+                <a href="{{ route('projects.reports.full-project.html', $project) }}" class="btn btn-default btn-block">Full Project HTML</a>
+                <a href="{{ route('projects.reports.full-project.pdf', $project) }}" class="btn btn-default btn-block">Full Project PDF</a>
             </div>
         </div>
     </div>
@@ -160,7 +160,11 @@
                                     <td><span class="label label-{{ $gate->final_decision_css }}">{{ $gate->final_decision_label }}</span></td>
                                     <td>{{ $gate->score }}</td>
                                     <td>{{ $gate->created_at->format('Y-m-d H:i') }}</td>
-                                    <td class="text-right"><a href="{{ route('projects.release-gates.markdown', [$project, $gate]) }}" class="btn btn-xs btn-primary">{{ __('messages.release_gates.download_markdown') }}</a></td>
+                                    <td class="text-right">
+                                        <a href="{{ route('projects.release-gates.markdown', [$project, $gate]) }}" class="btn btn-xs btn-primary">MD</a>
+                                        <a href="{{ route('projects.release-gates.html', [$project, $gate]) }}" class="btn btn-xs btn-default">HTML</a>
+                                        <a href="{{ route('projects.release-gates.pdf', [$project, $gate]) }}" class="btn btn-xs btn-default">PDF</a>
+                                    </td>
                                 </tr>
                             @endforeach
                             </tbody>
@@ -188,7 +192,11 @@
                                 <td>{{ $scanRun->started_at?->format('Y-m-d H:i') ?: $scanRun->created_at->format('Y-m-d H:i') }}</td>
                                 <td><span class="label label-{{ $scanRun->status_css }}">{{ $scanRun->status_label }}</span></td>
                                 <td>{{ $scanRun->scanned_count }}</td>
-                                <td class="text-right"><a href="{{ route('projects.reports.scans.markdown', [$project, $scanRun]) }}" class="btn btn-xs btn-primary">{{ __('messages.reports.download_markdown') }}</a></td>
+                                <td class="text-right">
+                                    <a href="{{ route('projects.reports.scans.markdown', [$project, $scanRun]) }}" class="btn btn-xs btn-primary">MD</a>
+                                    <a href="{{ route('projects.reports.scans.html', [$project, $scanRun]) }}" class="btn btn-xs btn-default">HTML</a>
+                                    <a href="{{ route('projects.reports.scans.pdf', [$project, $scanRun]) }}" class="btn btn-xs btn-default">PDF</a>
+                                </td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -212,7 +220,11 @@
                                 <td>{{ $compareRun->snapshotA?->name }}</td>
                                 <td>{{ $compareRun->snapshotB?->name }}</td>
                                 <td>{{ $compareRun->summary_json['total_changes'] ?? 0 }}</td>
-                                <td class="text-right"><a href="{{ route('projects.reports.compares.markdown', [$project, $compareRun]) }}" class="btn btn-xs btn-primary">{{ __('messages.reports.download_markdown') }}</a></td>
+                                <td class="text-right">
+                                    <a href="{{ route('projects.reports.compares.markdown', [$project, $compareRun]) }}" class="btn btn-xs btn-primary">MD</a>
+                                    <a href="{{ route('projects.reports.compares.html', [$project, $compareRun]) }}" class="btn btn-xs btn-default">HTML</a>
+                                    <a href="{{ route('projects.reports.compares.pdf', [$project, $compareRun]) }}" class="btn btn-xs btn-default">PDF</a>
+                                </td>
                             </tr>
                         @endforeach
                         </tbody>

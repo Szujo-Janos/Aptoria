@@ -1,7 +1,7 @@
-# Aptoria v1.0.86 QA Checklist
+# Aptoria v1.0.87 QA Checklist
 
-Release: **v1.0.86 - Export Credit Setting Runtime Hotfix**
-ZIP: `aptoria-1.0.86.zip`
+Release: **v1.0.87 - HTML & PDF Report Export Pass**
+ZIP: `aptoria-1.0.87.zip`
 
 ## Export Credit Checks
 
@@ -16,6 +16,18 @@ ZIP: `aptoria-1.0.86.zip`
 - [ ] Export QA Evidence Pack ZIP and confirm `APTORIA_CREDITS.txt` is included.
 - [ ] Export calendar `.ics` and confirm the calendar metadata references Aptoria.
 - [ ] Export endpoint inventory CSV and confirm the Aptoria attribution columns are present.
+
+
+## HTML / PDF Report Checks
+
+- [ ] Open a project Reports center and confirm Full Project export buttons show Markdown, HTML and PDF options.
+- [ ] Download Full Project HTML and confirm it opens with Aptoria header, readable tables and footer credit.
+- [ ] Download Full Project PDF and confirm it opens in a PDF viewer with readable text and Aptoria footer.
+- [ ] Download Release Readiness HTML and PDF.
+- [ ] Download a QA Release Gate as Markdown, HTML and PDF.
+- [ ] Download a Scan report as Markdown, HTML and PDF.
+- [ ] Download a Snapshot Compare report as Markdown, HTML and PDF.
+- [ ] Use the custom report builder and generate Markdown, HTML and PDF from the same selected sections.
 
 ## Regression Checks
 
@@ -37,9 +49,9 @@ ZIP: `aptoria-1.0.86.zip`
 
 ## Release Package Hygiene
 
-- [ ] ZIP root folder is `aptoria-1.0.86/`.
-- [ ] ZIP contains `VERSION` with `1.0.86`.
-- [ ] ZIP contains `docs/SYSTEM_AUDIT_v1.0.86.md`.
+- [ ] ZIP root folder is `aptoria-1.0.87/`.
+- [ ] ZIP contains `VERSION` with `1.0.87`.
+- [ ] ZIP contains `docs/SYSTEM_AUDIT_v1.0.87.md`.
 - [ ] ZIP contains `.github/workflows/php.yml`.
 - [ ] ZIP contains Windows/XAMPP PowerShell scripts.
 - [ ] ZIP contains `public/assets/aptoria-ui/vendor`.
