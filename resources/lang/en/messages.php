@@ -45,6 +45,7 @@ return array (
     'create_project' => 'Create Project',
     'environments_auth_profiles' => 'Environments & Auth Profiles',
     'endpoints' => 'Endpoints',
+    'endpoint_inventory' => 'Endpoint Inventory',
     'scans' => 'Scans',
     'snapshots' => 'Snapshots',
     'reports' => 'Reports',
@@ -497,6 +498,110 @@ return array (
     'openapi_path_params_auto_defaults_note' => 'Common project-level test values are created automatically during import when placeholders are found.',
     'single' => 'Endpoint',
     'risk' => 'Risk',
+  ),
+
+  'endpoint_inventory' => 
+  array (
+    'title' => 'Endpoint Inventory',
+    'short_title' => 'Inventory',
+    'intro' => 'Review the complete API endpoint catalogue with environment, auth, last scan evidence, risk, findings and coverage gaps in one audit-focused view.',
+    'table_title' => 'Endpoint inventory matrix',
+    'rows' => 'rows',
+    'scan' => 'Scan state',
+    'coverage' => 'Coverage',
+    'source' => 'Source',
+    'last_scan' => 'Last scan',
+    'findings_count' => 'Open findings',
+    'empty_title' => 'No endpoints match the current inventory filters.',
+    'empty_help' => 'Reset the filters, import an API collection or add endpoint inventory manually.',
+    'metrics' => 
+    array (
+      'total' => 'Endpoints',
+      'scanned' => 'Scan coverage',
+      'review_queue' => 'Risk review queue',
+      'open_findings' => 'Open findings',
+      'auth_required' => 'Auth required',
+      'avg_response_time' => 'Avg response time',
+    ),
+    'filters' => 
+    array (
+      'title' => 'Inventory filters',
+      'search' => 'Search',
+      'search_placeholder' => 'Path, name, tag or description...',
+      'all_methods' => 'All methods',
+      'all_risks' => 'All risks',
+      'all_environments' => 'All environments',
+      'all_auth' => 'All auth states',
+      'all_scan_states' => 'All scan states',
+      'all_findings' => 'All finding states',
+      'all_coverage' => 'All coverage states',
+      'all_sources' => 'All sources',
+      'all_statuses' => 'All endpoint states',
+      'sort' => 'Sort',
+    ),
+    'auth_filters' => 
+    array (
+      'required' => 'Auth required',
+      'public' => 'Public / unknown',
+      'profile' => 'Has auth profile',
+      'missing_profile' => 'Auth required without profile',
+    ),
+    'scan_filters' => 
+    array (
+      'scanned' => 'Scanned',
+      'not_scanned' => 'Not scanned',
+      'passed' => 'Completed',
+      'failed' => 'Failed',
+      'skipped' => 'Skipped',
+    ),
+    'finding_filters' => 
+    array (
+      'open' => 'Has open findings',
+      'none' => 'No open findings',
+    ),
+    'coverage_filters' => 
+    array (
+      'missing_assertions' => 'Missing assertions',
+      'missing_test_cases' => 'Missing test cases',
+      'missing_expected_status' => 'Missing expected status',
+      'missing_expected_content_type' => 'Missing expected content type',
+    ),
+    'status_filters' => 
+    array (
+      'active' => 'Active and scan-ready',
+      'inactive' => 'Inactive',
+      'excluded' => 'Excluded from scan',
+    ),
+    'sort' => 
+    array (
+      'risk' => 'Risk first',
+      'method' => 'Method',
+      'path' => 'Path',
+      'newest' => 'Newest first',
+      'oldest' => 'Oldest first',
+    ),
+    'sources' => 
+    array (
+      'postman' => 'Postman',
+      'openapi' => 'OpenAPI',
+      'manual' => 'Manual / CSV',
+    ),
+    'scan_states' => 
+    array (
+      'not_scanned' => 'Not scanned',
+    ),
+    'flags' => 
+    array (
+      'ready' => 'Ready',
+      'not_scanned' => 'Not scanned',
+      'open_findings' => ':count open',
+      'missing_assertions' => 'No assertions',
+      'missing_test_cases' => 'No test cases',
+      'missing_expected_status' => 'No expected status',
+      'missing_auth_profile' => 'Missing auth profile',
+      'inactive' => 'Inactive',
+      'excluded' => 'Excluded',
+    ),
   ),
   'risk' => 
   array (

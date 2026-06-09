@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnvironmentController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\EndpointController;
+use App\Http\Controllers\EndpointInventoryController;
 use App\Http\Controllers\EndpointPathParameterController;
 use App\Http\Controllers\FindingController;
 use App\Http\Controllers\FindingEvidenceController;
@@ -146,6 +147,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('projects/{project}/snapshots/{snapshot}', [SnapshotController::class, 'show'])->name('projects.snapshots.show');
     Route::post('projects/{project}/snapshots/compare', [SnapshotController::class, 'compare'])->name('projects.snapshots.compare');
     Route::get('projects/{project}/snapshot-compares/{compareRun}', [SnapshotController::class, 'showCompare'])->name('projects.snapshots.compares.show');
+    Route::get('projects/{project}/endpoint-inventory', EndpointInventoryController::class)->name('projects.endpoint-inventory.index');
     Route::post('projects/{project}/endpoints/{endpoint}/probe', [ScanController::class, 'probeEndpoint'])->name('projects.endpoints.probe');
     Route::post('projects/{project}/endpoints/{endpoint}/path-parameters', [EndpointPathParameterController::class, 'update'])->name('projects.endpoints.path-parameters.update');
     Route::get('projects/{project}/endpoints/import', [EndpointController::class, 'importForm'])->name('projects.endpoints.import.form');

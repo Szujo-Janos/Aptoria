@@ -8,6 +8,7 @@
         <div class="hpanel">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
+                    <a href="{{ route('projects.endpoint-inventory.index', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-list-alt"></i> {{ __('messages.endpoint_inventory.short_title') }}</a>
                     <a href="{{ route('projects.endpoints.import.form', $project) }}" class="btn btn-xs btn-info">{{ __('messages.endpoints.import_title') }}</a>
                     <a href="{{ route('projects.endpoints.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.endpoints.new') }}</a>
                 </div>

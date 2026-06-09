@@ -47,7 +47,7 @@
                                     <div class="aptoria-project-info-card">
                                         <h5 class="aptoria-card-title">{{ __('messages.projects.operational_summary') }}</h5>
                                         <dl class="dl-horizontal aptoria-project-dl">
-                                            <dt>{{ __('messages.projects.endpoints') }}</dt><dd><a href="{{ route('projects.endpoints.index', $project) }}">{{ $project->endpoints_count }}</a></dd>
+                                            <dt>{{ __('messages.projects.endpoints') }}</dt><dd><a href="{{ route('projects.endpoint-inventory.index', $project) }}">{{ $project->endpoints_count }}</a></dd>
                                             <dt>{{ __('messages.projects.scans') }}</dt><dd><a href="{{ route('projects.scans.index', $project) }}">{{ $project->scan_runs_count }}</a></dd>
                                             <dt>{{ __('messages.monitors.title') }}</dt><dd><a href="{{ route('projects.monitors.index', $project) }}">{{ $project->api_monitors_count }}</a></dd>
                                             <dt>{{ __('messages.test_suites.title') }}</dt><dd><a href="{{ route('projects.test-suites.index', $project) }}">{{ $project->test_suites_count }}</a></dd>
@@ -613,6 +613,7 @@
         <div class="hpanel hyellow">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
+                    <a href="{{ route('projects.endpoint-inventory.index', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.endpoint_inventory.short_title') }}</a>
                     <a href="{{ route('projects.endpoints.import.form', $project) }}" class="btn btn-xs btn-info">{{ __('messages.endpoints.import_title') }}</a>
                     <a href="{{ route('projects.endpoints.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.endpoints.new') }}</a>
                     <a href="{{ route('projects.endpoints.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.endpoints.view_all') }}</a>

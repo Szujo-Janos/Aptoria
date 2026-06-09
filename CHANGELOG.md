@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.1 - Endpoint Inventory Pass
+
+- Added a dedicated project Endpoint Inventory page at `/projects/{project}/endpoint-inventory`.
+- Added endpoint audit columns for method, path, environment, auth state, risk, latest scan, HTTP status, response time, open findings, source and coverage gaps.
+- Added server-side filters for method, risk, environment, auth state, scan state, findings, coverage gaps, import source and endpoint status.
+- Added endpoint inventory summary metrics for scan coverage, risk review queue, auth-required endpoints, open findings and average response time.
+- Linked Endpoint Inventory from the project sidebar, project details and endpoint list.
+- Added English/Hungarian localization and regression coverage for the Endpoint Inventory view.
+
 ## v1.1.0 - Postman Compatibility, Globals & Newman Import Pass
 
 - Combined the planned v1.0.99 and v1.1.0 work into one cumulative release.

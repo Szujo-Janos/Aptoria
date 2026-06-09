@@ -621,7 +621,7 @@ class EndpointImportService
 
             $response = Http::timeout(20)
                 ->connectTimeout(10)
-                ->withHeaders(['User-Agent' => 'Aptoria/'.config('aptoria.version', '1.1.0').' Collection Import'])
+                ->withHeaders(['User-Agent' => 'Aptoria/'.config('aptoria.version', '1.1.1').' Collection Import'])
                 ->withOptions([
                     'allow_redirects' => false,
                     'http_errors' => false,

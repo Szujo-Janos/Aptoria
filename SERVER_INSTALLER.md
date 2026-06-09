@@ -1,6 +1,6 @@
 # Aptoria Server First-Run Installer
 
-Current version: **v1.1.0**
+Current version: **v1.1.1**
 
 Aptoria contains a first-run setup flow for fresh deployments. Until the application is installed and locked, normal web pages redirect to `/setup`.
 
@@ -34,15 +34,15 @@ This file must never be included in release ZIPs or committed to Git.
 ## Windows/XAMPP recommended update flow
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.0.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.0"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.1.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.1"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.0\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.1\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -121,3 +121,8 @@ C:\xampp\php\php.exe artisan aptoria:health
 ```
 
 Admin users can also open **System Health** in the sidebar. The JSON endpoint is available at `/system/health.json` for machine-readable checks.
+
+
+## Post-install endpoint inventory smoke test
+
+After installation and migration, create or import a project, then open **Project → Endpoint Inventory** to confirm endpoint catalogue rendering, filters and localization.

@@ -45,6 +45,7 @@ return array (
     'create_project' => 'Új projekt',
     'environments_auth_profiles' => 'Környezetek és auth profilok',
     'endpoints' => 'Endpointok',
+    'endpoint_inventory' => 'Endpoint inventory',
     'scans' => 'Scanek',
     'snapshots' => 'Snapshotok',
     'reports' => 'Riportok',
@@ -497,6 +498,110 @@ return array (
     'openapi_path_params_auto_defaults_note' => 'Placeholder észlelésekor az import automatikusan létrehoz gyakori projekt szintű tesztértékeket.',
     'single' => 'Endpoint',
     'risk' => 'Kockázat',
+  ),
+
+  'endpoint_inventory' => 
+  array (
+    'title' => 'Endpoint inventory',
+    'short_title' => 'Inventory',
+    'intro' => 'Egy audit fókuszú nézetben áttekinthető a teljes API endpoint katalógus: környezet, auth, utolsó scan bizonyíték, kockázat, findingok és lefedettségi hiányok.',
+    'table_title' => 'Endpoint inventory mátrix',
+    'rows' => 'sor',
+    'scan' => 'Scan állapot',
+    'coverage' => 'Lefedettség',
+    'source' => 'Forrás',
+    'last_scan' => 'Utolsó scan',
+    'findings_count' => 'Nyitott findingok',
+    'empty_title' => 'Nincs endpoint a jelenlegi inventory szűrők mellett.',
+    'empty_help' => 'Állítsd vissza a szűrőket, importálj API collectiont, vagy vegyél fel endpointot kézzel.',
+    'metrics' => 
+    array (
+      'total' => 'Endpointok',
+      'scanned' => 'Scan lefedettség',
+      'review_queue' => 'Kockázati review sor',
+      'open_findings' => 'Nyitott findingok',
+      'auth_required' => 'Auth szükséges',
+      'avg_response_time' => 'Átlagos válaszidő',
+    ),
+    'filters' => 
+    array (
+      'title' => 'Inventory szűrők',
+      'search' => 'Keresés',
+      'search_placeholder' => 'Path, név, tag vagy leírás...',
+      'all_methods' => 'Minden metódus',
+      'all_risks' => 'Minden kockázat',
+      'all_environments' => 'Minden környezet',
+      'all_auth' => 'Minden auth állapot',
+      'all_scan_states' => 'Minden scan állapot',
+      'all_findings' => 'Minden finding állapot',
+      'all_coverage' => 'Minden lefedettségi állapot',
+      'all_sources' => 'Minden forrás',
+      'all_statuses' => 'Minden endpoint állapot',
+      'sort' => 'Rendezés',
+    ),
+    'auth_filters' => 
+    array (
+      'required' => 'Auth szükséges',
+      'public' => 'Publikus / ismeretlen',
+      'profile' => 'Van auth profil',
+      'missing_profile' => 'Auth szükséges, de nincs profil',
+    ),
+    'scan_filters' => 
+    array (
+      'scanned' => 'Scannelve',
+      'not_scanned' => 'Nincs scannelve',
+      'passed' => 'Lefutott',
+      'failed' => 'Hibás',
+      'skipped' => 'Kihagyva',
+    ),
+    'finding_filters' => 
+    array (
+      'open' => 'Van nyitott finding',
+      'none' => 'Nincs nyitott finding',
+    ),
+    'coverage_filters' => 
+    array (
+      'missing_assertions' => 'Hiányzó assertionök',
+      'missing_test_cases' => 'Hiányzó test case-ek',
+      'missing_expected_status' => 'Hiányzó elvárt státusz',
+      'missing_expected_content_type' => 'Hiányzó elvárt content type',
+    ),
+    'status_filters' => 
+    array (
+      'active' => 'Aktív és scan-ready',
+      'inactive' => 'Inaktív',
+      'excluded' => 'Scanből kizárt',
+    ),
+    'sort' => 
+    array (
+      'risk' => 'Kockázat előre',
+      'method' => 'Metódus',
+      'path' => 'Path',
+      'newest' => 'Legújabb előre',
+      'oldest' => 'Legrégebbi előre',
+    ),
+    'sources' => 
+    array (
+      'postman' => 'Postman',
+      'openapi' => 'OpenAPI',
+      'manual' => 'Kézi / CSV',
+    ),
+    'scan_states' => 
+    array (
+      'not_scanned' => 'Nincs scannelve',
+    ),
+    'flags' => 
+    array (
+      'ready' => 'Rendben',
+      'not_scanned' => 'Nincs scannelve',
+      'open_findings' => ':count nyitott',
+      'missing_assertions' => 'Nincs assertion',
+      'missing_test_cases' => 'Nincs test case',
+      'missing_expected_status' => 'Nincs elvárt státusz',
+      'missing_auth_profile' => 'Hiányzó auth profil',
+      'inactive' => 'Inaktív',
+      'excluded' => 'Kizárt',
+    ),
   ),
   'risk' => 
   array (

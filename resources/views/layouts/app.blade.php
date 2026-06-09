@@ -56,6 +56,7 @@
         'projects.qa-evidence.*',
         'projects.contract-validations.*',
         'projects.findings.*',
+        'projects.endpoint-inventory.*',
         'projects.endpoints.*',
         'projects.scans.*',
         'projects.snapshots.*',
@@ -258,6 +259,7 @@
                     @if($aptoriaCurrentProject)
                         <li class="nav-header"><span>{{ __('messages.nav.project_modules') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.show', 'projects.edit', 'projects.environments.*', 'projects.auth-profiles.*', 'projects.settings.*') }}"><a href="{{ route('projects.show', $aptoriaCurrentProject) }}"><i class="fa fa-info-circle"></i> {{ __('messages.projects.details') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.endpoint-inventory.*') }}"><a href="{{ route('projects.endpoint-inventory.index', $aptoriaCurrentProject) }}"><i class="fa fa-list-alt"></i> {{ __('messages.nav.endpoint_inventory') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.endpoints.*', 'projects.assertion-rules.*') }}"><a href="{{ route('projects.endpoints.index', $aptoriaCurrentProject) }}"><i class="fa fa-sitemap"></i> {{ __('messages.nav.endpoints') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-suites.*') }}"><a href="{{ route('projects.test-suites.index', $aptoriaCurrentProject) }}"><i class="fa fa-folder-open"></i> {{ __('messages.test_suites.title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-cases.*') }}"><a href="{{ route('projects.test-cases.index', $aptoriaCurrentProject) }}"><i class="fa fa-check-square-o"></i> {{ __('messages.test_cases.title') }}</a></li>

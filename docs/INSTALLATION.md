@@ -1,6 +1,6 @@
 # Aptoria Installation
 
-Current version: **v1.1.0**
+Current version: **v1.1.1**
 
 Aptoria is built for self-hosted Laravel deployment. The primary tested local workflow is Windows/XAMPP, with Linux/VPS scripts provided as helpers.
 
@@ -28,15 +28,15 @@ The update script installs dependencies and prepares local runtime folders.
 Use this exact PowerShell template for ZIP-based local updates:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.0.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.0"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.1.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.1"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.0\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.1\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -112,7 +112,7 @@ On the first successful login after creating the admin account, Aptoria redirect
 
 ## First project onboarding
 
-After profile review, open **Projects → Guided Project**. The v1.1.0 onboarding wizard creates the first usable project workspace in one pass:
+After profile review, open **Projects → Guided Project**. The v1.1.1 onboarding wizard creates the first usable project workspace in one pass:
 
 - project name and base URL;
 - first environment;
@@ -248,3 +248,8 @@ The page and command check PHP extensions, storage permissions, database connect
 ## API collection import smoke check
 
 After creating a project, open **Project → Endpoints → Import Endpoints**. Use the Postman sample button, preview the collection, then confirm the import. Verify that endpoint rows are created and that imported request metadata is visible on endpoint detail pages.
+
+
+## Endpoint inventory check
+
+After importing endpoints or creating a guided project, open **Project → Endpoint Inventory**. This page should show a consolidated audit catalogue with scan coverage, risk, auth state, findings and coverage gaps.

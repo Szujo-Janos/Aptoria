@@ -1,11 +1,11 @@
-# Aptoria v1.1.0 QA Checklist
+# Aptoria v1.1.1 QA Checklist
 
-Release: **v1.1.0 - Postman Compatibility, Globals & Newman Import Pass**
-ZIP: `aptoria-1.1.0.zip`
+Release: **v1.1.1 - Endpoint Inventory Pass**
+ZIP: `aptoria-1.1.1.zip`
 
 ## Install / update
 
-- [ ] Install from `aptoria-1.1.0.zip` using the documented PowerShell template.
+- [ ] Install from `aptoria-1.1.1.zip` using the documented PowerShell template.
 - [ ] Run `php artisan optimize:clear`.
 - [ ] Run `php artisan migrate`.
 - [ ] Run `php artisan aptoria:health`.
@@ -34,11 +34,20 @@ ZIP: `aptoria-1.1.0.zip`
 
 ## Hygiene
 
-- [ ] ZIP root folder is `aptoria-1.1.0/`.
-- [ ] ZIP contains `VERSION` with `1.1.0`.
+- [ ] ZIP root folder is `aptoria-1.1.1/`.
+- [ ] ZIP contains `VERSION` with `1.1.1`.
 - [ ] ZIP does not contain root `vendor/`.
 - [ ] ZIP does not contain `.env`.
 - [ ] ZIP does not contain `database/database.sqlite`.
 - [ ] ZIP does not contain `storage/app/installed.lock`.
 - [ ] ZIP does not contain `storage/app/setup-token.txt`.
 - [ ] ZIP keeps `public/assets/aptoria-ui/vendor`.
+
+
+## Endpoint Inventory QA
+
+- [ ] Open a project and click **Endpoint Inventory** from the project module sidebar.
+- [ ] Confirm the page shows method, path, environment, auth, risk, latest scan, HTTP status, response time, open findings, source and coverage columns.
+- [ ] Filter by method, risk, auth-required, not scanned, open findings and source.
+- [ ] Confirm the probe/details/edit buttons work from the inventory table.
+- [ ] Switch to Hungarian and confirm no raw `messages.endpoint_inventory...` keys appear.
