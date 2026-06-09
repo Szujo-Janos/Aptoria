@@ -205,6 +205,7 @@
                         <li><a href="{{ route('calendar.index') }}"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a></li>
                         <li><a href="{{ route('release-readiness.index') }}"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness') }}</a></li>
                         <li><a href="{{ route('help.index') }}"><i class="fa fa-question-circle"></i> {{ __('messages.nav.help') }}</a></li>
+                        <li><a href="{{ route('profile.show') }}"><i class="fa fa-user"></i> {{ __('messages.nav.my_profile') }}</a></li>
                         <li><a href="{{ route('settings.index') }}"><i class="fa fa-cog"></i> {{ __('messages.nav.settings') }}</a></li>
                         <li class="divider"></li>
                         <li>

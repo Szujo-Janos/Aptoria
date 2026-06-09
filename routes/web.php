@@ -31,6 +31,7 @@ use App\Http\Controllers\SnapshotController;
 use App\Http\Controllers\TestCaseController;
 use App\Http\Controllers\TestExecutionDashboardController;
 use App\Http\Controllers\TestSuiteController;
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingPageController::class)->name('landing');
@@ -54,6 +55,9 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/profile', [UserProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [UserProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [UserProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
 
 Route::middleware(['auth', 'admin'])->group(function (): void {

@@ -1,10 +1,10 @@
 <?php
 
 $aptoriaVersionFile = base_path('VERSION');
-$aptoriaVersion = is_file($aptoriaVersionFile) ? trim((string) file_get_contents($aptoriaVersionFile)) : '1.0.76';
+$aptoriaVersion = is_file($aptoriaVersionFile) ? trim((string) file_get_contents($aptoriaVersionFile)) : '1.0.83';
 
 return [
-    'version' => $aptoriaVersion !== '' ? $aptoriaVersion : '1.0.76',
+    'version' => $aptoriaVersion !== '' ? $aptoriaVersion : '1.0.83',
     'product_name' => 'Aptoria',
     'positioning' => 'Self-hosted API QA workflow, evidence and release gate platform.',
     'default_locale' => env('APTORIA_DEFAULT_LOCALE', 'en'),

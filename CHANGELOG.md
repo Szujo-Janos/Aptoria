@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.83 - User Profile Center
+
+- Added an authenticated user profile center at `/profile`.
+- Added profile editing for name, e-mail, interface language and timezone.
+- Added a separate password change form with current-password verification.
+- Added account information and activity summary panels.
+- Added profile navigation to the user dropdown.
+- Added user `locale` and `timezone` persistence.
+- Added profile feature regression coverage.
+- Bumped VERSION to `1.0.83`.
+
 ## v1.0.82 - Optional Vendor Plugin Guard Hotfix
 
 - Guarded Aptoria UI initialization for optional vendor plugins so public/auth pages do not throw JavaScript errors when sidebar-only plugins are not loaded.

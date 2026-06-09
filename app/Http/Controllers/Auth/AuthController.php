@@ -46,6 +46,11 @@ class AuthController extends Controller
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
 
+            $locale = Auth::user()?->locale;
+            if (is_string($locale) && in_array($locale, array_keys(config('aptoria.supported_locales', ['en' => 'English'])), true)) {
+                $request->session()->put('locale', $locale);
+            }
+
             return redirect()->intended(route($runtime->defaultLandingRouteName()))->with('success', __('messages.auth.login_success'));
         }
 
