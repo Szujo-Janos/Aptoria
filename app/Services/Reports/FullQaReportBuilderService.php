@@ -18,6 +18,14 @@ use Illuminate\Support\Collection;
 
 class FullQaReportBuilderService
 {
+    public const REPORT_PROFILE_EXECUTIVE = 'executive';
+    public const REPORT_PROFILE_TECHNICAL = 'technical';
+
+    public const REPORT_PROFILES = [
+        self::REPORT_PROFILE_EXECUTIVE,
+        self::REPORT_PROFILE_TECHNICAL,
+    ];
+
     public const SECTION_EXECUTIVE_SUMMARY = 'executive_summary';
     public const SECTION_RELEASE_READINESS = 'release_readiness';
     public const SECTION_RELEASE_GATE = 'release_gate';
@@ -84,18 +92,80 @@ class FullQaReportBuilderService
         ];
     }
 
+    /** @return array<string, string> */
+    public static function reportProfileOptions(): array
+    {
+        return [
+            self::REPORT_PROFILE_EXECUTIVE => __('messages.report_builder.profiles.executive'),
+            self::REPORT_PROFILE_TECHNICAL => __('messages.report_builder.profiles.technical'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function profileOptions(string $profile): array
+    {
+        return match ($profile) {
+            self::REPORT_PROFILE_EXECUTIVE => [
+                'title' => __('messages.report_builder.profile_titles.executive'),
+                'audience' => 'management',
+                'decision' => 'conditional',
+                'scope_notes' => __('messages.report_builder.profile_scope_notes.executive'),
+                'sections' => [
+                    self::SECTION_EXECUTIVE_SUMMARY,
+                    self::SECTION_RELEASE_READINESS,
+                    self::SECTION_RELEASE_GATE,
+                    self::SECTION_RECOMMENDATIONS,
+                    self::SECTION_APPENDIX,
+                ],
+                'problem_endpoints_only' => true,
+                'include_evidence_details' => false,
+                'include_technical_details' => false,
+                'endpoint_limit' => 25,
+                'test_case_limit' => 25,
+                'finding_limit' => 15,
+                'contract_result_limit' => 25,
+            ],
+            self::REPORT_PROFILE_TECHNICAL => [
+                'title' => __('messages.report_builder.profile_titles.technical'),
+                'audience' => 'internal',
+                'decision' => 'draft',
+                'scope_notes' => __('messages.report_builder.profile_scope_notes.technical'),
+                'sections' => [
+                    self::SECTION_RELEASE_READINESS,
+                    self::SECTION_QA_COVERAGE,
+                    self::SECTION_TEST_EXECUTION,
+                    self::SECTION_TEST_SUITES_CASES,
+                    self::SECTION_FINDINGS_EVIDENCE,
+                    self::SECTION_CONTRACT_VALIDATION,
+                    self::SECTION_SCANS_SNAPSHOTS,
+                    self::SECTION_ENDPOINT_INVENTORY,
+                    self::SECTION_RECOMMENDATIONS,
+                    self::SECTION_APPENDIX,
+                ],
+                'problem_endpoints_only' => false,
+                'include_evidence_details' => true,
+                'include_technical_details' => true,
+                'endpoint_limit' => 250,
+                'test_case_limit' => 250,
+                'finding_limit' => 250,
+                'contract_result_limit' => 250,
+            ],
+            default => self::profileOptions(self::REPORT_PROFILE_TECHNICAL),
+        };
+    }
+
     /** @param array<string, mixed> $options */
     public function markdown(Project $project, array $options = []): string
     {
         $project->loadMissing([
-            'environments',
+            'environments.authProfile',
             'authProfiles',
             'endpoints.environment.authProfile',
             'endpoints.authProfile',
             'endpoints.latestScanResult',
             'endpoints.assertionRules',
             'endpoints.testCases.latestResult',
-            'endpoints.findings.evidence',
+            'endpoints.findings.evidence.capturedBy',
             'testSuites.testCases.endpoint',
             'testCases.testSuite',
             'testCases.endpoint',
@@ -108,7 +178,8 @@ class FullQaReportBuilderService
             'contractValidationRuns.scanRun.environment',
             'findings.endpoint',
             'findings.testCase',
-            'findings.evidence',
+            'findings.evidence.capturedBy',
+            'findings.lifecycleChangedBy',
             'qaReleaseGates',
         ]);
         $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates']);
@@ -127,6 +198,12 @@ class FullQaReportBuilderService
         $lines[] = '';
         $lines[] = '**Project:** '.$this->md($project->name);
         $lines[] = '**Base URL:** '.$this->md($project->display_base_url);
+        foreach ($this->credits->projectBrandingMarkdownLines($project) as $brandingLine) {
+            $lines[] = $this->mdLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         $lines[] = '**Audience:** '.$this->md($this->audienceLabel((string) ($options['audience'] ?? 'internal')));
         $lines[] = '**Release decision:** '.$this->md($this->decisionLabel((string) ($options['decision'] ?? 'draft')));
         $lines[] = '**Generated:** '.now()->format('Y-m-d H:i:s');
@@ -192,6 +269,10 @@ class FullQaReportBuilderService
             );
         }
 
+        if ((bool) ($options['include_technical_details'] ?? false)) {
+            $this->appendTechnicalRequestResponseEvidence($lines, $project, (int) ($options['endpoint_limit'] ?? 50));
+        }
+
         if (in_array(self::SECTION_RECOMMENDATIONS, $sections, true)) {
             $this->appendRecommendations($lines, $summary, $coverage['summary']);
         }
@@ -230,6 +311,10 @@ class FullQaReportBuilderService
         $lines[] = '| Contract validation runs | '.$project->contract_validation_runs_count.' |';
         $lines[] = '| Findings | '.$project->findings_count.' |';
         $lines[] = '| Open findings | '.$summary['finding_counts']['open'].' |';
+        $lines[] = '| Reopened findings | '.($summary['finding_counts']['reopened'] ?? 0).' |';
+        $lines[] = '| Fixed findings | '.($summary['finding_counts']['fixed'] ?? 0).' |';
+        $lines[] = '| False positives | '.($summary['finding_counts']['false_positive'] ?? 0).' |';
+        $lines[] = '| Accepted risks | '.($summary['finding_counts']['accepted_risk'] ?? 0).' |';
         $lines[] = '| Release readiness | '.$this->md($summary['label']).' |';
         $lines[] = '| Release score | '.$summary['score'].' / 100 |';
         $lines[] = '| QA coverage | '.$coverageSummary['coverage_percent'].'% |';
@@ -239,7 +324,23 @@ class FullQaReportBuilderService
         $lines[] = '';
     }
 
-    /** @param array<int, string> $lines @param array<string, mixed> $summary */
+    /** @param array<int, string> $lines */
+    private function appendEnvironmentMatrix(array &$lines, Project $project): void
+    {
+        if ($project->environments->isEmpty()) {
+            return;
+        }
+
+        $lines[] = '## Environment Matrix';
+        $lines[] = '';
+        $lines[] = '| Environment | Type | Base URL | Auth profile | Production |';
+        $lines[] = '|---|---|---|---|---|';
+        foreach ($project->environments as $environment) {
+            $lines[] = '| '.$this->md($environment->name).' | '.$this->md($environment->environment_type_label).' | '.$this->md($environment->display_base_url).' | '.$this->md($environment->authProfile?->name ?: __('messages.environments.use_project_default_auth')).' | '.($environment->is_production ? __('messages.common.yes') : __('messages.common.no')).' |';
+        }
+        $lines[] = '';
+    }
+
     private function appendReleaseReadiness(array &$lines, array $summary): void
     {
         $lines[] = '## Release Readiness';
@@ -252,6 +353,8 @@ class FullQaReportBuilderService
         $lines[] = '| Blocking issues | '.count($summary['blocking_issues']).' |';
         $lines[] = '| Warnings | '.count($summary['warnings']).' |';
         $lines[] = '';
+
+        $this->appendFindingLifecycleStatusSummary($lines, $summary['finding_counts']);
 
         $this->appendIssueList($lines, 'Blocking Issues', $summary['blocking_issues']);
         $this->appendIssueList($lines, 'Warnings', $summary['warnings']);
@@ -410,18 +513,24 @@ class FullQaReportBuilderService
 
         $lines[] = '## Findings & Evidence';
         $lines[] = '';
+        $statusCounts = collect(Finding::LIFECYCLE_STATUSES)
+            ->mapWithKeys(fn (string $status): array => [$status => $project->findings->where('status', $status)->count()])
+            ->all();
+        $this->appendFindingLifecycleStatusSummary($lines, ['status_counts' => $statusCounts]);
+
         if ($openFindings->isEmpty()) {
             $lines[] = 'No open findings were recorded.';
             $lines[] = '';
             return;
         }
 
-        $lines[] = '| Severity | Status | Source | Finding | Endpoint | Test Case | Evidence |';
-        $lines[] = '|---|---|---|---|---|---|---:|';
+        $lines[] = '| Severity | Status | Source | Finding | Endpoint | Test Case | Last lifecycle change | Evidence |';
+        $lines[] = '|---|---|---|---|---|---|---|---:|';
         foreach ($openFindings as $finding) {
             $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
             $testCase = $finding->testCase?->title ?: 'n/a';
-            $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->source_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$this->md($testCase).' | '.$finding->evidence->count().' |';
+            $lastLifecycleChange = $finding->lifecycle_changed_at ? $finding->lifecycle_changed_at->format('Y-m-d H:i') : 'n/a';
+            $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->source_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$this->md($testCase).' | '.$this->md($lastLifecycleChange).' | '.$finding->evidence->count().' |';
         }
         $lines[] = '';
 
@@ -438,7 +547,22 @@ class FullQaReportBuilderService
             $lines[] = '- **Actual:** '.$this->md($finding->actual_result ?: 'n/a');
             $lines[] = '- **Recommendation:** '.$this->md($finding->recommendation ?: 'n/a');
             foreach ($finding->evidence as $evidence) {
-                $lines[] = '- **'.$this->md($evidence->type_label).':** '.$this->md($evidence->source_label ?: 'Evidence').' — '.$this->md($evidence->content ?: $evidence->url ?: 'n/a');
+                $attachment = $evidence->has_attachment ? ' · attachment: '.$evidence->attachment_original_name.' ('.$evidence->attachment_size_label.')' : '';
+                $captured = $evidence->captured_at ? ' · captured: '.$evidence->captured_at->format('Y-m-d H:i') : '';
+                $by = $evidence->capturedBy ? ' · by: '.$evidence->capturedBy->name : '';
+                $lines[] = '- **'.$this->md($evidence->type_label).':** '.$this->md($evidence->source_label ?: 'Evidence').' — '.$this->md($evidence->summary.$attachment.$captured.$by);
+                if ($evidence->request_excerpt) {
+                    $lines[] = '  - Request excerpt: `'.$this->md(\Illuminate\Support\Str::limit($evidence->request_excerpt, 180)).'`';
+                }
+                if ($evidence->response_excerpt) {
+                    $lines[] = '  - Response excerpt: `'.$this->md(\Illuminate\Support\Str::limit($evidence->response_excerpt, 180)).'`';
+                }
+                if ($evidence->curl_command) {
+                    $lines[] = '  - cURL: `'.$this->md(\Illuminate\Support\Str::limit($evidence->curl_command, 180)).'`';
+                }
+                if ($evidence->attachment_sha256) {
+                    $lines[] = '  - Attachment SHA-256: `'.$this->md($evidence->attachment_sha256).'`';
+                }
             }
             $lines[] = '';
         }
@@ -531,6 +655,36 @@ class FullQaReportBuilderService
         $lines[] = '';
     }
 
+    /** @param array<int, string> $lines */
+    private function appendTechnicalRequestResponseEvidence(array &$lines, Project $project, int $limit): void
+    {
+        $rows = $project->endpoints
+            ->map(fn (Endpoint $endpoint): array => [$endpoint, $endpoint->latestScanResult])
+            ->filter(fn (array $row): bool => $row[1] instanceof ScanResult)
+            ->sortBy(fn (array $row): string => sprintf('%s %s', $row[0]->method, $row[0]->path))
+            ->take($this->limit($limit));
+
+        $lines[] = '## Technical Request / Response Evidence';
+        $lines[] = '';
+
+        if ($rows->isEmpty()) {
+            $lines[] = 'No latest scan result evidence is available for endpoint-level request/response review.';
+            $lines[] = '';
+            return;
+        }
+
+        $lines[] = '| Method | Endpoint | URL | HTTP | Time | Content type | Size | Sensitive data | Broken auth | Schema drift | Body preview / error |';
+        $lines[] = '|---|---|---|---:|---:|---|---:|---|---|---|---|';
+        foreach ($rows as [$endpoint, $result]) {
+            $bodyPreview = $result->body_preview ?: $result->error_message ?: 'n/a';
+            $sensitive = $result->sensitive_data_detected ? 'yes ('.$result->sensitive_data_count.')' : 'no';
+            $brokenAuth = $result->broken_auth_detected ? 'yes' : 'no';
+            $schemaDrift = $result->schema_drift_detected ? 'yes ('.$result->schema_drift_count.')' : 'no';
+            $lines[] = '| '.$this->md($endpoint->method).' | '.$this->md($endpoint->path).' | '.$this->md($result->url).' | '.$this->md($result->status_code ?: 'n/a').' | '.$this->md($result->response_time_ms !== null ? $result->response_time_ms.' ms' : 'n/a').' | '.$this->md($result->content_type ?: 'n/a').' | '.$this->md($result->response_size !== null ? (string) $result->response_size : 'n/a').' | '.$this->md($sensitive).' | '.$this->md($brokenAuth).' | '.$this->md($schemaDrift).' | '.$this->md(\Illuminate\Support\Str::limit($bodyPreview, 180)).' |';
+        }
+        $lines[] = '';
+    }
+
     /** @param array<int, string> $lines @param array<string, mixed> $summary @param array<string, mixed> $coverageSummary */
     private function appendRecommendations(array &$lines, array $summary, array $coverageSummary): void
     {
@@ -572,6 +726,22 @@ class FullQaReportBuilderService
         $lines[] = '- Safe scan evidence is based on non-destructive GET/HEAD probing.';
         $lines[] = '- Secrets and authentication material are masked in UI and exports by design.';
         $lines[] = '- Risk levels are QA review signals, not exploit confirmations.';
+        $lines[] = '';
+    }
+
+    /** @param array<int, string> $lines @param array<string, mixed> $findingCounts */
+    private function appendFindingLifecycleStatusSummary(array &$lines, array $findingCounts): void
+    {
+        $lines[] = '### Finding Lifecycle Status Summary';
+        $lines[] = '';
+        $lines[] = '| Status | Count | Release impact |';
+        $lines[] = '|---|---:|---|';
+        foreach (Finding::LIFECYCLE_STATUSES as $status) {
+            $impact = in_array($status, Finding::OPEN_STATUSES, true)
+                ? 'Counts as open release risk'
+                : 'Does not count as open release risk';
+            $lines[] = '| '.$this->md(__('messages.findings.statuses.'.$status)).' | '.($findingCounts['status_counts'][$status] ?? 0).' | '.$this->md($impact).' |';
+        }
         $lines[] = '';
     }
 
@@ -617,6 +787,17 @@ class FullQaReportBuilderService
         }
 
         return $date ? (string) $date : 'n/a';
+    }
+
+    private function mdLine(string $line): string
+    {
+        if (! str_contains($line, ':** ')) {
+            return $this->md($line);
+        }
+
+        [$label, $value] = explode(':** ', $line, 2);
+
+        return $label.':** '.$this->md($value);
     }
 
     private function md(mixed $value): string

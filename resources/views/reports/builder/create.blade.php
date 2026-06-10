@@ -138,6 +138,12 @@
                             {{ __('messages.report_builder.fields.include_evidence_details') }}
                         </label>
                     </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="include_technical_details" value="1" @checked(old('include_technical_details'))>
+                            {{ __('messages.report_builder.fields.include_technical_details') }}
+                        </label>
+                    </div>
                 </div>
                 <div class="panel-footer text-right">
                     <a href="{{ route('projects.reports.full-project.markdown', $project) }}" class="btn btn-default">Full MD</a>

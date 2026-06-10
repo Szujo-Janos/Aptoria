@@ -23,7 +23,10 @@ class HtmlPdfReportExportTest extends TestCase
         $this->assertStringContainsString('<!doctype html>', $html);
         $this->assertStringContainsString('<title>Sample QA Report</title>', $html);
         $this->assertStringContainsString('<table>', $html);
+        $this->assertStringContainsString('font-family:Calibri', $html);
+        $this->assertStringContainsString('report-table-wrap', $html);
         $this->assertStringContainsString('report-meta-bar', $html);
+        $this->assertStringContainsString('report-context-grid', $html);
         $this->assertStringContainsString('Project', $html);
         $this->assertStringContainsString('Base URL', $html);
         $this->assertStringContainsString('https://api.demo.example', $html);

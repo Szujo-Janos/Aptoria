@@ -13,6 +13,7 @@ use App\Services\Settings\ProjectSettingService;
 use App\Services\Settings\SettingService;
 use App\Services\Settings\SettingsRuntimeService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\View\View;
 
@@ -36,15 +37,18 @@ class ProjectController extends Controller
     public function store(ProjectRequest $request, ProjectSettingService $projectSettings, SettingsRuntimeService $runtime): RedirectResponse
     {
         $project = Project::query()->create([
-            ...$request->validated(),
+            ...$this->projectPayload($request),
             'user_id' => Auth::id(),
             'is_active' => $request->boolean('is_active'),
         ]);
+
+        $this->persistReportLogo($request, $project);
 
         Model::withoutEvents(function () use ($project, $projectSettings): void {
             $project->environments()->create([
                 'name' => 'staging',
                 'base_url' => $project->base_url,
+                'environment_type' => \App\Models\Environment::TYPE_STAGING,
                 'is_production' => false,
             ]);
 
@@ -79,6 +83,8 @@ class ProjectController extends Controller
         $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'apiMonitors', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates']);
         Model::withoutEvents(fn () => $projectSettings->seedDefaults($project));
         $projectSettingSummary = $projectSettings->grouped($project);
+        $defaultEnvironmentId = (string) $projectSettings->get($project, 'scan.default_environment_id', '');
+        $defaultAuthProfileId = (string) $projectSettings->get($project, 'scan.default_auth_profile_id', '');
         $projectNotes = (string) $projectSettings->get($project, 'project.notes', '');
         $projectHealth = $projectHealthService->summarize($project);
         $releaseReadiness = $releaseReadinessService->summarize($project);
@@ -105,7 +111,7 @@ class ProjectController extends Controller
 
         $showProjectCalendarPreview = $settings->boolean('ui.show_project_calendar_preview', true);
 
-        return view('projects.show', compact('project', 'projectSettingSummary', 'projectNotes', 'projectHealth', 'releaseReadiness', 'qaCoverage', 'projectCalendarEvents', 'projectCalendarSummary', 'showProjectCalendarPreview'));
+        return view('projects.show', compact('project', 'projectSettingSummary', 'defaultEnvironmentId', 'defaultAuthProfileId', 'projectNotes', 'projectHealth', 'releaseReadiness', 'qaCoverage', 'projectCalendarEvents', 'projectCalendarSummary', 'showProjectCalendarPreview')); 
     }
 
     public function edit(Project $project): View
@@ -116,15 +122,65 @@ class ProjectController extends Controller
     public function update(ProjectRequest $request, Project $project): RedirectResponse
     {
         $project->update([
-            ...$request->validated(),
+            ...$this->projectPayload($request),
             'is_active' => $request->boolean('is_active'),
         ]);
+
+        $this->persistReportLogo($request, $project);
 
         return redirect()->route('projects.show', $project)->with('success', __('messages.projects.updated'));
     }
 
+    /** @return array<string, mixed> */
+    private function projectPayload(ProjectRequest $request): array
+    {
+        return collect($request->validated())
+            ->except(['report_logo', 'remove_report_logo'])
+            ->map(fn ($value) => is_string($value) ? trim($value) : $value)
+            ->all();
+    }
+
+    private function persistReportLogo(ProjectRequest $request, Project $project): void
+    {
+        if ($request->boolean('remove_report_logo')) {
+            $this->deleteReportLogo($project);
+        }
+
+        if (! $request->hasFile('report_logo')) {
+            return;
+        }
+
+        $this->deleteReportLogo($project);
+
+        $file = $request->file('report_logo');
+        if ($file === null || ! $file->isValid()) {
+            return;
+        }
+
+        $path = $file->store('report-branding/projects/'.$project->id);
+
+        $project->forceFill([
+            'report_logo_path' => $path,
+            'report_logo_original_name' => $file->getClientOriginalName(),
+        ])->save();
+    }
+
+    private function deleteReportLogo(Project $project): void
+    {
+        if ($project->report_logo_path) {
+            Storage::delete((string) $project->report_logo_path);
+        }
+
+        $project->forceFill([
+            'report_logo_path' => null,
+            'report_logo_original_name' => null,
+        ])->saveQuietly();
+    }
+
     public function destroy(Project $project): RedirectResponse
     {
+        $this->deleteReportLogo($project);
+
         $project->delete();
 
         return redirect()->route('projects.index')->with('success', __('messages.projects.deleted'));

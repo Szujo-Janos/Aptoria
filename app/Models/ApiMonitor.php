@@ -31,6 +31,7 @@ class ApiMonitor extends Model
         'project_id',
         'environment_id',
         'baseline_snapshot_id',
+        'test_suite_id',
         'created_by',
         'name',
         'frequency',
@@ -41,6 +42,12 @@ class ApiMonitor extends Model
         'alert_email',
         'alert_webhook_url',
         'alert_on_recovery',
+        'alert_on_critical_finding',
+        'alert_on_high_finding',
+        'alert_on_http_5xx',
+        'alert_on_sensitive_data',
+        'alert_on_broken_auth',
+        'alert_on_schema_drift',
         'last_run_at',
         'next_run_at',
         'last_scan_run_id',
@@ -50,6 +57,7 @@ class ApiMonitor extends Model
         'last_message',
         'last_alert_at',
         'last_alert_status',
+        'last_alert_fingerprint',
         'summary_json',
     ];
 
@@ -61,6 +69,12 @@ class ApiMonitor extends Model
             'auto_compare' => 'boolean',
             'notify_dashboard' => 'boolean',
             'alert_on_recovery' => 'boolean',
+            'alert_on_critical_finding' => 'boolean',
+            'alert_on_high_finding' => 'boolean',
+            'alert_on_http_5xx' => 'boolean',
+            'alert_on_sensitive_data' => 'boolean',
+            'alert_on_broken_auth' => 'boolean',
+            'alert_on_schema_drift' => 'boolean',
             'last_run_at' => 'datetime',
             'last_alert_at' => 'datetime',
             'next_run_at' => 'datetime',
@@ -81,6 +95,11 @@ class ApiMonitor extends Model
     public function baselineSnapshot(): BelongsTo
     {
         return $this->belongsTo(Snapshot::class, 'baseline_snapshot_id');
+    }
+
+    public function testSuite(): BelongsTo
+    {
+        return $this->belongsTo(TestSuite::class);
     }
 
     public function creator(): BelongsTo
@@ -117,6 +136,11 @@ class ApiMonitor extends Model
     public function calendarEvents(): HasMany
     {
         return $this->hasMany(CalendarEvent::class, 'api_monitor_id');
+    }
+
+    public function getSuiteLabelAttribute(): string
+    {
+        return $this->testSuite?->name ?: __('messages.monitors.all_project_endpoints');
     }
 
     public function getFrequencyLabelAttribute(): string

@@ -15,6 +15,7 @@
         <tr><th align="left">Previous status</th><td>{{ $payload['previous_status'] ?? '-' }}</td></tr>
         <tr><th align="left">Severity</th><td>{{ $payload['severity'] ?? '-' }}</td></tr>
         <tr><th align="left">Message</th><td>{{ $payload['message'] ?? '-' }}</td></tr>
+        <tr><th align="left">Trigger summary</th><td>{{ $payload['trigger_summary'] ?? '-' }}</td></tr>
         <tr><th align="left">Triggered at</th><td>{{ $payload['triggered_at'] ?? '-' }}</td></tr>
         <tr><th align="left">Next run</th><td>{{ $payload['next_run_at'] ?? '-' }}</td></tr>
     </table>

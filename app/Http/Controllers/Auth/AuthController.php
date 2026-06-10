@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\AuditLog;
+use App\Services\Audit\AuditLogService;
 use App\Services\Setup\SetupStateService;
 use App\Services\Settings\SettingsRuntimeService;
 use Illuminate\Http\RedirectResponse as HttpRedirectResponse;
@@ -58,6 +60,16 @@ class AuthController extends Controller
             if (is_string($locale) && in_array($locale, array_keys(config('aptoria.supported_locales', ['en' => 'English'])), true)) {
                 $request->session()->put('locale', $locale);
             }
+
+            app(AuditLogService::class)->record([
+                'user_id' => $user?->id,
+                'event_type' => AuditLog::EVENT_AUTH,
+                'action' => AuditLog::ACTION_LOGIN,
+                'severity' => AuditLog::SEVERITY_INFO,
+                'subject_label' => 'user',
+                'subject_name' => $user?->email,
+                'summary' => 'User signed in: '.($user?->email ?? 'unknown'),
+            ]);
 
             $shouldShowProfile = $this->recordSuccessfulLoginAndShouldShowProfile($user);
 
@@ -113,6 +125,17 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        app(AuditLogService::class)->record([
+            'user_id' => $user?->id,
+            'event_type' => AuditLog::EVENT_AUTH,
+            'action' => AuditLog::ACTION_LOGOUT,
+            'severity' => AuditLog::SEVERITY_INFO,
+            'subject_label' => 'user',
+            'subject_name' => $user?->email,
+            'summary' => 'User signed out: '.($user?->email ?? 'unknown'),
+        ]);
+
         Auth::logout();
 
         $request->session()->invalidate();

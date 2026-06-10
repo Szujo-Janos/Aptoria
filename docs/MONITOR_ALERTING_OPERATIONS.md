@@ -1,85 +1,57 @@
-# Monitor Notifications & Alerting Operations
+# Monitor Alerting Operations
 
-Release: **Aptoria v1.0.39 – Calendar UX, Activity Noise Reduction & Visual Timeline Hotfix**
+Aptoria v1.1.14 supports monitor-level dashboard, email and webhook notifications.
 
-Aptoria scheduled monitors can now create alert records when a monitor state changes. This is intentionally lightweight and safe for a self-hosted Laravel/XAMPP installation.
+## Channels
 
-## What triggers an alert
+Each monitor can use any combination of:
 
-An alert is created when the monitor status changes into one of these states:
+- dashboard alert history;
+- email delivery through Laravel Mail;
+- HTTP(S) webhook JSON delivery.
 
-- `failed`
-- `warning`
-- `regression_detected`
+## Trigger rules
 
-A recovery alert is also created when the previous status was non-healthy and the new status becomes `healthy`, if **Alert when recovered** is enabled on the monitor.
+The monitor form includes configurable trigger checkboxes for:
 
-Repeated runs with the same failing status do not create duplicate dashboard alerts. This avoids notification spam when a broken API stays broken for several scheduled runs.
+- critical findings;
+- high findings;
+- HTTP 5xx responses;
+- sensitive data exposure;
+- broken auth / unauthenticated access;
+- schema drift;
+- recovery to healthy.
 
-## Alert channels
+A scheduled monitor run evaluates these signals after the safe scan and optional regression suite execution.
 
-### Dashboard alert record
+## Alert fingerprinting
 
-When **Show warnings on dashboard** is enabled, Aptoria stores a `monitor_alert_events` record. The monitor list shows the last alert time and last alert status.
+Aptoria stores a `last_alert_fingerprint` on the monitor. This reduces repeated notification spam for unchanged problem states while still allowing a new alert when the trigger mix or counts change.
 
-### Webhook JSON
+## Test notification
 
-If a monitor has a valid HTTP(S) webhook URL, Aptoria sends a JSON POST payload on the same state-change events.
+Open **Project → Monitors → Alerts** for a monitor and click **Send test notification**.
 
-Example payload:
+Expected result:
 
-```json
-{
-  "app": "Aptoria",
-  "version": "1.0.39",
-  "event": "monitor_status_changed",
-  "monitor_id": 12,
-  "monitor": "Daily staging regression watch",
-  "project_id": 3,
-  "project": "Example API",
-  "environment": "Staging",
-  "status": "regression_detected",
-  "previous_status": "healthy",
-  "severity": "critical",
-  "message": "Regression detected on 2 endpoint(s).",
-  "scan_run_id": 44,
-  "snapshot_id": 19,
-  "compare_run_id": 7,
-  "next_run_at": "2026-06-08 10:15:00",
-  "alert_email": "qa@example.com",
-  "triggered_at": "2026-06-07T15:45:00+00:00"
-}
-```
+- a dashboard alert event is recorded;
+- email is sent if `alert_email` is configured and mail works;
+- webhook JSON is posted if `alert_webhook_url` is configured.
 
-Webhook delivery status is stored on the alert event as `sent`, `failed`, `skipped` or `recorded`.
+## Global alert center
 
-## Email field
+Open `/monitor-alerts` or the **Open alerts** shortcut from the monitor pages.
 
-The monitor form includes an **Alert email** field. From v1.0.39 Aptoria sends a Laravel Mail notification on monitor state changes when mail is configured. Local installs default to the `log` mailer; production should use SMTP.
+Available filters:
 
-## Recommended Windows Task Scheduler command
+- channel;
+- severity;
+- only open alerts.
+
+## CLI evidence
 
 ```powershell
-C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50
+C:\xampp\php\php.exe artisan aptoria:run-monitors --limit=50 --save-json
 ```
 
-For CI/scheduler logs:
-
-```powershell
-C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50 --json
-```
-
-For strict scheduled regression gates:
-
-```powershell
-C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50 --fail-on-warning --fail-on-regression
-```
-
-## QA checks
-
-- Create a monitor with dashboard alerts enabled.
-- Add a webhook URL only if the target endpoint is trusted.
-- Force a monitor run against an inactive project or a known failing endpoint.
-- Confirm a monitor alert record is created.
-- Confirm webhook delivery is marked `sent`, `failed` or `skipped`.
-- Confirm repeated same-status failures do not create duplicate state-change alerts.
+Saved summaries are written under `storage/app/monitor-runs/` and contain alert counts plus scan alert signal metadata.

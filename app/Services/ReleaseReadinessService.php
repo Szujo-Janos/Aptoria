@@ -53,15 +53,29 @@ class ReleaseReadinessService
         $latestContractValidation = $project->contractValidationRuns()->latest()->first();
         $openFindings = $project->findings()
             ->whereIn('status', Finding::OPEN_STATUSES)
-            ->with(['endpoint', 'testCase', 'evidence'])
+            ->with(['endpoint', 'testCase', 'evidence.capturedBy', 'lifecycleChangedBy'])
             ->latest('detected_at')
             ->get();
+        $findingStatusCounts = $project->findings()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $findingLifecycleCounts = collect(Finding::LIFECYCLE_STATUSES)
+            ->mapWithKeys(fn (string $status): array => [$status => (int) ($findingStatusCounts[$status] ?? 0)])
+            ->all();
         $findingCounts = [
+            'total' => (int) $project->findings->count(),
             'open' => $openFindings->count(),
             'critical_open' => $openFindings->where('severity', Finding::SEVERITY_CRITICAL)->count(),
             'high_open' => $openFindings->where('severity', Finding::SEVERITY_HIGH)->count(),
             'medium_open' => $openFindings->where('severity', Finding::SEVERITY_MEDIUM)->count(),
             'low_open' => $openFindings->where('severity', Finding::SEVERITY_LOW)->count(),
+            'fixed' => $findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0,
+            'false_positive' => $findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0,
+            'accepted_risk' => $findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0,
+            'reopened' => $findingLifecycleCounts[Finding::STATUS_REOPENED] ?? 0,
+            'resolved' => (int) (($findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0)),
+            'status_counts' => $findingLifecycleCounts,
         ];
         $testRunCounts = collect(TestCase::RUN_STATUSES)
             ->mapWithKeys(fn (string $status): array => [$status => 0])
@@ -144,7 +158,22 @@ class ReleaseReadinessService
         $blockingIssues = $this->blockingIssues($project, $latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $latestContractValidation, $findingCounts, $testExecution);
         $warnings = $this->warnings($latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $project, $latestContractValidation, $findingCounts, $testExecution);
 
-        $score = $this->score($endpointCount, $coveragePercent, $assertionCounts, $regression, $riskCounts, $latestScan, $project, $latestContractValidation, $findingCounts, $testExecution);
+        $scoreComponents = $this->scoreComponents(
+            $project,
+            $endpoints,
+            $latestScan,
+            $latestSnapshot,
+            $latestCompare,
+            $latestContractValidation,
+            $findingCounts,
+            $testExecution,
+            $qaCoverage,
+            $assertionCounts,
+            $regression,
+            $riskCounts,
+            $coveragePercent
+        );
+        $score = $this->componentScore($scoreComponents);
         $status = $this->status($project, $latestScan, $blockingIssues, $warnings, $score);
 
         return [
@@ -153,6 +182,8 @@ class ReleaseReadinessService
             'css' => $this->statusCss($status),
             'score' => $score,
             'grade' => $this->grade($score),
+            'score_components' => $scoreComponents,
+            'score_component_total' => array_sum(array_column($scoreComponents, 'max_points')),
             'endpoint_count' => $endpointCount,
             'coverage_count' => $coverageCount,
             'coverage_percent' => $coveragePercent,
@@ -189,6 +220,12 @@ class ReleaseReadinessService
         $lines[] = '';
         $lines[] = '**Project:** '.$project->name;
         $lines[] = '**Base URL:** '.$project->display_base_url;
+        foreach ($this->credits->projectBrandingMarkdownLines($project) as $brandingLine) {
+            $lines[] = $this->mdBrandingLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         $lines[] = '**Generated:** '.now()->format('Y-m-d H:i:s');
         $lines[] = '**Aptoria version:** '.config('aptoria.version');
         $lines[] = '';
@@ -218,7 +255,31 @@ class ReleaseReadinessService
         $lines[] = '| Open findings | '.$summary['finding_counts']['open'].' |';
         $lines[] = '| Critical open findings | '.$summary['finding_counts']['critical_open'].' |';
         $lines[] = '| High open findings | '.$summary['finding_counts']['high_open'].' |';
+        $lines[] = '| Reopened findings | '.($summary['finding_counts']['reopened'] ?? 0).' |';
+        $lines[] = '| Fixed findings | '.($summary['finding_counts']['fixed'] ?? 0).' |';
+        $lines[] = '| False positives | '.($summary['finding_counts']['false_positive'] ?? 0).' |';
+        $lines[] = '| Accepted risks | '.($summary['finding_counts']['accepted_risk'] ?? 0).' |';
         $lines[] = '| Regression status | '.$this->md($summary['regression']['label']).' |';
+        $lines[] = '';
+        $lines[] = '## Finding Lifecycle Status Summary';
+        $lines[] = '';
+        $lines[] = '| Status | Count | Release impact |';
+        $lines[] = '|---|---:|---|';
+        foreach (Finding::LIFECYCLE_STATUSES as $status) {
+            $impact = in_array($status, Finding::OPEN_STATUSES, true)
+                ? 'Counts as open release risk'
+                : 'Does not count as open release risk';
+            $lines[] = '| '.$this->md(__('messages.findings.statuses.'.$status)).' | '.($summary['finding_counts']['status_counts'][$status] ?? 0).' | '.$this->md($impact).' |';
+        }
+        $lines[] = '';
+
+        $lines[] = '## Readiness Score Breakdown';
+        $lines[] = '';
+        $lines[] = '| Component | Points | Percent | Status |';
+        $lines[] = '|---|---:|---:|---|';
+        foreach ($summary['score_components'] as $component) {
+            $lines[] = '| '.$this->md((string) $component['label']).' | '.$component['earned_points'].' / '.$component['max_points'].' | '.$component['percent'].'% | '.$this->md((string) $component['status_label']).' |';
+        }
         $lines[] = '';
         $lines[] = '## Test Execution Summary';
         $lines[] = '';
@@ -283,11 +344,12 @@ class ReleaseReadinessService
         if ($summary['open_findings']->isEmpty()) {
             $lines[] = 'No open findings.';
         } else {
-            $lines[] = '| Severity | Status | Finding | Endpoint | Evidence |';
-            $lines[] = '|---|---|---|---|---:|';
+            $lines[] = '| Severity | Status | Finding | Endpoint | Evidence | Attachments |';
+            $lines[] = '|---|---|---|---|---:|---:|';
             foreach ($summary['open_findings'] as $finding) {
                 $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
-                $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$finding->evidence->count().' |';
+                $attachmentCount = $finding->evidence->filter(fn ($evidence): bool => $evidence->has_attachment)->count();
+                $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$finding->evidence->count().' | '.$attachmentCount.' |';
             }
         }
         $lines[] = '';
@@ -320,6 +382,121 @@ class ReleaseReadinessService
         $this->credits->appendMarkdownFooter($lines, 'release_readiness_report', $project);
 
         return implode("\n", $lines)."\n";
+    }
+
+
+    /**
+     * @param Collection<int, Endpoint> $endpoints
+     * @return array<int, array<string, mixed>>
+     */
+    private function scoreComponents(Project $project, Collection $endpoints, $latestScan, $latestSnapshot, $latestCompare, $latestContractValidation, array $findingCounts, array $testExecution, array $qaCoverage, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent): array
+    {
+        $latestScanResults = $latestScan?->results ?? collect();
+        $evidenceCount = $project->findingEvidence()->count();
+        $releaseGateCount = $project->qaReleaseGates()->count();
+        $authRequired = $endpoints->filter(fn (Endpoint $endpoint): bool => (bool) $endpoint->auth_required);
+        $authConfigured = $authRequired->filter(fn (Endpoint $endpoint): bool => $endpoint->auth_profile_id !== null);
+        $securityEvents = (int) $latestScanResults->filter(fn (ScanResult $result): bool => (bool) $result->sensitive_data_detected || (bool) $result->broken_auth_detected || (bool) $result->schema_drift_detected)->count();
+
+        $components = [];
+        $components[] = $this->scoreComponent('evidence', 10, min(10, ($latestScan && $latestScan->status === \App\Models\ScanRun::STATUS_COMPLETED ? 4 : 0) + ($latestSnapshot ? 2 : 0) + ($latestCompare ? 2 : 0) + min(2, $evidenceCount > 0 ? 2 : 0)), [
+            __('messages.release_readiness.score_checks.latest_scan').': '.($latestScan ? $latestScan->status_label : __('messages.common.not_available')),
+            __('messages.release_readiness.score_checks.snapshot').': '.($latestSnapshot ? $latestSnapshot->name : __('messages.common.not_available')),
+            __('messages.release_readiness.score_checks.evidence_count').': '.$evidenceCount,
+        ]);
+        $components[] = $this->scoreComponent('endpoint_coverage', 15, (int) round(15 * ($coveragePercent / 100)), [
+            __('messages.release_readiness.covered_endpoints').': '.$coveragePercent.'%',
+        ]);
+        $components[] = $this->scoreComponent('qa_coverage', 10, (int) round(10 * (($qaCoverage['coverage_percent'] ?? 0) / 100)), [
+            __('messages.qa_coverage.coverage_percent').': '.($qaCoverage['coverage_percent'] ?? 0).'%',
+            __('messages.qa_coverage.gap_filters.not_scanned').': '.($qaCoverage['not_scanned'] ?? 0),
+        ]);
+        $endpointCount = max(1, (int) $project->endpoints_count);
+        $assertionQuality = (($assertionCounts[AssertionEvaluationService::STATUS_PASS] ?? 0) + (($assertionCounts[AssertionEvaluationService::STATUS_WARNING] ?? 0) * 0.5)) / $endpointCount;
+        $components[] = $this->scoreComponent('assertions', 10, (int) round(10 * max(0, min(1, $assertionQuality))), [
+            __('messages.assertions.statuses.pass').': '.($assertionCounts[AssertionEvaluationService::STATUS_PASS] ?? 0),
+            __('messages.assertions.statuses.fail').': '.($assertionCounts[AssertionEvaluationService::STATUS_FAIL] ?? 0),
+            __('messages.assertions.statuses.not_configured').': '.($assertionCounts[AssertionEvaluationService::STATUS_NOT_CONFIGURED] ?? 0),
+        ]);
+        $testScore = ($testExecution['total'] ?? 0) > 0
+            ? ((($testExecution['execution_percent'] ?? 0) * 0.45) + (($testExecution['pass_rate'] ?? 0) * 0.55)) / 100
+            : 0;
+        $components[] = $this->scoreComponent('test_execution', 10, (int) round(10 * max(0, min(1, $testScore))), [
+            __('messages.test_execution.execution_coverage').': '.($testExecution['execution_percent'] ?? 0).'%',
+            __('messages.test_execution.pass_rate').': '.($testExecution['pass_rate'] ?? 0).'%',
+        ]);
+        $regressionPenalty = min(10, (($regression['detected_count'] ?? 0) * 5) + (($regression['warning_count'] ?? 0) * 2));
+        $components[] = $this->scoreComponent('regression', 10, max(0, 10 - $regressionPenalty), [
+            __('messages.regressions.regression_status').': '.$regression['label'],
+            __('messages.release_readiness.score_checks.regressions').': '.($regression['detected_count'] ?? 0),
+        ]);
+        $securityPenalty = min(15, ($securityEvents * 5) + (($riskCounts[Endpoint::RISK_CRITICAL] ?? 0) * 5) + (($riskCounts[Endpoint::RISK_HIGH] ?? 0) * 2) + max(0, $authRequired->count() - $authConfigured->count()) * 3);
+        $components[] = $this->scoreComponent('security', 15, max(0, 15 - $securityPenalty), [
+            __('messages.release_readiness.score_checks.security_events').': '.$securityEvents,
+            __('messages.release_readiness.score_checks.auth_ready').': '.$authConfigured->count().' / '.$authRequired->count(),
+        ]);
+        $findingPenalty = min(10, (($findingCounts['critical_open'] ?? 0) * 5) + (($findingCounts['high_open'] ?? 0) * 3) + (($findingCounts['medium_open'] ?? 0) * 1));
+        $components[] = $this->scoreComponent('findings', 10, max(0, 10 - $findingPenalty), [
+            __('messages.findings.open_findings').': '.($findingCounts['open'] ?? 0),
+            __('messages.findings.severities.critical').': '.($findingCounts['critical_open'] ?? 0),
+            __('messages.findings.severities.high').': '.($findingCounts['high_open'] ?? 0),
+            __('messages.findings.statuses.reopened').': '.($findingCounts['reopened'] ?? 0),
+            __('messages.findings.statuses.accepted_risk').': '.($findingCounts['accepted_risk'] ?? 0),
+            __('messages.findings.statuses.false_positive').': '.($findingCounts['false_positive'] ?? 0),
+            __('messages.findings.statuses.fixed').': '.($findingCounts['fixed'] ?? 0),
+        ]);
+        if ($latestContractValidation) {
+            $contractPenalty = min(5, (($latestContractValidation->breaking_count ?? 0) * 3) + (($latestContractValidation->failed_count ?? 0) * 2) + (($latestContractValidation->warning_count ?? 0) * 1));
+            $contractEarned = max(0, 5 - $contractPenalty);
+        } else {
+            $contractEarned = 1;
+        }
+        $components[] = $this->scoreComponent('contract', 5, $contractEarned, [
+            __('messages.contract_validations.short_title').': '.($latestContractValidation ? $latestContractValidation->health_label : __('messages.common.not_available')),
+        ]);
+        $components[] = $this->scoreComponent('report_signoff', 5, min(5, ($releaseGateCount > 0 ? 3 : 0) + ($project->apiMonitors()->where('is_enabled', true)->exists() ? 1 : 0) + ($project->is_active ? 1 : 0)), [
+            __('messages.release_readiness.score_checks.release_gates').': '.$releaseGateCount,
+            __('messages.release_readiness.score_checks.enabled_monitors').': '.$project->apiMonitors()->where('is_enabled', true)->count(),
+        ]);
+
+        return $components;
+    }
+
+    /** @return array<string, mixed> */
+    private function scoreComponent(string $key, int $maxPoints, int $earnedPoints, array $checks = []): array
+    {
+        $earnedPoints = max(0, min($maxPoints, $earnedPoints));
+        $percent = $maxPoints > 0 ? (int) round(($earnedPoints / $maxPoints) * 100) : 0;
+        $status = match (true) {
+            $percent >= 85 => 'strong',
+            $percent >= 55 => 'review',
+            default => 'weak',
+        };
+
+        return [
+            'key' => $key,
+            'label' => __('messages.release_readiness.score_components.'.$key),
+            'earned_points' => $earnedPoints,
+            'max_points' => $maxPoints,
+            'percent' => $percent,
+            'status' => $status,
+            'status_label' => __('messages.release_readiness.score_statuses.'.$status),
+            'css' => match ($status) {
+                'strong' => 'success',
+                'review' => 'warning',
+                default => 'danger',
+            },
+            'checks' => array_values(array_filter($checks)),
+        ];
+    }
+
+    /** @param array<int, array<string, mixed>> $components */
+    private function componentScore(array $components): int
+    {
+        $max = array_sum(array_map(fn (array $component): int => (int) $component['max_points'], $components));
+        $earned = array_sum(array_map(fn (array $component): int => (int) $component['earned_points'], $components));
+
+        return $max > 0 ? (int) round(($earned / $max) * 100) : 0;
     }
 
     /** @return array<int, string> */
@@ -635,6 +812,17 @@ class ReleaseReadinessService
         }
 
         return $lines;
+    }
+
+    private function mdBrandingLine(string $line): string
+    {
+        if (! str_contains($line, ':** ')) {
+            return $this->md($line);
+        }
+
+        [$label, $value] = explode(':** ', $line, 2);
+
+        return $label.':** '.$this->md($value);
     }
 
     private function md(?string $value): string

@@ -91,6 +91,75 @@ class SnapshotCompareTest extends TestCase
         $this->assertSame(2, $compareRun->items()->where('change_type', CompareItem::TYPE_CHANGED)->count());
     }
 
+
+    public function test_snapshot_compare_detects_body_schema_security_and_header_drift(): void
+    {
+        $this->seed();
+
+        $admin = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $project = Project::query()->where('slug', 'demo-public-api')->firstOrFail();
+
+        $snapshotA = Snapshot::query()->create([
+            'project_id' => $project->id,
+            'created_by' => $admin->id,
+            'name' => 'Baseline',
+            'endpoint_count' => 1,
+        ]);
+        $snapshotB = Snapshot::query()->create([
+            'project_id' => $project->id,
+            'created_by' => $admin->id,
+            'name' => 'Current',
+            'endpoint_count' => 1,
+        ]);
+
+        $snapshotA->items()->create([
+            'method' => Endpoint::METHOD_GET,
+            'path' => '/users/{id}',
+            'auth_required' => true,
+            'risk_level' => Endpoint::RISK_HIGH,
+            'status_code' => 200,
+            'content_type' => 'application/json',
+            'metadata_json' => [
+                'headers' => ['content-type' => 'application/json', 'strict-transport-security' => 'max-age=31536000'],
+                'body_preview' => '{"id":1,"name":"Alice"}',
+                'sensitive_data_detected' => false,
+                'sensitive_data_count' => 0,
+                'broken_auth_detected' => false,
+            ],
+        ]);
+        $snapshotB->items()->create([
+            'method' => Endpoint::METHOD_GET,
+            'path' => '/users/{id}',
+            'auth_required' => true,
+            'risk_level' => Endpoint::RISK_HIGH,
+            'status_code' => 200,
+            'content_type' => 'application/json',
+            'metadata_json' => [
+                'headers' => ['content-type' => 'application/json; charset=utf-8'],
+                'body_preview' => '{"id":"1","name":"Alice","email":"alice@example.test"}',
+                'sensitive_data_detected' => true,
+                'sensitive_data_count' => 1,
+                'broken_auth_detected' => true,
+            ],
+        ]);
+
+        $compareRun = app(SnapshotService::class)->compare($snapshotA, $snapshotB, $admin);
+
+        $this->assertDatabaseHas('compare_items', ['compare_run_id' => $compareRun->id, 'field_changed' => 'body_preview']);
+        $this->assertDatabaseHas('compare_items', ['compare_run_id' => $compareRun->id, 'field_changed' => 'response_schema']);
+        $this->assertDatabaseHas('compare_items', ['compare_run_id' => $compareRun->id, 'field_changed' => 'sensitive_data']);
+        $this->assertDatabaseHas('compare_items', ['compare_run_id' => $compareRun->id, 'field_changed' => 'broken_auth']);
+        $this->assertDatabaseHas('compare_items', ['compare_run_id' => $compareRun->id, 'field_changed' => 'security_header']);
+        $this->assertGreaterThanOrEqual(1, $compareRun->fresh()->summary_json['breaking_count'] ?? 0);
+
+        $this->actingAs($admin)
+            ->get(route('projects.snapshots.compares.show', [$project, $compareRun]))
+            ->assertOk()
+            ->assertSee(__('messages.snapshots.diff_viewer_title'))
+            ->assertSee(__('messages.snapshots.diff_groups.schema'))
+            ->assertSee(__('messages.snapshots.breaking_changes'));
+    }
+
     public function test_snapshot_index_renders_compare_ui(): void
     {
         $this->seed();

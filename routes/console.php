@@ -2,6 +2,7 @@
 
 use App\Models\CalendarEvent;
 use App\Models\Project;
+use App\Services\Demo\DemoProjectService;
 use App\Services\Monitors\ScheduledMonitorService;
 use App\Services\Security\SecurityStatusService;
 use App\Services\System\SystemHealthService;
@@ -10,6 +11,67 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('aptoria:version', function (): void {
     $this->info('Aptoria '.config('aptoria.version'));
 })->purpose('Display the Aptoria version.');
+
+
+Artisan::command('aptoria:demo-project {--remove : Remove the imported comprehensive demo project.} {--json : Print machine-readable JSON output.}', function (): int {
+    try {
+        $service = app(DemoProjectService::class);
+        $summary = $this->option('remove') ? $service->remove() : $service->import();
+        $publicSummary = $summary;
+        unset($publicSummary['project']);
+
+        if (isset($publicSummary['readiness']) && is_array($publicSummary['readiness'])) {
+            $readiness = $publicSummary['readiness'];
+            $publicSummary['readiness'] = [
+                'status' => $readiness['status'] ?? null,
+                'label' => $readiness['label'] ?? null,
+                'score' => $readiness['score'] ?? null,
+                'grade' => $readiness['grade'] ?? null,
+                'blocking_issues' => count($readiness['blocking_issues'] ?? []),
+                'warnings' => count($readiness['warnings'] ?? []),
+            ];
+        }
+
+        $payload = array_merge([
+            'version' => config('aptoria.version'),
+            'action' => $this->option('remove') ? 'removed' : 'imported',
+            'generated_at' => now()->toIso8601String(),
+        ], $publicSummary);
+
+        if ($this->option('json')) {
+            $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+            $this->line($json !== false ? (string) $json : '{"status":"failed","error":"Unable to encode demo project summary."}');
+        } else {
+            $this->info('Aptoria demo project generator');
+            $this->line('Version: '.config('aptoria.version'));
+            $this->line('Action: '.$payload['action']);
+            $this->line('Slug: '.($payload['slug'] ?? 'n/a'));
+            $this->line('Imported: '.(($payload['exists'] ?? false) ? 'yes' : 'no'));
+            $this->newLine();
+            $this->table(
+                ['Area', 'Rows'],
+                collect($payload['counts'] ?? [])
+                    ->map(fn (int $count, string $key): array => [str_replace('_', ' ', $key), $count])
+                    ->values()
+                    ->all()
+            );
+        }
+
+        return 0;
+    } catch (Throwable $exception) {
+        if ($this->option('json')) {
+            $this->line((string) json_encode([
+                'version' => config('aptoria.version'),
+                'status' => 'failed',
+                'error' => $exception->getMessage(),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        } else {
+            $this->error($exception->getMessage());
+        }
+
+        return 1;
+    }
+})->purpose('Import or remove the comprehensive Aptoria demo project and sample QA evidence.');
 
 Artisan::command('aptoria:health {--json : Print machine-readable JSON output.} {--fail-on-warning : Return exit code 1 when warnings are present.}', function (): int {
     $report = app(SystemHealthService::class)->report();
@@ -70,14 +132,50 @@ Artisan::command('aptoria:security-audit {--fail-on-warning}', function (): int 
 })->purpose('Run the Aptoria deployment/security readiness audit.');
 
 Artisan::command(
-    'aptoria:run-monitors {--limit=50 : Maximum number of enabled matching monitors to inspect.} {--project= : Optional project id or slug filter.} {--monitor= : Optional monitor id filter.} {--force : Run matching enabled monitors even when next_run_at is in the future.} {--dry-run : List matching monitors without executing scans.} {--json : Print machine-readable JSON output.} {--fail-on-warning : Return exit code 1 when monitor warnings are detected.} {--fail-on-regression : Return exit code 1 when regressions are detected.}',
+    'aptoria:run-monitors {--limit=50 : Maximum number of enabled matching monitors to inspect.} {--project= : Optional project id or slug filter.} {--environment= : Optional environment id/name/type filter; use default for project-default monitors.} {--suite= : Optional test suite id/name filter; use all for whole-project monitors.} {--monitor= : Optional monitor id filter.} {--force : Run matching enabled monitors even when next_run_at is in the future.} {--dry-run : List matching monitors without executing scans.} {--json : Print machine-readable JSON output.} {--save-json : Save the runner summary under storage/app/monitor-runs.} {--output= : Optional JSON output file path. Relative paths are saved under storage/app.} {--fail-on-warning : Return exit code 1 when monitor warnings are detected.} {--fail-on-regression : Return exit code 1 when regressions are detected.}',
     function (): int {
         $summary = app(ScheduledMonitorService::class)->runDue((int) $this->option('limit'), [
             'project' => $this->option('project') ?: null,
+            'environment' => $this->option('environment') ?: null,
+            'suite' => $this->option('suite') ?: null,
             'monitor' => $this->option('monitor') ?: null,
             'force' => (bool) $this->option('force'),
             'dry_run' => (bool) $this->option('dry-run'),
         ]);
+
+        $summary['version'] = config('aptoria.version');
+        $summary['generated_at'] = now()->toIso8601String();
+        $summary['filters'] = [
+            'project' => $this->option('project') ?: null,
+            'environment' => $this->option('environment') ?: null,
+            'suite' => $this->option('suite') ?: null,
+            'monitor' => $this->option('monitor') ?: null,
+            'force' => (bool) $this->option('force'),
+        ];
+
+        $savePath = $this->option('output') ?: null;
+        if ($this->option('save-json') && ! $savePath) {
+            $savePath = 'monitor-runs/monitor-run-'.now()->format('Ymd-His').'.json';
+        }
+
+        if ($savePath) {
+            $targetPath = (string) $savePath;
+            $isWindowsAbsolutePath = strlen($targetPath) >= 3
+                && ctype_alpha($targetPath[0])
+                && $targetPath[1] === ':'
+                && in_array($targetPath[2], ['\\', '/'], true);
+            $isAbsolutePath = str_starts_with($targetPath, '/') || $isWindowsAbsolutePath;
+            if (! $isAbsolutePath) {
+                $targetPath = storage_path('app/'.ltrim($targetPath, '\/'));
+            }
+
+            if (! is_dir(dirname($targetPath))) {
+                mkdir(dirname($targetPath), 0775, true);
+            }
+
+            $summary['saved_to'] = $targetPath;
+            file_put_contents($targetPath, json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        }
 
         if ($this->option('json')) {
             $this->line((string) json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -86,17 +184,45 @@ Artisan::command(
             $this->line('Version: '.config('aptoria.version'));
             $this->line('Mode: '.(($summary['dry_run'] ?? false) ? 'dry-run' : 'execute'));
             $this->line('Checked: '.$summary['checked'].' | Due: '.$summary['due'].' | Ran: '.$summary['ran'].' | Failed: '.$summary['failed'].' | Warnings: '.$summary['warnings'].' | Regressions: '.$summary['regressions'].' | Alerts: '.$summary['alerts'].' | Alert failures: '.$summary['alert_failures'].' | Skipped: '.$summary['skipped']);
+
+            if (! empty($summary['saved_to'])) {
+                $this->line('Saved JSON: '.$summary['saved_to']);
+            }
+
+            $projectFilter = ($summary['filters']['project'] ?? null) ?: 'all';
+            $environmentFilter = ($summary['filters']['environment'] ?? null) ?: 'all';
+            $suiteFilter = ($summary['filters']['suite'] ?? null) ?: 'all';
+            $monitorFilter = ($summary['filters']['monitor'] ?? null) ?: 'all';
+
+            $this->line('Applied filters: Project='.$projectFilter.' | Environment='.$environmentFilter.' | Suite='.$suiteFilter.' | Monitor='.$monitorFilter);
+            $this->line('Project filter: '.$projectFilter);
+            $this->line('Environment filter: '.$environmentFilter);
+            $this->line('Suite filter: '.$suiteFilter);
+            $this->line('Monitor filter: '.$monitorFilter);
+
+            foreach (($summary['monitors'] ?? []) as $monitorTarget) {
+                $this->line(sprintf(
+                    'Monitor target: %s | Project: %s | Environment: %s | Suite: %s',
+                    (string) ($monitorTarget['name'] ?? 'monitor'),
+                    (string) ($monitorTarget['project'] ?? '-'),
+                    (string) ($monitorTarget['environment'] ?? '-'),
+                    (string) ($monitorTarget['suite'] ?? '-')
+                ));
+            }
+
             $this->newLine();
 
             if (empty($summary['monitors'])) {
                 $this->line('No enabled matching monitors are due.');
             } else {
                 $this->table(
-                    ['ID', 'Project', 'Monitor', 'Status', 'Next run', 'Message'],
+                    ['ID', 'Project', 'Monitor', 'Environment', 'Suite', 'Status', 'Next run', 'Message'],
                     array_map(static fn (array $monitor): array => [
                         $monitor['monitor_id'] ?? '?',
                         $monitor['project'] ?? '-',
                         $monitor['name'] ?? 'monitor',
+                        $monitor['environment'] ?? '-',
+                        $monitor['suite'] ?? '-',
                         $monitor['status'] ?? 'unknown',
                         $monitor['next_run_at'] ?? '-',
                         $monitor['message'] ?? '',
@@ -119,7 +245,8 @@ Artisan::command(
 
         return 0;
     }
-)->purpose('Run due Aptoria scheduled monitors with optional project, monitor, dry-run and JSON output filters.');
+)->purpose('Run due Aptoria scheduled monitors with optional project, environment, suite, monitor, dry-run, JSON and saved-output filters.');
+
 
 
 Artisan::command('aptoria:calendar-cleanup-setup-noise {--force : Delete matching setup/demo noise entries.}', function (): int {

@@ -22,6 +22,10 @@ class SystemHealthDiagnosticsTest extends TestCase
         $this->assertArrayHasKey('categories', $report);
         $this->assertArrayHasKey('runtime', $report['categories']);
         $this->assertArrayHasKey('database', $report['categories']);
+        $this->assertArrayHasKey('cache', $report['categories']);
+        $this->assertArrayHasKey('import_export', $report['categories']);
+        $this->assertArrayHasKey('reporting', $report['categories']);
+        $this->assertArrayHasKey('queue', $report['categories']);
         $this->assertNotEmpty($report['checks']);
         $this->assertArrayHasKey('system_info', $report);
     }
@@ -38,6 +42,9 @@ class SystemHealthDiagnosticsTest extends TestCase
             ->assertSee(__('messages.system_health.categories.runtime'))
             ->assertSee(__('messages.system_health.categories.database'))
             ->assertSee(__('messages.system_health.categories.storage'))
+            ->assertSee(__('messages.system_health.categories.reporting'))
+            ->assertSee(__('messages.system_health.cli_title'))
+            ->assertSee('artisan aptoria:health')
             ->assertSee(route('system.health.json'), false)
             ->assertDontSee('messages.system_health');
     }
@@ -72,11 +79,25 @@ class SystemHealthDiagnosticsTest extends TestCase
             ->assertJsonPath('product', 'Aptoria')
             ->assertJsonStructure([
                 'summary' => ['status', 'score', 'ok', 'warnings', 'failed', 'info', 'total'],
-                'categories' => ['runtime', 'database', 'security'],
+                'categories' => ['runtime', 'cache', 'database', 'security', 'import_export', 'reporting', 'automation', 'queue'],
                 'checks',
                 'system_info',
                 'next_steps',
             ]);
+    }
+
+    public function test_system_health_report_contains_deployment_specific_checks(): void
+    {
+        $this->seed();
+
+        $report = app(SystemHealthService::class)->report();
+        $keys = collect($report['checks'])->pluck('key')->all();
+
+        $this->assertContains('cache_write_read', $keys);
+        $this->assertContains('database_export_payload', $keys);
+        $this->assertContains('simple_pdf_renderer', $keys);
+        $this->assertContains('temporary_upload_directory', $keys);
+        $this->assertContains('queue_connection_configured', $keys);
     }
 
     public function test_system_health_is_reachable_from_global_navigation(): void

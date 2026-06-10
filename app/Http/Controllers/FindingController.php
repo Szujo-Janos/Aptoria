@@ -24,7 +24,7 @@ class FindingController extends Controller
         $source = (string) $request->query('source', '');
 
         $findings = $project->findings()
-            ->with(['endpoint', 'testCase', 'scanRun', 'scanResult', 'contractValidationResult', 'evidence'])
+            ->with(['endpoint', 'testCase', 'scanRun', 'scanResult', 'contractValidationResult', 'evidence.capturedBy', 'lifecycleChangedBy'])
             ->when($status === 'open', fn ($query) => $query->whereIn('status', Finding::OPEN_STATUSES))
             ->when($status !== '' && $status !== 'all' && $status !== 'open', fn ($query) => $query->where('status', $status))
             ->when($severity !== '', fn ($query) => $query->where('severity', $severity))
@@ -33,11 +33,21 @@ class FindingController extends Controller
             ->paginate($settings->integer('app.items_per_page', 25))
             ->withQueryString();
 
+        $statusCounts = $project->findings()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
         $summary = [
             'total' => $project->findings()->count(),
             'open' => $project->findings()->whereIn('status', Finding::OPEN_STATUSES)->count(),
             'critical' => $project->findings()->whereIn('status', Finding::OPEN_STATUSES)->where('severity', Finding::SEVERITY_CRITICAL)->count(),
             'high' => $project->findings()->whereIn('status', Finding::OPEN_STATUSES)->where('severity', Finding::SEVERITY_HIGH)->count(),
+            'fixed' => (int) ($statusCounts[Finding::STATUS_FIXED] ?? 0),
+            'accepted_risk' => (int) ($statusCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0),
+            'false_positive' => (int) ($statusCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0),
+            'reopened' => (int) ($statusCounts[Finding::STATUS_REOPENED] ?? 0),
+            'status_counts' => collect(Finding::LIFECYCLE_STATUSES)->mapWithKeys(fn (string $rowStatus): array => [$rowStatus => (int) ($statusCounts[$rowStatus] ?? 0)])->all(),
         ];
 
         return view('findings.index', compact('project', 'findings', 'summary', 'status', 'severity', 'source'));
@@ -54,6 +64,11 @@ class FindingController extends Controller
     public function store(FindingRequest $request, Project $project): RedirectResponse
     {
         $finding = $project->findings()->create($this->payload($request, $project));
+        $finding->forceFill([
+            'lifecycle_changed_at' => now(),
+            'lifecycle_changed_by_user_id' => $request->user()?->id,
+        ])->save();
+        $this->recordLifecycleEvent($request, $project, $finding, null, $finding->status, __('messages.findings.lifecycle.created_note'));
 
         return redirect()
             ->route('projects.findings.show', [$project, $finding])
@@ -63,7 +78,7 @@ class FindingController extends Controller
     public function show(Project $project, Finding $finding): View
     {
         $this->ensureFindingBelongsToProject($project, $finding);
-        $finding->load(['endpoint', 'testCase.testSuite', 'scanRun', 'scanResult.scanRun', 'contractValidationResult.run', 'evidence']);
+        $finding->load(['endpoint', 'testCase.testSuite', 'scanRun', 'scanResult.scanRun', 'contractValidationResult.run', 'evidence.capturedBy', 'lifecycleEvents.user', 'lifecycleChangedBy']);
 
         return view('findings.show', compact('project', 'finding'));
     }
@@ -79,11 +94,54 @@ class FindingController extends Controller
     public function update(FindingRequest $request, Project $project, Finding $finding): RedirectResponse
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $fromStatus = $finding->status;
         $finding->update($this->payload($request, $project));
+
+        if ($fromStatus !== $finding->status) {
+            $finding->forceFill([
+                'lifecycle_changed_at' => now(),
+                'lifecycle_changed_by_user_id' => $request->user()?->id,
+            ])->save();
+            $this->recordLifecycleEvent($request, $project, $finding, $fromStatus, $finding->status, $finding->lifecycle_note);
+        }
 
         return redirect()
             ->route('projects.findings.show', [$project, $finding])
             ->with('success', __('messages.findings.updated'));
+    }
+
+    public function transition(Request $request, Project $project, Finding $finding): RedirectResponse
+    {
+        $this->ensureFindingBelongsToProject($project, $finding);
+
+        $data = $request->validate([
+            'status' => ['required', 'string', 'in:'.implode(',', Finding::LIFECYCLE_STATUSES)],
+            'note' => ['nullable', 'string', 'max:3000'],
+        ]);
+
+        $fromStatus = $finding->status;
+        $toStatus = (string) $data['status'];
+        $allowed = array_keys($finding->availableLifecycleTransitions());
+
+        if ($toStatus !== $fromStatus && ! in_array($toStatus, $allowed, true)) {
+            return back()->withErrors(['status' => __('messages.findings.lifecycle.invalid_transition')]);
+        }
+
+        $finding->forceFill([
+            'status' => $toStatus,
+            'lifecycle_note' => $data['note'] ?? null,
+            'lifecycle_changed_at' => now(),
+            'lifecycle_changed_by_user_id' => $request->user()?->id,
+            'reopened_count' => $toStatus === Finding::STATUS_REOPENED && $fromStatus !== Finding::STATUS_REOPENED
+                ? ((int) $finding->reopened_count) + 1
+                : (int) $finding->reopened_count,
+        ])->save();
+
+        $this->recordLifecycleEvent($request, $project, $finding, $fromStatus, $toStatus, $data['note'] ?? null);
+
+        return redirect()
+            ->route('projects.findings.show', [$project, $finding])
+            ->with('success', __('messages.findings.lifecycle.updated'));
     }
 
     public function destroy(Project $project, Finding $finding): RedirectResponse
@@ -179,6 +237,18 @@ class FindingController extends Controller
         }
 
         return $modelClass::query()->whereKey($id)->where('project_id', $project->id)->exists();
+    }
+
+    private function recordLifecycleEvent(Request $request, Project $project, Finding $finding, ?string $fromStatus, string $toStatus, ?string $note = null): void
+    {
+        $finding->lifecycleEvents()->create([
+            'project_id' => $project->id,
+            'user_id' => $request->user()?->id,
+            'from_status' => $fromStatus,
+            'to_status' => $toStatus,
+            'note' => $note,
+            'changed_at' => now(),
+        ]);
     }
 
     private function ensureFindingBelongsToProject(Project $project, Finding $finding): void

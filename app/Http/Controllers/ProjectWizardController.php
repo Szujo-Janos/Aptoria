@@ -107,6 +107,7 @@ class ProjectWizardController extends Controller
             $environment = $project->environments()->create([
                 'name' => $validated['environment_name'],
                 'base_url' => $validated['environment_base_url'],
+                'environment_type' => $request->boolean('environment_is_production') ? \App\Models\Environment::TYPE_PRODUCTION : \App\Models\Environment::TYPE_STAGING,
                 'is_production' => $request->boolean('environment_is_production'),
             ]);
 

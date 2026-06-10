@@ -28,6 +28,8 @@ use App\Models\SnapshotItem;
 use App\Models\TestCase;
 use App\Models\TestCaseResult;
 use App\Models\TestSuite;
+use App\Models\User;
+use App\Observers\AuditLogObserver;
 use App\Observers\CalendarActivityObserver;
 use App\Services\Settings\SettingService;
 use Illuminate\Support\Facades\URL;
@@ -54,6 +56,10 @@ class AppServiceProvider extends ServiceProvider
 
         foreach ($this->calendarAuditedModels() as $modelClass) {
             $modelClass::observe(CalendarActivityObserver::class);
+        }
+
+        foreach ($this->auditLoggedModels() as $modelClass) {
+            $modelClass::observe(AuditLogObserver::class);
         }
     }
 
@@ -100,6 +106,7 @@ class AppServiceProvider extends ServiceProvider
                     'projects.snapshots.*',
                     'projects.monitors.*',
                     'projects.calendar.*',
+                    'projects.audit-log.*',
                     'projects.reports.*',
                     'projects.release-readiness.*',
                     'projects.release-gates.*'
@@ -136,4 +143,35 @@ class AppServiceProvider extends ServiceProvider
             TestSuite::class,
         ];
     }
+
+    /** @return array<class-string<\Illuminate\Database\Eloquent\Model>> */
+    private function auditLoggedModels(): array
+    {
+        return [
+            ApiMonitor::class,
+            AuthProfile::class,
+            CalendarEvent::class,
+            CompareRun::class,
+            ContractValidationRun::class,
+            Endpoint::class,
+            EndpointAssertionRule::class,
+            EndpointPathParameter::class,
+            Environment::class,
+            Finding::class,
+            FindingEvidence::class,
+            MonitorAlertEvent::class,
+            Project::class,
+            ProjectSetting::class,
+            QaReleaseGate::class,
+            QaReleaseGateItem::class,
+            ScanRun::class,
+            Setting::class,
+            Snapshot::class,
+            TestCase::class,
+            TestCaseResult::class,
+            TestSuite::class,
+            User::class,
+        ];
+    }
+
 }

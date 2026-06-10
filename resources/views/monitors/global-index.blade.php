@@ -8,6 +8,7 @@
         <div class="hpanel hgreen">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
+                    <a href="{{ route('monitors.alerts.index', ['open' => 1]) }}" class="btn btn-xs btn-warning">{{ __('messages.monitors.open_alerts') }}</a>
                     <a href="{{ route('projects.index') }}" class="btn btn-xs btn-success">{{ __('messages.monitors.create_from_project') }}</a>
                 </div>
                 <i class="fa fa-clock-o"></i> {{ __('messages.monitors.overview_title') }}
@@ -16,7 +17,7 @@
                 <p class="text-muted">{{ __('messages.monitors.overview_intro') }}</p>
                 <div class="alert alert-info m-b-none">
                     <strong>{{ __('messages.monitors.scheduler_command') }}</strong><br>
-                    <code>C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50</code>
+                    <code>C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50 --save-json</code><br><code>php artisan aptoria:run-monitors --dry-run --json</code>
                 </div>
             </div>
         </div>
@@ -43,6 +44,7 @@
                                 <th>{{ __('messages.nav.projects') }}</th>
                                 <th>{{ __('messages.monitors.frequency') }}</th>
                                 <th>{{ __('messages.environments.title') }}</th>
+                                <th>{{ __('messages.monitors.test_suite') }}</th>
                                 <th>{{ __('messages.monitors.next_run') }}</th>
                                 <th>{{ __('messages.monitors.last_run') }}</th>
                                 <th>{{ __('messages.common.status') }}</th>
@@ -57,6 +59,7 @@
                                     <td>@if($monitor->project)<a href="{{ route('projects.show', $monitor->project) }}">{{ $monitor->project->name }}</a>@else {{ __('messages.common.not_available') }} @endif</td>
                                     <td>{{ $monitor->frequency_label }}</td>
                                     <td>{{ $monitor->environment?->name ?: __('messages.endpoints.project_default') }}</td>
+                                    <td>{{ $monitor->suite_label }}</td>
                                     <td>{{ $monitor->next_run_label }}</td>
                                     <td>{{ $monitor->last_run_label }}</td>
                                     <td><span class="label label-{{ $monitor->last_status_css }}">{{ $monitor->last_status_label }}</span></td>

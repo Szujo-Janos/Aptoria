@@ -30,6 +30,15 @@ class ScanResult extends Model
         'response_size',
         'headers_json',
         'body_preview',
+        'response_schema_json',
+        'sensitive_data_detected',
+        'sensitive_data_count',
+        'sensitive_data_summary_json',
+        'broken_auth_detected',
+        'broken_auth_summary_json',
+        'schema_drift_detected',
+        'schema_drift_count',
+        'schema_drift_summary_json',
         'error_message',
         'risk_level',
         'risk_reason',
@@ -41,6 +50,15 @@ class ScanResult extends Model
     {
         return [
             'headers_json' => 'array',
+            'sensitive_data_summary_json' => 'array',
+            'response_schema_json' => 'array',
+            'schema_drift_summary_json' => 'array',
+            'schema_drift_detected' => 'boolean',
+            'schema_drift_count' => 'integer',
+            'sensitive_data_detected' => 'boolean',
+            'sensitive_data_count' => 'integer',
+            'broken_auth_detected' => 'boolean',
+            'broken_auth_summary_json' => 'array',
             'auth_applied' => 'boolean',
             'expected_status_matched' => 'boolean',
             'expected_content_type_matched' => 'boolean',
@@ -75,6 +93,35 @@ class ScanResult extends Model
     public function findings(): HasMany
     {
         return $this->hasMany(Finding::class);
+    }
+
+
+    public function getSchemaDriftSummaryLabelAttribute(): string
+    {
+        if (! is_array($this->schema_drift_summary_json)) {
+            return __('messages.schema_drift.not_checked');
+        }
+
+        return (string) ($this->schema_drift_summary_json['summary'] ?? __('messages.common.not_available'));
+    }
+
+
+    public function getBrokenAuthSummaryLabelAttribute(): string
+    {
+        if (! is_array($this->broken_auth_summary_json)) {
+            return __('messages.broken_auth.not_checked');
+        }
+
+        return (string) ($this->broken_auth_summary_json['summary'] ?? __('messages.common.not_available'));
+    }
+
+    public function getSensitiveDataSummaryLabelAttribute(): string
+    {
+        if (! $this->sensitive_data_detected || ! is_array($this->sensitive_data_summary_json)) {
+            return __('messages.common.not_available');
+        }
+
+        return (string) ($this->sensitive_data_summary_json['summary'] ?? __('messages.common.not_available'));
     }
 
     public function getStatusCssAttribute(): string

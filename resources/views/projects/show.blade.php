@@ -541,7 +541,10 @@
     <div class="col-lg-6">
         <div class="hpanel hgreen">
             <div class="panel-heading hbuilt">
-                <div class="panel-tools"><a href="{{ route('projects.environments.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.environments.new') }}</a></div>
+                <div class="panel-tools">
+                    <a href="{{ route('projects.environments.index', $project) }}" class="btn btn-xs btn-info">{{ __('messages.environments.manager_short') }}</a>
+                    <a href="{{ route('projects.environments.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.environments.new') }}</a>
+                </div>
                 {{ __('messages.environments.title') }}
             </div>
             <div class="panel-body">
@@ -552,14 +555,21 @@
                     </div>
                 @else
                     <table class="table table-striped table-condensed">
-                        <thead><tr><th>{{ __('messages.common.name') }}</th><th>{{ __('messages.common.base_url') }}</th><th>{{ __('messages.auth_profiles.title') }}</th><th>{{ __('messages.common.type') }}</th><th></th></tr></thead>
+                        <thead><tr><th>{{ __('messages.common.name') }}</th><th>{{ __('messages.common.base_url') }}</th><th>{{ __('messages.auth_profiles.title') }}</th><th>{{ __('messages.common.type') }}</th><th>{{ __('messages.environments.default_environment') }}</th><th></th></tr></thead>
                         <tbody>
                         @foreach($project->environments as $environment)
                             <tr>
                                 <td><strong>{{ $environment->name }}</strong></td>
                                 <td><code>{{ $environment->base_url }}</code></td>
                                 <td>{{ $environment->authProfile?->name ?: __('messages.environments.use_project_default_auth') }}</td>
-                                <td>{!! $environment->is_production ? '<span class="label label-danger">'.__('messages.environments.production').'</span>' : '<span class="label label-info">'.__('messages.environments.non_production').'</span>' !!}</td>
+                                <td><span class="label label-{{ $environment->environment_type_css }}">{{ $environment->environment_type_label }}</span></td>
+                                <td>
+                                    @if((string) ($defaultEnvironmentId ?? '') === (string) $environment->id)
+                                        <span class="label label-success"><i class="fa fa-check"></i> {{ __('messages.common.yes') }}</span>
+                                    @else
+                                        <span class="text-muted">{{ __('messages.common.no') }}</span>
+                                    @endif
+                                </td>
                                 <td class="text-right"><a href="{{ route('projects.environments.edit', [$project, $environment]) }}" class="btn btn-xs btn-default">{{ __('messages.common.edit') }}</a></td>
                             </tr>
                         @endforeach

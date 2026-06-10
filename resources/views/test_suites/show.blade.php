@@ -8,7 +8,11 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
-                    <a href="{{ route('projects.test-cases.create', ['project' => $project, 'test_suite_id' => $testSuite->id]) }}" class="btn btn-xs btn-success">{{ __('messages.test_cases.create') }}</a>
+                    <form method="POST" action="{{ route('projects.test-suites.run', [$project, $testSuite]) }}" style="display:inline" data-aptoria-confirm="true" data-aptoria-confirm-title="{{ __('messages.common.confirm_title') }}" data-aptoria-confirm-text="{{ __('messages.regression_builder.confirm_run') }}" data-aptoria-confirm-type="info" data-aptoria-confirm-button="{{ __('messages.regression_builder.run_suite') }}" data-aptoria-suite-run-form="true">
+                        @csrf
+                        <button type="submit" class="btn btn-xs btn-success" data-aptoria-submit-label="<i class=&quot;fa fa-spinner fa-spin&quot;></i> {{ __('messages.regression_builder.running_label') }}"><i class="fa fa-play"></i> {{ __('messages.regression_builder.run_suite') }}</button>
+                    </form>
+                    <a href="{{ route('projects.test-cases.create', ['project' => $project, 'test_suite_id' => $testSuite->id]) }}" class="btn btn-xs btn-primary">{{ __('messages.test_cases.create') }}</a>
                     <a href="{{ route('projects.test-suites.edit', [$project, $testSuite]) }}" class="btn btn-xs btn-primary">{{ __('messages.common.edit') }}</a>
                     <a href="{{ route('projects.test-suites.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>
                 </div>
@@ -56,6 +60,7 @@
                         <table class="table table-striped table-bordered">
                             <thead>
                                 <tr>
+                                    <th>{{ __('messages.regression_builder.execution_order') }}</th>
                                     <th>{{ __('messages.test_cases.title_field') }}</th>
                                     <th>{{ __('messages.endpoints.title') }}</th>
                                     <th>{{ __('messages.test_cases.priority') }}</th>
@@ -68,6 +73,7 @@
                             <tbody>
                             @foreach($testSuite->testCases as $case)
                                 <tr>
+                                    <td>{{ $case->execution_order ?: $loop->iteration }}</td>
                                     <td><strong>{{ $case->title }}</strong><br><small class="text-muted">{{ \Illuminate\Support\Str::limit($case->description, 100) }}</small></td>
                                     <td>@if($case->endpoint)<a href="{{ route('projects.endpoints.show', [$project, $case->endpoint]) }}"><code>{{ $case->endpoint->method }} {{ $case->endpoint->path }}</code></a>@else<span class="text-muted">{{ __('messages.common.none') }}</span>@endif</td>
                                     <td><span class="label label-{{ $case->priority_css }}">{{ $case->priority_label }}</span></td>

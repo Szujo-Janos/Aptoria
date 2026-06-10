@@ -43,12 +43,23 @@
         return null;
     }
 
+    function closestSuiteRunForm(element) {
+        while (element && element !== document) {
+            if (element.matches && element.matches('form[data-aptoria-suite-run-form="true"]')) {
+                return element;
+            }
+            element = element.parentNode;
+        }
+
+        return null;
+    }
+
     function getSubmitButton(form, event) {
         if (event && event.submitter) {
             return event.submitter;
         }
 
-        if (lastClickedSubmitButton && closestScanForm(lastClickedSubmitButton) === form) {
+        if (lastClickedSubmitButton && (closestScanForm(lastClickedSubmitButton) === form || closestSuiteRunForm(lastClickedSubmitButton) === form)) {
             return lastClickedSubmitButton;
         }
 
@@ -160,6 +171,9 @@
 
         event.preventDefault();
         event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
 
         var submitter = getFormSubmitter(form, event);
         var originalLabel = submitter ? (submitter.value || submitter.textContent || '') : '';
@@ -183,6 +197,11 @@
                 } else {
                     submitter.innerHTML = loadingLabel;
                 }
+            }
+
+            if (form.matches && form.matches('form[data-aptoria-suite-run-form="true"]')) {
+                submitWithSuiteRunAnimation(form, submitter);
+                return;
             }
 
             HTMLFormElement.prototype.submit.call(form);
@@ -237,6 +256,46 @@
         forceShowModal(modal);
     }
 
+
+    function showSuiteRunModal() {
+        var modal = document.getElementById('aptoria-suite-run-modal');
+        if (!modal) {
+            return;
+        }
+
+        if (window.jQuery && window.jQuery.fn && typeof window.jQuery.fn.modal === 'function') {
+            window.jQuery(modal).modal({
+                backdrop: 'static',
+                keyboard: false,
+                show: true
+            });
+
+            window.setTimeout(function () {
+                if (window.getComputedStyle(modal).display === 'none') {
+                    forceShowModal(modal);
+                }
+            }, 80);
+
+            return;
+        }
+
+        forceShowModal(modal);
+    }
+
+    function submitWithSuiteRunAnimation(form, submitter) {
+        if (form.getAttribute('data-aptoria-suite-run-submitted') === 'true') {
+            return;
+        }
+
+        form.setAttribute('data-aptoria-suite-run-submitted', 'true');
+        disableSubmitButton(submitter || getFormSubmitter(form));
+        showSuiteRunModal();
+
+        window.setTimeout(function () {
+            HTMLFormElement.prototype.submit.call(form);
+        }, 1200);
+    }
+
     function isSafeScanConfirmed(form) {
         if (!form.hasAttribute('data-aptoria-requires-confirm')) {
             return true;
@@ -277,6 +336,31 @@
         }, 1200);
     }
 
+
+    function handleSuiteRunSubmit(event) {
+        var form = event.target;
+        if (!form || !form.matches || !form.matches('form[data-aptoria-suite-run-form="true"]')) {
+            return;
+        }
+
+        if (form.getAttribute('data-aptoria-confirm') === 'true' && form.getAttribute('data-aptoria-confirmed') !== 'true') {
+            return;
+        }
+
+        if (form.getAttribute('data-aptoria-suite-run-submitted') === 'true') {
+            return;
+        }
+
+        if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        submitWithSuiteRunAnimation(form, getSubmitButton(form, event));
+    }
+
     document.addEventListener('click', function (event) {
         var target = event.target;
         if (!target) {
@@ -284,7 +368,7 @@
         }
 
         var button = target.closest ? target.closest('button[type="submit"], input[type="submit"]') : null;
-        if (button && closestScanForm(button)) {
+        if (button && (closestScanForm(button) || closestSuiteRunForm(button))) {
             lastClickedSubmitButton = button;
         }
     }, true);
@@ -559,4 +643,5 @@
 
     document.addEventListener('submit', handleConfirmedSubmit, true);
     document.addEventListener('submit', handleScanSubmit, true);
+    document.addEventListener('submit', handleSuiteRunSubmit, true);
 })();

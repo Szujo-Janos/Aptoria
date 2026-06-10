@@ -15,6 +15,8 @@ class MonitorAlertEvent extends Model
     public const CHANNEL_WEBHOOK = 'webhook';
     public const CHANNEL_EMAIL = 'email';
 
+    public const STATUS_TEST = 'test';
+
     public const DELIVERY_RECORDED = 'recorded';
     public const DELIVERY_SENT = 'sent';
     public const DELIVERY_SKIPPED = 'skipped';

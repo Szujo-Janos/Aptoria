@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Database\DatabaseMaintenanceService;
 use App\Services\Security\SecurityStatusService;
 use App\Services\Setup\SetupStateService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -31,10 +32,14 @@ class SystemHealthService
             $this->runtimeChecks(),
             $this->applicationChecks(),
             $this->storageChecks(),
+            $this->cacheChecks(),
             $this->databaseChecks(),
             $this->securityChecks(),
+            $this->importExportChecks(),
+            $this->reportingChecks(),
             $this->maintenanceChecks(),
             $this->automationChecks(),
+            $this->queueChecks(),
         );
 
         return [
@@ -66,6 +71,15 @@ class SystemHealthService
             'Session driver' => (string) config('session.driver'),
             'Timezone' => (string) config('app.timezone'),
             'Setup lock file' => $this->setupState->hasLockFile() ? 'present' : 'missing',
+            'PHP binary' => PHP_BINARY,
+            'PHP SAPI' => PHP_SAPI,
+            'Loaded php.ini' => php_ini_loaded_file() ?: 'not reported',
+            'Operating system' => PHP_OS_FAMILY.' / '.php_uname('s').' '.php_uname('r'),
+            'Memory limit' => (string) ini_get('memory_limit'),
+            'Max execution time' => (string) ini_get('max_execution_time'),
+            'Upload max filesize' => (string) ini_get('upload_max_filesize'),
+            'Post max size' => (string) ini_get('post_max_size'),
+            'Mail transport' => (string) config('mail.default'),
             'Project root' => base_path(),
             'Public path' => public_path(),
             'Storage path' => storage_path(),
@@ -75,7 +89,7 @@ class SystemHealthService
     /** @return array<int, array<string, mixed>> */
     private function runtimeChecks(): array
     {
-        $extensions = ['ctype', 'curl', 'fileinfo', 'json', 'mbstring', 'openssl', 'pdo', 'tokenizer', 'xml'];
+        $extensions = ['ctype', 'curl', 'fileinfo', 'json', 'mbstring', 'openssl', 'pdo', 'tokenizer', 'xml', 'zip'];
         $checks = [
             $this->check(
                 'runtime',
@@ -132,6 +146,26 @@ class SystemHealthService
             $this->memoryLimitMegabytes() === null || $this->memoryLimitMegabytes() >= 128,
             'memory_limit='.(string) ini_get('memory_limit'),
             'Use at least 128M for reports, imports and larger scans.',
+            'warning'
+        );
+
+        $checks[] = $this->check(
+            'runtime',
+            'max_execution_time',
+            'PHP max execution time',
+            $this->iniSizeMegabytes('max_execution_time') === 0 || (int) ini_get('max_execution_time') >= 30,
+            'max_execution_time='.(string) ini_get('max_execution_time'),
+            'Use at least 30 seconds for imports, reports and scheduled monitor runs.',
+            'warning'
+        );
+
+        $checks[] = $this->check(
+            'runtime',
+            'upload_limit',
+            'Upload limit supports evidence and import files',
+            $this->iniSizeMegabytes('upload_max_filesize') >= 2 && $this->iniSizeMegabytes('post_max_size') >= 2,
+            'upload_max_filesize='.(string) ini_get('upload_max_filesize').', post_max_size='.(string) ini_get('post_max_size'),
+            'Use at least 2M for report logos and preferably more for evidence/import files.',
             'warning'
         );
 
@@ -244,6 +278,41 @@ class SystemHealthService
     }
 
     /** @return array<int, array<string, mixed>> */
+    private function cacheChecks(): array
+    {
+        $checks = [
+            $this->check(
+                'cache',
+                'cache_store_configured',
+                'Cache store is configured',
+                trim((string) config('cache.default')) !== '',
+                'CACHE_STORE/CACHE_DRIVER='.(string) config('cache.default'),
+                'Set a valid cache store in .env.'
+            ),
+        ];
+
+        try {
+            $key = 'aptoria-health-'.str_replace('.', '', uniqid('', true));
+            Cache::put($key, 'ok', 60);
+            $readBack = Cache::get($key);
+            Cache::forget($key);
+
+            $checks[] = $this->check(
+                'cache',
+                'cache_write_read',
+                'Cache write/read/delete probe works',
+                $readBack === 'ok',
+                $readBack === 'ok' ? 'Temporary cache probe succeeded.' : 'Temporary cache probe did not return the expected value.',
+                'Fix cache permissions or switch to a supported cache store.'
+            );
+        } catch (Throwable $exception) {
+            $checks[] = $this->check('cache', 'cache_write_read', 'Cache write/read/delete probe works', false, $exception->getMessage(), 'Fix cache permissions or switch to a supported cache store.');
+        }
+
+        return $checks;
+    }
+
+    /** @return array<int, array<string, mixed>> */
     private function databaseChecks(): array
     {
         $checks = [
@@ -345,14 +414,14 @@ class SystemHealthService
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function maintenanceChecks(): array
+    private function importExportChecks(): array
     {
         $checks = [];
 
         try {
             $payload = $this->databaseMaintenance->exportPayload();
             $checks[] = $this->check(
-                'maintenance',
+                'import_export',
                 'database_export_payload',
                 'Database export payload can be generated',
                 ($payload['type'] ?? '') === DatabaseMaintenanceService::EXPORT_TYPE,
@@ -360,8 +429,107 @@ class SystemHealthService
                 'Check DatabaseMaintenanceService and database permissions.'
             );
         } catch (Throwable $exception) {
-            $checks[] = $this->check('maintenance', 'database_export_payload', 'Database export payload can be generated', false, $exception->getMessage(), 'Check DatabaseMaintenanceService and database permissions.');
+            $checks[] = $this->check('import_export', 'database_export_payload', 'Database export payload can be generated', false, $exception->getMessage(), 'Check DatabaseMaintenanceService and database permissions.');
         }
+
+        $checks[] = $this->pathWritableCheck(
+            'import_export',
+            'storage_exports_writable',
+            'Export storage target is writable',
+            storage_path('app/exports'),
+            'Create storage/app/exports or make storage/app writable for generated exports.',
+            'warning'
+        );
+
+        $checks[] = $this->pathWritableCheck(
+            'import_export',
+            'storage_imports_writable',
+            'Import staging target is writable',
+            storage_path('app/imports'),
+            'Create storage/app/imports or make storage/app writable for uploaded/imported files.',
+            'warning'
+        );
+
+        $checks[] = $this->check(
+            'import_export',
+            'temporary_upload_directory',
+            'PHP temporary upload directory is writable',
+            is_dir(sys_get_temp_dir()) && is_writable(sys_get_temp_dir()),
+            sys_get_temp_dir(),
+            'Fix the PHP temporary directory permissions used for uploads.'
+        );
+
+        $checks[] = $this->check(
+            'import_export',
+            'newman_import_support',
+            'Newman JSON/JUnit import prerequisites',
+            extension_loaded('json') && extension_loaded('xml'),
+            'json='.(extension_loaded('json') ? 'loaded' : 'missing').', xml='.(extension_loaded('xml') ? 'loaded' : 'missing'),
+            'Enable json and xml PHP extensions for Newman JSON/JUnit import.'
+        );
+
+        return $checks;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function reportingChecks(): array
+    {
+        $domPdfAvailable = class_exists('Dompdf\\Dompdf') || class_exists('Barryvdh\\DomPDF\\Facade\\Pdf');
+
+        return [
+            $this->check(
+                'reporting',
+                'simple_pdf_renderer',
+                'Built-in PDF renderer is available',
+                class_exists(\App\Services\Reports\SimplePdfReportRenderer::class),
+                'Dependency-free PDF renderer class is available.',
+                'Restore app/Services/Reports/SimplePdfReportRenderer.php from the release package.'
+            ),
+            $this->info(
+                'reporting',
+                'dompdf_status',
+                'DOMPDF availability',
+                $domPdfAvailable ? 'DOMPDF is installed and can be used by custom deployments.' : 'DOMPDF is not installed; Aptoria will use the built-in PDF renderer.'
+            ),
+            $this->pathWritableCheck(
+                'reporting',
+                'report_output_writable',
+                'Report output storage is writable',
+                storage_path('app/reports'),
+                'Create storage/app/reports or make storage/app writable for report output.',
+                'warning'
+            ),
+            $this->pathWritableCheck(
+                'reporting',
+                'report_logo_storage_writable',
+                'Project report logo storage is writable',
+                storage_path('app/private/report-logos'),
+                'Create storage/app/private/report-logos or make storage/app/private writable.',
+                'warning'
+            ),
+            $this->pathWritableCheck(
+                'reporting',
+                'finding_evidence_storage_writable',
+                'Finding evidence attachment storage is writable',
+                storage_path('app/private/finding-evidence'),
+                'Create storage/app/private/finding-evidence or make storage/app/private writable.',
+                'warning'
+            ),
+            $this->check(
+                'reporting',
+                'report_views_present',
+                'Report presentation templates are present',
+                is_file(resource_path('views/reports/html.blade.php')) || is_file(resource_path('views/reports/partials/readiness-endpoint-table.blade.php')),
+                'Report Blade templates were found.',
+                'Restore resources/views/reports from the release package.'
+            ),
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function maintenanceChecks(): array
+    {
+        $checks = [];
 
         $checks[] = $this->check(
             'maintenance',
@@ -438,6 +606,51 @@ class SystemHealthService
         ];
     }
 
+    /** @return array<int, array<string, mixed>> */
+    private function queueChecks(): array
+    {
+        $queue = (string) config('queue.default');
+        $checks = [
+            $this->check(
+                'queue',
+                'queue_connection_configured',
+                'Queue connection is configured',
+                trim($queue) !== '',
+                'QUEUE_CONNECTION='.$queue,
+                'Set QUEUE_CONNECTION in .env.',
+                'warning'
+            ),
+        ];
+
+        if ($queue === 'database') {
+            foreach (['jobs', (string) config('queue.failed.table', 'failed_jobs')] as $table) {
+                try {
+                    $checks[] = $this->check(
+                        'queue',
+                        'queue_table_'.$table,
+                        'Queue table exists: '.$table,
+                        Schema::hasTable($table),
+                        Schema::hasTable($table) ? 'Found.' : 'Missing.',
+                        'Run php artisan queue:table / queue:failed-table and migrate, or switch queue connection.'
+                    );
+                } catch (Throwable $exception) {
+                    $checks[] = $this->check('queue', 'queue_table_'.$table, 'Queue table exists: '.$table, false, $exception->getMessage(), 'Check database connection and migrations.', 'warning');
+                }
+            }
+        }
+
+        if ($queue === 'sync') {
+            $checks[] = $this->info(
+                'queue',
+                'sync_queue_note',
+                'Synchronous queue mode',
+                'QUEUE_CONNECTION=sync runs notification jobs inline. This is fine for local/XAMPP use; use database/redis for heavier server workloads.'
+            );
+        }
+
+        return $checks;
+    }
+
     /** @param array<int, array<string, mixed>> $checks @return array<string, mixed> */
     private function summarize(array $checks): array
     {
@@ -469,10 +682,14 @@ class SystemHealthService
             'runtime' => 'Runtime',
             'application' => 'Application',
             'storage' => 'Storage & permissions',
+            'cache' => 'Cache',
             'database' => 'Database',
             'security' => 'Security posture',
-            'maintenance' => 'Maintenance & export',
+            'import_export' => 'Import & export',
+            'reporting' => 'Reporting & evidence',
+            'maintenance' => 'Maintenance',
             'automation' => 'Automation',
+            'queue' => 'Queue',
         ];
 
         $categories = [];
@@ -503,6 +720,31 @@ class SystemHealthService
             ->take(8)
             ->values()
             ->all();
+    }
+
+    private function pathWritableCheck(string $category, string $key, string $label, string $path, string $fix, string $severity = 'fail'): array
+    {
+        $exists = is_dir($path);
+        $target = $exists ? $path : dirname($path);
+        $writable = is_dir($target) && is_writable($target);
+        $detail = $exists
+            ? $path.($writable ? ' is writable.' : ' is not writable.')
+            : $path.' does not exist; parent '.dirname($path).($writable ? ' is writable.' : ' is not writable.');
+
+        return $this->check($category, $key, $label, $writable, $detail, $fix, $severity);
+    }
+
+    private function info(string $category, string $key, string $label, string $detail): array
+    {
+        return [
+            'category' => $category,
+            'key' => $key,
+            'label' => $label,
+            'status' => 'info',
+            'css' => 'info',
+            'detail' => $detail,
+            'fix' => '',
+        ];
     }
 
     private function check(string $category, string $key, string $label, bool $passes, string $detail, string $fix, string $severity = 'fail'): array
@@ -549,6 +791,28 @@ class SystemHealthService
         $publicPath = realpath(public_path()) ?: public_path();
 
         return str_starts_with(str_replace('\\', '/', $realPath), str_replace('\\', '/', $publicPath));
+    }
+
+    private function iniSizeMegabytes(string $key): int
+    {
+        $value = trim((string) ini_get($key));
+        if ($value === '' || $value === '-1') {
+            return 0;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        $unit = strtolower(substr($value, -1));
+        $number = (float) $value;
+
+        return match ($unit) {
+            'g' => (int) ceil($number * 1024),
+            'm' => (int) ceil($number),
+            'k' => max(1, (int) ceil($number / 1024)),
+            default => (int) ceil($number),
+        };
     }
 
     private function memoryLimitMegabytes(): ?int

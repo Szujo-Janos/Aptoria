@@ -131,7 +131,18 @@ class SnapshotService
             'url' => $result?->url ?: $endpoint->full_url,
             'headers' => $result?->headers_json ?: [],
             'body_preview' => $result?->body_preview,
+            'body_preview_hash' => $this->bodyPreviewHash($result?->body_preview),
+            'body_preview_excerpt' => $this->bodyPreviewExcerpt($result?->body_preview),
+            'body_schema' => is_array($result?->response_schema_json) ? $result->response_schema_json : $this->bodySchema($result?->body_preview),
             'response_size' => $result?->response_size,
+            'sensitive_data_detected' => (bool) ($result?->sensitive_data_detected ?? false),
+            'sensitive_data_count' => (int) ($result?->sensitive_data_count ?? 0),
+            'sensitive_data_summary' => is_array($result?->sensitive_data_summary_json) ? ($result->sensitive_data_summary_json['summary'] ?? null) : null,
+            'broken_auth_detected' => (bool) ($result?->broken_auth_detected ?? false),
+            'broken_auth_summary' => is_array($result?->broken_auth_summary_json) ? ($result->broken_auth_summary_json['summary'] ?? null) : null,
+            'schema_drift_detected' => (bool) ($result?->schema_drift_detected ?? false),
+            'schema_drift_count' => (int) ($result?->schema_drift_count ?? 0),
+            'schema_drift_summary' => is_array($result?->schema_drift_summary_json) ? ($result->schema_drift_summary_json['summary'] ?? null) : null,
             'risk_score' => $riskAnalysis['score'],
             'assertion_status' => $assertionEvaluation['status'],
             'failed_assertion_rules' => array_column($assertionEvaluation['failed_rules'], 'rule_label'),
@@ -233,8 +244,18 @@ class SnapshotService
             $this->recordCompareItem($compareRun, CompareItem::TYPE_CHANGED, $itemB, 'risk_score', 'risk_score', (string) $oldRiskScore, (string) $newRiskScore, $severity);
         }
 
+        $this->compareBooleanMetadata($compareRun, $itemB, $metadataA, $metadataB, 'sensitive_data_detected', 'sensitive_data', CompareItem::SEVERITY_HIGH);
+        $this->compareBooleanMetadata($compareRun, $itemB, $metadataA, $metadataB, 'broken_auth_detected', 'broken_auth', CompareItem::SEVERITY_CRITICAL);
+        $this->compareBooleanMetadata($compareRun, $itemB, $metadataA, $metadataB, 'schema_drift_detected', 'schema_drift', CompareItem::SEVERITY_HIGH);
+        $this->compareNumericMetadata($compareRun, $itemB, $metadataA, $metadataB, 'sensitive_data_count', 'sensitive_data_count', CompareItem::SEVERITY_HIGH);
+        $this->compareNumericMetadata($compareRun, $itemB, $metadataA, $metadataB, 'schema_drift_count', 'schema_drift_count', CompareItem::SEVERITY_HIGH);
+        $this->compareNumericMetadata($compareRun, $itemB, $metadataA, $metadataB, 'response_size', 'response_size', CompareItem::SEVERITY_REVIEW, 512);
+        $this->compareBodyPreview($compareRun, $itemB, $metadataA, $metadataB);
+        $this->compareBodySchema($compareRun, $itemB, $metadataA, $metadataB);
+
         $headersA = $this->normalizedHeaders($metadataA['headers'] ?? []);
         $headersB = $this->normalizedHeaders($metadataB['headers'] ?? []);
+        $this->compareHeaders($compareRun, $itemB, $headersA, $headersB);
         foreach (['strict-transport-security', 'content-security-policy', 'x-content-type-options'] as $header) {
             if (array_key_exists($header, $headersA) && ! array_key_exists($header, $headersB)) {
                 $this->recordCompareItem($compareRun, CompareItem::TYPE_CHANGED, $itemB, 'security_header', 'security_header', $header, __('messages.snapshots.values.missing'), CompareItem::SEVERITY_HIGH);
@@ -244,6 +265,249 @@ class SnapshotService
                 $this->recordCompareItem($compareRun, CompareItem::TYPE_CHANGED, $itemB, 'security_header', 'security_header', __('messages.snapshots.values.missing'), $header, CompareItem::SEVERITY_INFO);
             }
         }
+    }
+
+    private function compareBooleanMetadata(CompareRun $compareRun, SnapshotItem $itemB, array $metadataA, array $metadataB, string $key, string $field, string $escalationSeverity): void
+    {
+        $old = (bool) ($metadataA[$key] ?? false);
+        $new = (bool) ($metadataB[$key] ?? false);
+
+        if ($old === $new) {
+            return;
+        }
+
+        $severity = $new ? $escalationSeverity : CompareItem::SEVERITY_INFO;
+        $this->recordCompareItem($compareRun, CompareItem::TYPE_CHANGED, $itemB, $field, $field, $this->boolValue($old), $this->boolValue($new), $severity);
+    }
+
+    private function compareNumericMetadata(CompareRun $compareRun, SnapshotItem $itemB, array $metadataA, array $metadataB, string $key, string $field, string $severity, int $minimumDelta = 1): void
+    {
+        $old = $metadataA[$key] ?? null;
+        $new = $metadataB[$key] ?? null;
+
+        if (! is_numeric($old) || ! is_numeric($new)) {
+            return;
+        }
+
+        if (abs((int) $new - (int) $old) < $minimumDelta) {
+            return;
+        }
+
+        $this->recordCompareItem($compareRun, CompareItem::TYPE_CHANGED, $itemB, $field, $field, (string) $old, (string) $new, $severity);
+    }
+
+    private function compareBodyPreview(CompareRun $compareRun, SnapshotItem $itemB, array $metadataA, array $metadataB): void
+    {
+        $oldHash = (string) ($metadataA['body_preview_hash'] ?? $this->bodyPreviewHash($metadataA['body_preview'] ?? null));
+        $newHash = (string) ($metadataB['body_preview_hash'] ?? $this->bodyPreviewHash($metadataB['body_preview'] ?? null));
+
+        if ($oldHash === '' || $newHash === '' || $oldHash === $newHash) {
+            return;
+        }
+
+        $oldExcerpt = (string) ($metadataA['body_preview_excerpt'] ?? $this->bodyPreviewExcerpt($metadataA['body_preview'] ?? null));
+        $newExcerpt = (string) ($metadataB['body_preview_excerpt'] ?? $this->bodyPreviewExcerpt($metadataB['body_preview'] ?? null));
+
+        $this->recordCompareItem(
+            $compareRun,
+            CompareItem::TYPE_CHANGED,
+            $itemB,
+            'body_preview',
+            'body_preview',
+            $oldExcerpt !== '' ? $oldExcerpt : substr($oldHash, 0, 12),
+            $newExcerpt !== '' ? $newExcerpt : substr($newHash, 0, 12),
+            CompareItem::SEVERITY_REVIEW
+        );
+    }
+
+    private function compareBodySchema(CompareRun $compareRun, SnapshotItem $itemB, array $metadataA, array $metadataB): void
+    {
+        $schemaA = $this->metadataSchema($metadataA);
+        $schemaB = $this->metadataSchema($metadataB);
+
+        if ($schemaA === [] && $schemaB === []) {
+            return;
+        }
+
+        $paths = collect(array_keys($schemaA))->merge(array_keys($schemaB))->unique()->sort()->values();
+        $recorded = 0;
+        $hasSchemaDrift = false;
+        foreach ($paths as $path) {
+            $oldType = $schemaA[$path] ?? null;
+            $newType = $schemaB[$path] ?? null;
+
+            if ($oldType === $newType) {
+                continue;
+            }
+
+            if ($oldType === null) {
+                $old = __('messages.snapshots.values.missing');
+                $new = $path.' ('.$newType.')';
+                $severity = CompareItem::SEVERITY_INFO;
+            } elseif ($newType === null) {
+                $old = $path.' ('.$oldType.')';
+                $new = __('messages.snapshots.values.missing');
+                $severity = CompareItem::SEVERITY_HIGH;
+            } else {
+                $old = $path.' ('.$oldType.')';
+                $new = $path.' ('.$newType.')';
+                $severity = CompareItem::SEVERITY_HIGH;
+            }
+
+            $field = $oldType === null ? 'response_schema_added' : ($newType === null ? 'response_schema_removed' : (($oldType === 'null' || $newType === 'null') ? 'response_schema_nullability' : 'response_schema_type'));
+            $this->recordCompareItem($compareRun, CompareItem::TYPE_CHANGED, $itemB, $field, 'response_schema', $old, $new, $severity);
+            $hasSchemaDrift = true;
+            $recorded++;
+
+            if ($recorded >= 25) {
+                break;
+            }
+        }
+
+        if ($hasSchemaDrift) {
+            $this->recordCompareItem(
+                $compareRun,
+                CompareItem::TYPE_CHANGED,
+                $itemB,
+                'response_schema',
+                'response_schema',
+                count($schemaA).' fields',
+                count($schemaB).' fields',
+                CompareItem::SEVERITY_REVIEW
+            );
+        }
+    }
+
+    /** @param array<string, mixed> $headersA @param array<string, mixed> $headersB */
+    private function compareHeaders(CompareRun $compareRun, SnapshotItem $itemB, array $headersA, array $headersB): void
+    {
+        $ignored = ['date', 'server', 'x-powered-by', 'etag', 'last-modified'];
+        $keys = collect(array_keys($headersA))->merge(array_keys($headersB))->unique()->sort()->values();
+        $recorded = 0;
+
+        foreach ($keys as $header) {
+            if (in_array($header, $ignored, true)) {
+                continue;
+            }
+
+            $old = $this->headerValue($headersA[$header] ?? null);
+            $new = $this->headerValue($headersB[$header] ?? null);
+
+            if ($old === $new) {
+                continue;
+            }
+
+            $severity = str_starts_with($header, 'x-') || str_contains($header, 'security') || in_array($header, ['content-type', 'cache-control', 'location'], true)
+                ? CompareItem::SEVERITY_REVIEW
+                : CompareItem::SEVERITY_INFO;
+
+            $this->recordCompareItem(
+                $compareRun,
+                CompareItem::TYPE_CHANGED,
+                $itemB,
+                'response_header',
+                'response_header',
+                $header.': '.($old !== '' ? $old : __('messages.snapshots.values.missing')),
+                $header.': '.($new !== '' ? $new : __('messages.snapshots.values.missing')),
+                $severity
+            );
+            $recorded++;
+
+            if ($recorded >= 25) {
+                break;
+            }
+        }
+    }
+
+    private function bodyPreviewHash(mixed $preview): ?string
+    {
+        $value = is_string($preview) ? trim($preview) : '';
+
+        return $value !== '' ? hash('sha256', $value) : null;
+    }
+
+    private function bodyPreviewExcerpt(mixed $preview): ?string
+    {
+        $value = is_string($preview) ? trim(preg_replace('/\s+/', ' ', $preview) ?: '') : '';
+
+        return $value !== '' ? Str::limit($value, 180) : null;
+    }
+
+    /** @return array<string, string> */
+    private function bodySchema(mixed $preview): array
+    {
+        if (! is_string($preview) || trim($preview) === '') {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode($preview, true, 128, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return [];
+        }
+
+        $schema = [];
+        $this->collectSchemaPaths($decoded, '$', $schema, 0);
+
+        return $schema;
+    }
+
+    /** @param array<string, mixed> $metadata @return array<string, string> */
+    private function metadataSchema(array $metadata): array
+    {
+        if (isset($metadata['body_schema']) && is_array($metadata['body_schema'])) {
+            return collect($metadata['body_schema'])
+                ->filter(fn (mixed $type, mixed $path): bool => is_string($path) && is_string($type))
+                ->mapWithKeys(fn (string $type, string $path): array => [$path => $type])
+                ->all();
+        }
+
+        return $this->bodySchema($metadata['body_preview'] ?? null);
+    }
+
+    /** @param array<string, string> $schema */
+    private function collectSchemaPaths(mixed $value, string $path, array &$schema, int $depth): void
+    {
+        if ($depth > 6 || count($schema) >= 150) {
+            return;
+        }
+
+        $schema[$path] = $this->jsonType($value);
+
+        if (is_array($value)) {
+            if (array_is_list($value)) {
+                if (array_key_exists(0, $value)) {
+                    $this->collectSchemaPaths($value[0], $path.'[]', $schema, $depth + 1);
+                }
+                return;
+            }
+
+            foreach ($value as $key => $child) {
+                $this->collectSchemaPaths($child, $path.'.'.$key, $schema, $depth + 1);
+            }
+        }
+    }
+
+    private function jsonType(mixed $value): string
+    {
+        return match (true) {
+            is_array($value) && array_is_list($value) => 'array',
+            is_array($value) => 'object',
+            is_int($value) => 'integer',
+            is_float($value) => 'number',
+            is_bool($value) => 'boolean',
+            $value === null => 'null',
+            default => 'string',
+        };
+    }
+
+    private function headerValue(mixed $value): string
+    {
+        if (is_array($value)) {
+            return implode(', ', array_map(fn (mixed $item): string => (string) $item, $value));
+        }
+
+        return trim((string) $value);
     }
 
     private function recordCompareItem(CompareRun $compareRun, string $changeType, SnapshotItem $item, ?string $fieldChanged, ?string $fieldLabel, ?string $oldValue, ?string $newValue, string $severity): void
@@ -290,6 +554,15 @@ class SnapshotService
             'high_count' => $items->where('severity', CompareItem::SEVERITY_HIGH)->count(),
             'review_count' => $items->where('severity', CompareItem::SEVERITY_REVIEW)->count(),
             'info_count' => $items->where('severity', CompareItem::SEVERITY_INFO)->count(),
+            'breaking_count' => $items->whereIn('severity', [CompareItem::SEVERITY_CRITICAL, CompareItem::SEVERITY_HIGH])->count(),
+            'status_code_count' => $items->where('field_changed', 'status_code')->count(),
+            'response_time_count' => $items->where('field_changed', 'response_time_ms')->count(),
+            'header_count' => $items->filter(fn (CompareItem $item): bool => in_array($item->field_changed, ['response_header', 'security_header'], true))->count(),
+            'body_count' => $items->whereIn('field_changed', ['body_preview', 'response_size'])->count(),
+            'schema_count' => $items->whereIn('field_changed', ['response_schema', 'response_schema_added', 'response_schema_removed', 'response_schema_type', 'response_schema_nullability'])->count(),
+            'sensitive_data_count' => $items->whereIn('field_changed', ['sensitive_data', 'sensitive_data_count'])->count(),
+            'broken_auth_count' => $items->where('field_changed', 'broken_auth')->count(),
+            'schema_drift_count' => $items->whereIn('field_changed', ['schema_drift', 'schema_drift_count'])->count(),
         ];
     }
 

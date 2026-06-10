@@ -62,10 +62,15 @@
         'projects.snapshots.*',
         'projects.monitors.*',
         'projects.calendar.*',
+        'projects.audit-log.*',
         'projects.reports.*',
         'projects.release-readiness.*',
         'projects.release-gates.*'
     );
+    $aptoriaOperationsNavActive = $aptoriaOperationsNavActive ?? request()->routeIs('monitors.*', 'calendar.*');
+    $aptoriaReleaseNavActive = $aptoriaReleaseNavActive ?? request()->routeIs('reports.*', 'release-readiness.*');
+    $aptoriaAdminNavActive = $aptoriaAdminNavActive ?? request()->routeIs('audit-log.*', 'demo-project.*', 'system.health.*', 'settings.*');
+    $aptoriaSupportNavActive = $aptoriaSupportNavActive ?? request()->routeIs('how-it-works', 'help.*');
     $aptoriaProjectMenuActive = $aptoriaProjectMenuActive ?? fn (string ...$patterns): string => request()->routeIs(...$patterns) ? 'active' : '';
     $aptoriaCurrentProject = $aptoriaCurrentProject ?? request()->route('project');
     $aptoriaCurrentProject = $aptoriaCurrentProject instanceof \App\Models\Project ? $aptoriaCurrentProject : null;
@@ -195,25 +200,21 @@
                     </ul>
                 </li>
 
-                <li class="dropdown aptoria-user-menu">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <li class="dropdown aptoria-user-menu aptoria-account-menu">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="{{ __('messages.header.account_menu') }}">
                         <i class="fa fa-user-circle"></i>
                         <span class="aptoria-menu-text">{{ auth()->user()->name ?? __('messages.auth.default_user_name') }}</span>
                         <span class="caret"></span>
                     </a>
-                    <ul class="dropdown-menu hdropdown animated flipInX">
-                        <li class="title">
+                    <ul class="dropdown-menu hdropdown animated flipInX aptoria-clean-profile-menu">
+                        <li class="title aptoria-profile-menu-title">
                             <strong>{{ auth()->user()->name ?? __('messages.auth.default_user_name') }}</strong><br>
-                            <small>{{ __('messages.header.signed_in') }}</small>
+                            <small>{{ auth()->user()->email ?? __('messages.header.signed_in') }}</small>
                         </li>
-                        <li><a href="{{ route('how-it-works') }}"><i class="fa fa-map-o"></i> {{ __('messages.nav.how_it_works') }}</a></li>
-                        <li><a href="{{ route('monitors.index') }}"><i class="fa fa-clock-o"></i> {{ __('messages.nav.monitors') }}</a></li>
-                        <li><a href="{{ route('calendar.index') }}"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a></li>
-                        <li><a href="{{ route('release-readiness.index') }}"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness') }}</a></li>
-                        <li><a href="{{ route('help.index') }}"><i class="fa fa-question-circle"></i> {{ __('messages.nav.help') }}</a></li>
                         <li><a href="{{ route('profile.show') }}"><i class="fa fa-user"></i> {{ __('messages.nav.my_profile') }}</a></li>
-                        <li><a href="{{ route('system.health.index') }}"><i class="fa fa-heartbeat"></i> {{ __('messages.nav.system_health') }}</a></li>
+                        <li><a href="{{ route('profile.show') }}#default-report-identity"><i class="fa fa-id-card-o"></i> {{ __('messages.nav.default_report_identity') }}</a></li>
                         <li><a href="{{ route('settings.index') }}"><i class="fa fa-cog"></i> {{ __('messages.nav.settings') }}</a></li>
+                        <li><a href="{{ route('help.index') }}"><i class="fa fa-life-ring"></i> {{ __('messages.nav.help') }}</a></li>
                         <li class="divider"></li>
                         <li>
                             <form action="{{ route('logout') }}" method="POST" class="menu-form">
@@ -246,60 +247,87 @@
             </div>
         </div>
 
-        <ul class="nav" id="side-menu">
+        <ul class="nav aptoria-ia-sidebar" id="side-menu">
             <li class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <a href="{{ route('dashboard') }}"><i class="fa fa-dashboard"></i> <span class="nav-label">{{ __('messages.nav.dashboard') }}</span></a>
             </li>
+
             <li class="{{ $aptoriaProjectNavActive ? 'active' : '' }}">
                 <a href="#"><i class="fa fa-briefcase"></i> <span class="nav-label">{{ __('messages.nav.projects') }}</span><span class="fa arrow"></span></a>
-                <ul class="nav nav-second-level">
+                <ul class="nav nav-second-level aptoria-nav-grouped">
                     <li class="{{ $aptoriaProjectMenuActive('projects.index') }}"><a href="{{ route('projects.index') }}"><i class="fa fa-list-ul"></i> {{ __('messages.nav.all_projects') }}</a></li>
                     <li class="{{ $aptoriaProjectMenuActive('projects.create') }}"><a href="{{ route('projects.create') }}"><i class="fa fa-plus-circle"></i> {{ __('messages.nav.create_project') }}</a></li>
                     <li class="{{ $aptoriaProjectMenuActive('projects.wizard.*') }}"><a href="{{ route('projects.wizard.create') }}"><i class="fa fa-magic"></i> {{ __('messages.nav.guided_project') }}</a></li>
+
                     @if($aptoriaCurrentProject)
-                        <li class="nav-header"><span>{{ __('messages.nav.project_modules') }}</span></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.show', 'projects.edit', 'projects.environments.*', 'projects.auth-profiles.*', 'projects.settings.*') }}"><a href="{{ route('projects.show', $aptoriaCurrentProject) }}"><i class="fa fa-info-circle"></i> {{ __('messages.projects.details') }}</a></li>
+                        <li class="nav-header"><span>{{ __('messages.nav.current_project') }}</span></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.show', 'projects.edit') }}"><a href="{{ route('projects.show', $aptoriaCurrentProject) }}"><i class="fa fa-info-circle"></i> {{ __('messages.projects.details') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.settings.*') }}"><a href="{{ route('projects.settings.edit', $aptoriaCurrentProject) }}"><i class="fa fa-sliders"></i> {{ __('messages.nav.project_settings') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.environments.*', 'projects.auth-profiles.*') }}"><a href="{{ route('projects.environments.index', $aptoriaCurrentProject) }}"><i class="fa fa-server"></i> {{ __('messages.nav.environments_auth_profiles') }}</a></li>
+
+                        <li class="nav-header"><span>{{ __('messages.nav.api_inventory') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.endpoint-inventory.*') }}"><a href="{{ route('projects.endpoint-inventory.index', $aptoriaCurrentProject) }}"><i class="fa fa-list-alt"></i> {{ __('messages.nav.endpoint_inventory') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.endpoints.*', 'projects.assertion-rules.*') }}"><a href="{{ route('projects.endpoints.index', $aptoriaCurrentProject) }}"><i class="fa fa-sitemap"></i> {{ __('messages.nav.endpoints') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.contract-validations.*') }}"><a href="{{ route('projects.contract-validations.index', $aptoriaCurrentProject) }}"><i class="fa fa-code"></i> {{ __('messages.contract_validations.short_title') }}</a></li>
+
+                        <li class="nav-header"><span>{{ __('messages.nav.quality_workflow') }}</span></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.scans.*', 'projects.snapshots.*') }}"><a href="{{ route('projects.scans.index', $aptoriaCurrentProject) }}"><i class="fa fa-crosshairs"></i> {{ __('messages.nav.scans_snapshots') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-suites.*') }}"><a href="{{ route('projects.test-suites.index', $aptoriaCurrentProject) }}"><i class="fa fa-folder-open"></i> {{ __('messages.test_suites.title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-cases.*') }}"><a href="{{ route('projects.test-cases.index', $aptoriaCurrentProject) }}"><i class="fa fa-check-square-o"></i> {{ __('messages.test_cases.title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-execution.*') }}"><a href="{{ route('projects.test-execution.index', $aptoriaCurrentProject) }}"><i class="fa fa-play-circle"></i> {{ __('messages.test_execution.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.qa-coverage.*') }}"><a href="{{ route('projects.qa-coverage.index', $aptoriaCurrentProject) }}"><i class="fa fa-pie-chart"></i> {{ __('messages.qa_coverage.short_title') }}</a></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.qa-evidence.*') }}"><a href="{{ route('projects.qa-evidence.index', $aptoriaCurrentProject) }}"><i class="fa fa-archive"></i> {{ __('messages.qa_evidence.short_title') }}</a></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.scans.*', 'projects.snapshots.*') }}"><a href="{{ route('projects.scans.index', $aptoriaCurrentProject) }}"><i class="fa fa-crosshairs"></i> {{ __('messages.nav.scans') }}</a></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.calendar.*') }}"><a href="{{ route('projects.calendar.index', $aptoriaCurrentProject) }}"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.contract-validations.*') }}"><a href="{{ route('projects.contract-validations.index', $aptoriaCurrentProject) }}"><i class="fa fa-code"></i> {{ __('messages.contract_validations.short_title') }}</a></li>
+
+                        <li class="nav-header"><span>{{ __('messages.nav.risk_evidence') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.findings.*') }}"><a href="{{ route('projects.findings.index', $aptoriaCurrentProject) }}"><i class="fa fa-bug"></i> {{ __('messages.findings.title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.qa-evidence.*') }}"><a href="{{ route('projects.qa-evidence.index', $aptoriaCurrentProject) }}"><i class="fa fa-archive"></i> {{ __('messages.qa_evidence.short_title') }}</a></li>
+
+                        <li class="nav-header"><span>{{ __('messages.nav.release_reporting') }}</span></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.release-readiness.*') }}"><a href="{{ route('projects.release-readiness.show', $aptoriaCurrentProject) }}"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness_short') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.release-gates.*') }}"><a href="{{ route('projects.release-gates.index', $aptoriaCurrentProject) }}"><i class="fa fa-flag-checkered"></i> {{ __('messages.release_gates.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.reports.index') }}"><a href="{{ route('projects.reports.index', $aptoriaCurrentProject) }}"><i class="fa fa-file-text-o"></i> {{ __('messages.nav.reports') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.reports.builder.*') }}"><a href="{{ route('projects.reports.builder.create', $aptoriaCurrentProject) }}"><i class="fa fa-pencil-square-o"></i> {{ __('messages.report_builder.short_title') }}</a></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.release-gates.*') }}"><a href="{{ route('projects.release-gates.index', $aptoriaCurrentProject) }}"><i class="fa fa-flag-checkered"></i> {{ __('messages.release_gates.short_title') }}</a></li>
+
+                        <li class="nav-header"><span>{{ __('messages.nav.automation_audit') }}</span></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.monitors.*') }}"><a href="{{ route('projects.monitors.index', $aptoriaCurrentProject) }}"><i class="fa fa-clock-o"></i> {{ __('messages.nav.monitors') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.calendar.*') }}"><a href="{{ route('projects.calendar.index', $aptoriaCurrentProject) }}"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.audit-log.*') }}"><a href="{{ route('projects.audit-log.index', $aptoriaCurrentProject) }}"><i class="fa fa-history"></i> {{ __('messages.nav.audit_log') }}</a></li>
                     @endif
                 </ul>
             </li>
-            <li class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                <a href="{{ route('reports.index') }}"><i class="fa fa-file-text-o"></i> <span class="nav-label">{{ __('messages.nav.reports') }}</span></a>
-            </li>
-            <li class="{{ request()->routeIs('monitors.*') ? 'active' : '' }}">
-                <a href="{{ route('monitors.index') }}"><i class="fa fa-clock-o"></i> <span class="nav-label">{{ __('messages.nav.monitors') }}</span></a>
-            </li>
-            <li class="{{ request()->routeIs('calendar.*', 'projects.calendar.*') ? 'active' : '' }}">
-                <a href="{{ route('calendar.index') }}"><i class="fa fa-calendar"></i> <span class="nav-label">{{ __('messages.nav.calendar') }}</span></a>
-            </li>
-            <li class="{{ request()->routeIs('release-readiness.*') ? 'active' : '' }}">
-                <a href="{{ route('release-readiness.index') }}"><i class="fa fa-check-circle"></i> <span class="nav-label">{{ __('messages.nav.release_readiness_short') }}</span></a>
+
+            <li class="{{ $aptoriaReleaseNavActive ? 'active' : '' }}">
+                <a href="#"><i class="fa fa-flag-checkered"></i> <span class="nav-label">{{ __('messages.nav.release_reporting') }}</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li class="{{ request()->routeIs('release-readiness.*') ? 'active' : '' }}"><a href="{{ route('release-readiness.index') }}"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness') }}</a></li>
+                    <li class="{{ request()->routeIs('reports.*') ? 'active' : '' }}"><a href="{{ route('reports.index') }}"><i class="fa fa-file-text-o"></i> {{ __('messages.nav.reports') }}</a></li>
+                </ul>
             </li>
 
-            <li class="{{ request()->routeIs('how-it-works') ? 'active' : '' }}">
-                <a href="{{ route('how-it-works') }}"><i class="fa fa-map-o"></i> <span class="nav-label">{{ __('messages.nav.how_it_works_short') }}</span></a>
+            <li class="{{ $aptoriaOperationsNavActive ? 'active' : '' }}">
+                <a href="#"><i class="fa fa-tasks"></i> <span class="nav-label">{{ __('messages.nav.operations') }}</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li class="{{ request()->routeIs('monitors.index') ? 'active' : '' }}"><a href="{{ route('monitors.index') }}"><i class="fa fa-clock-o"></i> {{ __('messages.nav.monitors') }}</a></li>
+                    <li class="{{ request()->routeIs('monitors.alerts.*') ? 'active' : '' }}"><a href="{{ route('monitors.alerts.index') }}"><i class="fa fa-bell-o"></i> {{ __('messages.nav.monitor_alerts') }}</a></li>
+                    <li class="{{ request()->routeIs('calendar.*') ? 'active' : '' }}"><a href="{{ route('calendar.index') }}"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a></li>
+                </ul>
             </li>
-            <li class="{{ request()->routeIs('help.*') ? 'active' : '' }}">
-                <a href="{{ route('help.index') }}"><i class="fa fa-life-ring"></i> <span class="nav-label">{{ __('messages.nav.help') }}</span></a>
+
+            <li class="{{ $aptoriaAdminNavActive ? 'active' : '' }}">
+                <a href="#"><i class="fa fa-shield"></i> <span class="nav-label">{{ __('messages.nav.audit_admin') }}</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li class="{{ request()->routeIs('audit-log.*') ? 'active' : '' }}"><a href="{{ route('audit-log.index') }}"><i class="fa fa-history"></i> {{ __('messages.nav.audit_log') }}</a></li>
+                    <li class="{{ request()->routeIs('system.health.*') ? 'active' : '' }}"><a href="{{ route('system.health.index') }}"><i class="fa fa-heartbeat"></i> {{ __('messages.nav.system_health') }}</a></li>
+                    <li class="{{ request()->routeIs('settings.*') ? 'active' : '' }}"><a href="{{ route('settings.index') }}"><i class="fa fa-cog"></i> {{ __('messages.nav.settings') }}</a></li>
+                    <li class="{{ request()->routeIs('demo-project.*') ? 'active' : '' }}"><a href="{{ route('demo-project.index') }}"><i class="fa fa-flask"></i> {{ __('messages.nav.demo_project') }}</a></li>
+                </ul>
             </li>
-            <li class="{{ request()->routeIs('system.health.*') ? 'active' : '' }}">
-                <a href="{{ route('system.health.index') }}"><i class="fa fa-heartbeat"></i> <span class="nav-label">{{ __('messages.nav.system_health') }}</span></a>
-            </li>
-            <li class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                <a href="{{ route('settings.index') }}"><i class="fa fa-cog"></i> <span class="nav-label">{{ __('messages.nav.settings') }}</span></a>
+
+            <li class="{{ $aptoriaSupportNavActive ? 'active' : '' }}">
+                <a href="#"><i class="fa fa-life-ring"></i> <span class="nav-label">{{ __('messages.nav.learning_support') }}</span><span class="fa arrow"></span></a>
+                <ul class="nav nav-second-level">
+                    <li class="{{ request()->routeIs('how-it-works') ? 'active' : '' }}"><a href="{{ route('how-it-works') }}"><i class="fa fa-map-o"></i> {{ __('messages.nav.how_it_works') }}</a></li>
+                    <li class="{{ request()->routeIs('help.*') ? 'active' : '' }}"><a href="{{ route('help.index') }}"><i class="fa fa-question-circle"></i> {{ __('messages.nav.help') }}</a></li>
+                </ul>
             </li>
         </ul>
     </div>
@@ -393,6 +421,36 @@
                     <div><span class="fa fa-file-text-o text-primary"></span> {{ __('messages.scans.modal_step_report') }}</div>
                 </div>
                 <p class="small text-muted m-t-md m-b-none">{{ __('messages.scans.modal_wait') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade aptoria-scan-modal aptoria-suite-run-modal" id="aptoria-suite-run-modal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="aptoria-loader" aria-hidden="true">
+                    <div class="aptoria-loader-grid"></div>
+                    <div class="aptoria-loader-sweep"></div>
+                    <div class="aptoria-loader-pulse"></div>
+                    <div class="aptoria-loader-core">
+                        @if($aptoriaShowLogo)
+                            <img src="{{ asset('assets/aptoria/img/aptoria-logo-icon.png') }}" alt="" class="aptoria-loader-logo">
+                        @else
+                            <i class="fa fa-play text-primary"></i>
+                        @endif
+                    </div>
+                </div>
+                <h3 class="m-t-md m-b-xs">{{ __('messages.regression_builder.modal_title') }}</h3>
+                <p class="text-muted m-b-lg">{{ __('messages.regression_builder.modal_subtitle') }}</p>
+                <div class="aptoria-scan-steps text-left">
+                    <div><span class="fa fa-check-circle text-success"></span> {{ __('messages.regression_builder.modal_step_safe') }}</div>
+                    <div><span class="fa fa-list-ol text-info"></span> {{ __('messages.regression_builder.modal_step_order') }}</div>
+                    <div><span class="fa fa-shield text-warning"></span> {{ __('messages.regression_builder.modal_step_assertions') }}</div>
+                    <div><span class="fa fa-file-text-o text-primary"></span> {{ __('messages.regression_builder.modal_step_results') }}</div>
+                </div>
+                <p class="small text-muted m-t-md m-b-none">{{ __('messages.regression_builder.modal_wait') }}</p>
             </div>
         </div>
     </div>

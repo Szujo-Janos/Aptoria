@@ -6,6 +6,7 @@ use App\Models\AuthProfile;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Settings\ProjectSettingService;
+use App\Services\Audit\AuditLogService;
 use App\Services\Calendar\CalendarActivityLogger;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class DemoQaProjectSeeder extends Seeder
 
     public function run(): void
     {
-        CalendarActivityLogger::withoutRecording(fn () => $this->seedDemo());
+        AuditLogService::withoutRecording(fn () => CalendarActivityLogger::withoutRecording(fn () => $this->seedDemo()));
     }
 
     private function seedDemo(): void
@@ -86,6 +87,7 @@ class DemoQaProjectSeeder extends Seeder
                 'project_id' => $project->id,
                 'name' => 'staging',
                 'base_url' => 'https://staging-api.demo.northstar.example',
+                'environment_type' => \App\Models\Environment::TYPE_STAGING,
                 'auth_profile_id' => $bearer->id,
                 'is_production' => false,
                 ...$timestamps(),
@@ -94,6 +96,7 @@ class DemoQaProjectSeeder extends Seeder
                 'project_id' => $project->id,
                 'name' => 'production',
                 'base_url' => 'https://api.demo.northstar.example',
+                'environment_type' => \App\Models\Environment::TYPE_PRODUCTION,
                 'auth_profile_id' => $bearer->id,
                 'is_production' => true,
                 ...$timestamps(),
@@ -407,7 +410,7 @@ class DemoQaProjectSeeder extends Seeder
 
             $findings = [
                 'catalogue' => [$endpointIds['products'], $testCaseIds['products'], $resultIds[$reviewScanId]['products'], $contractResults['products'], 'Catalogue unavailable during release validation', 'scan', 'critical', 'open', 'Expected HTTP 200; stored safe scan received HTTP 503 after 1840 ms.', 'Verify upstream health, timeout policy and add a regression test before release.'],
-                'profile' => [$endpointIds['user'], $testCaseIds['user'], $resultIds[$reviewScanId]['user'], $contractResults['user'], 'Customer profile returned unexpected HTML', 'contract', 'high', 'triaged', 'Sensitive customer endpoint returned text/html instead of the documented JSON contract.', 'Verify authentication, error handling, data minimization and response content negotiation.'],
+                'profile' => [$endpointIds['user'], $testCaseIds['user'], $resultIds[$reviewScanId]['user'], $contractResults['user'], 'Customer profile returned unexpected HTML', 'contract', 'high', 'confirmed', 'Sensitive customer endpoint returned text/html instead of the documented JSON contract.', 'Verify authentication, error handling, data minimization and response content negotiation.'],
                 'audit' => [$endpointIds['audit'], null, $resultIds[$reviewScanId]['audit'], $contractResults['audit'], 'Administrative audit log response is slow', 'assertion', 'medium', 'in_progress', 'Stored response time exceeded the configured 1000 ms QA threshold.', 'Profile the query and retain a performance regression check.'],
                 'delete' => [$endpointIds['delete_user'], $testCaseIds['delete_user'], $resultIds[$reviewScanId]['delete_user'], null, 'Account deletion security review is blocked', 'test_case', 'high', 'open', 'Destructive endpoint was correctly skipped by safe scan, but manual authorization evidence is missing.', 'Document endpoint ownership and verify owner-only authorization in an isolated test environment.'],
             ];

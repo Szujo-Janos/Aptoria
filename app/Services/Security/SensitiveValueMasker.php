@@ -76,11 +76,14 @@ class SensitiveValueMasker
             '/("authorization"\s*:\s*")(Bearer|Basic)\s+([^"\n]+)(")/i',
             '/(Bearer\s+)[A-Za-z0-9\-._~+\/]+=*/i',
             '/(Basic\s+)[A-Za-z0-9+\/]+=*/i',
+            '/\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\b/',
             '/("?(?:token|api_key|apikey|secret|password|access_token|refresh_token|client_secret|x-api-key|id_token|private_key|client_key|csrf|xsrf)"?\s*[:=]\s*")([^"\n]{4,})(")/i',
             '/([?&](?:token|api_key|apikey|secret|password|access_token|refresh_token|client_secret|x-api-key|id_token|private_key|client_key|csrf|xsrf)=)([^&#\s]+)/i',
             '/((?:token|api_key|apikey|secret|password|access_token|refresh_token|client_secret|x-api-key|id_token|private_key|client_key|csrf|xsrf)\s*[:=]\s*)([^\s,;]{4,})/i',
             '/((?:Authorization|authorization)\s*[:=]\s*+)(?!(?:Bearer|Basic)\s+\*{8}(?:\s|$))([^\r\n,;"}\]]{4,})/i',
             '/("authorization"\s*:\s*")(?!(?:Bearer|Basic)\s+\*{8}")([^"\n]{4,})(")/i',
+            '/\b[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}\b/i',
+            '/(?<!\d)(?:\+\d{1,3}[\s.\-]?)?(?:\(?\d{2,4}\)?[\s.\-]?){2,4}\d{2,4}(?!\d)/',
         ];
 
         $replacements = [
@@ -88,11 +91,14 @@ class SensitiveValueMasker
             '$1$2 '.self::MASK.'$4',
             '$1'.self::MASK,
             '$1'.self::MASK,
+            self::MASK,
             '$1'.self::MASK.'$3',
             '$1'.self::MASK,
             '$1'.self::MASK,
             '$1'.self::MASK,
             '$1'.self::MASK.'$3',
+            '[email]',
+            '[phone]',
         ];
 
         return preg_replace($patterns, $replacements, $value) ?? $value;

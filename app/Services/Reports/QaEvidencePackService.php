@@ -154,6 +154,12 @@ class QaEvidencePackService
         $lines[] = '';
         $lines[] = '**Project:** '.$this->md($project->name);
         $lines[] = '**Base URL:** '.$this->md($this->authRuntime->maskForExport($project->display_base_url));
+        foreach ($this->credits->projectBrandingMarkdownLines($project) as $brandingLine) {
+            $lines[] = $this->mdBrandingLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         $lines[] = '**Generated:** '.now()->format('Y-m-d H:i:s');
         $lines[] = '**Aptoria version:** '.config('aptoria.version');
         $lines[] = '**Final QA decision:** '.$this->md($context['final_decision_label']);
@@ -604,7 +610,7 @@ class QaEvidencePackService
     private function openFindingsMarkdown(Project $project): string
     {
         $findings = $project->findings()
-            ->with('endpoint')
+            ->with(['endpoint', 'evidence'])
             ->whereIn('status', Finding::OPEN_STATUSES)
             ->orderBy('severity')
             ->latest('detected_at')
@@ -624,11 +630,12 @@ class QaEvidencePackService
             return implode("\n", $lines)."\n";
         }
 
-        $lines[] = '| Severity | Status | Source | Endpoint | Title |';
-        $lines[] = '|---|---|---|---|---|';
+        $lines[] = '| Severity | Status | Source | Endpoint | Evidence | Attachments | Title |';
+        $lines[] = '|---|---|---|---|---:|---:|---|';
         foreach ($findings as $finding) {
             $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
-            $lines[] = '| '.$this->md($finding->severity).' | '.$this->md($finding->status).' | '.$this->md($finding->source).' | '.$this->md($endpoint).' | '.$this->md($finding->title).' |';
+            $attachmentCount = $finding->evidence->filter(fn ($evidence): bool => $evidence->has_attachment)->count();
+            $lines[] = '| '.$this->md($finding->severity).' | '.$this->md($finding->status).' | '.$this->md($finding->source).' | '.$this->md($endpoint).' | '.$finding->evidence->count().' | '.$attachmentCount.' | '.$this->md($finding->title).' |';
         }
 
         $lines[] = '';
@@ -724,6 +731,17 @@ class QaEvidencePackService
     private function dateValue(mixed $date): string
     {
         return $date ? $date->format('Y-m-d H:i:s') : 'n/a';
+    }
+
+    private function mdBrandingLine(string $line): string
+    {
+        if (! str_contains($line, ':** ')) {
+            return $this->md($line);
+        }
+
+        [$label, $value] = explode(':** ', $line, 2);
+
+        return $label.':** '.$this->md($value);
     }
 
     private function md(mixed $value): string

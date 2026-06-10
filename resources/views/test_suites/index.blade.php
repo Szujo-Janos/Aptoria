@@ -8,7 +8,8 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
-                    <a href="{{ route('projects.test-suites.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.test_suites.create') }}</a>
+                    <a href="{{ route('projects.test-suites.builder', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-magic"></i> {{ __('messages.regression_builder.short_title') }}</a>
+                    <a href="{{ route('projects.test-suites.create', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.test_suites.create') }}</a>
                     <a href="{{ route('projects.test-cases.index', $project) }}" class="btn btn-xs btn-info">{{ __('messages.test_cases.title') }}</a>
                     <a href="{{ route('projects.show', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>
                 </div>
@@ -20,7 +21,7 @@
                     <div class="text-center p-xl">
                         <h4>{{ __('messages.test_suites.empty_title') }}</h4>
                         <p class="text-muted">{{ __('messages.test_suites.empty_help') }}</p>
-                        <a href="{{ route('projects.test-suites.create', $project) }}" class="btn btn-success">{{ __('messages.test_suites.create') }}</a>
+                        <a href="{{ route('projects.test-suites.builder', $project) }}" class="btn btn-success">{{ __('messages.regression_builder.short_title') }}</a>
                     </div>
                 @else
                     <div class="table-responsive">

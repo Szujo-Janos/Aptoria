@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\CompareRun;
 use App\Models\Project;
 use App\Models\ScanRun;
 use App\Models\Snapshot;
+use App\Services\Audit\AuditLogService;
+use App\Services\Reports\FullQaReportBuilderService;
 use App\Services\Reports\ReportExportService;
 use App\Services\Reports\ReportPresentationService;
 use App\Services\Settings\SettingService;
@@ -87,6 +90,68 @@ class ReportController extends Controller
         return $this->download(
             $presentation->pdfFromMarkdown($markdown, 'Full Project QA Report', $project),
             $exports->filename($project, 'full-project-qa-report', 'pdf'),
+            'application/pdf'
+        );
+    }
+
+    public function executiveMarkdown(Project $project, FullQaReportBuilderService $builder, ReportExportService $exports): Response
+    {
+        return $this->download(
+            $builder->markdown($project, FullQaReportBuilderService::profileOptions(FullQaReportBuilderService::REPORT_PROFILE_EXECUTIVE)),
+            $exports->filename($project, 'executive-report', 'md'),
+            'text/markdown; charset=UTF-8'
+        );
+    }
+
+    public function executiveHtml(Project $project, FullQaReportBuilderService $builder, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $markdown = $builder->markdown($project, FullQaReportBuilderService::profileOptions(FullQaReportBuilderService::REPORT_PROFILE_EXECUTIVE));
+
+        return $this->download(
+            $presentation->htmlFromMarkdown($markdown, __('messages.report_builder.profile_titles.executive'), $project),
+            $exports->filename($project, 'executive-report', 'html'),
+            'text/html; charset=UTF-8'
+        );
+    }
+
+    public function executivePdf(Project $project, FullQaReportBuilderService $builder, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $markdown = $builder->markdown($project, FullQaReportBuilderService::profileOptions(FullQaReportBuilderService::REPORT_PROFILE_EXECUTIVE));
+
+        return $this->download(
+            $presentation->pdfFromMarkdown($markdown, __('messages.report_builder.profile_titles.executive'), $project),
+            $exports->filename($project, 'executive-report', 'pdf'),
+            'application/pdf'
+        );
+    }
+
+    public function technicalMarkdown(Project $project, FullQaReportBuilderService $builder, ReportExportService $exports): Response
+    {
+        return $this->download(
+            $builder->markdown($project, FullQaReportBuilderService::profileOptions(FullQaReportBuilderService::REPORT_PROFILE_TECHNICAL)),
+            $exports->filename($project, 'technical-report', 'md'),
+            'text/markdown; charset=UTF-8'
+        );
+    }
+
+    public function technicalHtml(Project $project, FullQaReportBuilderService $builder, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $markdown = $builder->markdown($project, FullQaReportBuilderService::profileOptions(FullQaReportBuilderService::REPORT_PROFILE_TECHNICAL));
+
+        return $this->download(
+            $presentation->htmlFromMarkdown($markdown, __('messages.report_builder.profile_titles.technical'), $project),
+            $exports->filename($project, 'technical-report', 'html'),
+            'text/html; charset=UTF-8'
+        );
+    }
+
+    public function technicalPdf(Project $project, FullQaReportBuilderService $builder, ReportExportService $exports, ReportPresentationService $presentation): Response
+    {
+        $markdown = $builder->markdown($project, FullQaReportBuilderService::profileOptions(FullQaReportBuilderService::REPORT_PROFILE_TECHNICAL));
+
+        return $this->download(
+            $presentation->pdfFromMarkdown($markdown, __('messages.report_builder.profile_titles.technical'), $project),
+            $exports->filename($project, 'technical-report', 'pdf'),
             'application/pdf'
         );
     }
@@ -183,6 +248,24 @@ class ReportController extends Controller
 
     private function download(string $content, string $filename, string $contentType): Response
     {
+        $routeProject = request()->route('project');
+        $project = $routeProject instanceof Project ? $routeProject : null;
+
+        app(AuditLogService::class)->record([
+            'project_id' => $project?->id,
+            'event_type' => AuditLog::EVENT_REPORT,
+            'action' => AuditLog::ACTION_GENERATED,
+            'severity' => AuditLog::SEVERITY_INFO,
+            'subject_label' => 'report',
+            'subject_name' => $filename,
+            'summary' => 'Report generated: '.$filename,
+            'metadata' => [
+                'filename' => $filename,
+                'content_type' => $contentType,
+                'bytes' => strlen($content),
+            ],
+        ]);
+
         return response($content, 200, [
             'Content-Type' => $contentType,
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',

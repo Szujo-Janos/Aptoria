@@ -37,6 +37,43 @@ class CompareItem extends Model
         return $this->belongsTo(CompareRun::class);
     }
 
+
+    public function getDiffGroupAttribute(): string
+    {
+        return match ($this->field_changed) {
+            'status_code' => 'status',
+            'response_time_ms' => 'performance',
+            'content_type', 'response_header', 'security_header' => 'headers',
+            'body_preview', 'response_size' => 'body',
+            'response_schema', 'response_schema_added', 'response_schema_removed', 'response_schema_type', 'response_schema_nullability' => 'schema',
+            'sensitive_data', 'sensitive_data_count', 'broken_auth', 'schema_drift', 'schema_drift_count', 'auth_required', 'auth_profile' => 'security',
+            'risk_level', 'risk_score' => 'risk',
+            default => $this->change_type === self::TYPE_NEW || $this->change_type === self::TYPE_REMOVED ? 'inventory' : 'metadata',
+        };
+    }
+
+    public function getDiffGroupLabelAttribute(): string
+    {
+        return __('messages.snapshots.diff_groups.'.$this->diff_group);
+    }
+
+    public function getDiffGroupCssAttribute(): string
+    {
+        return match ($this->diff_group) {
+            'security' => 'danger',
+            'schema', 'status' => 'warning',
+            'performance' => 'info',
+            'body', 'headers' => 'primary',
+            'risk' => 'warning',
+            default => 'default',
+        };
+    }
+
+    public function getBreakingChangeAttribute(): bool
+    {
+        return in_array($this->severity, [self::SEVERITY_CRITICAL, self::SEVERITY_HIGH], true);
+    }
+
     public function getChangeLabelAttribute(): string
     {
         return __('messages.snapshots.change_types.'.$this->change_type);

@@ -111,6 +111,9 @@ class EndpointInventoryService
                 'missing_test_cases' => $query->doesntHave('testCases'),
                 'missing_expected_status' => $query->whereNull('expected_status'),
                 'missing_expected_content_type' => $query->whereNull('expected_content_type'),
+                'sensitive_data' => $query->whereHas('latestScanResult', fn (Builder $query): Builder => $query->where('sensitive_data_detected', true)),
+                'broken_auth' => $query->whereHas('latestScanResult', fn (Builder $query): Builder => $query->where('broken_auth_detected', true)),
+                'schema_drift' => $query->whereHas('latestScanResult', fn (Builder $query): Builder => $query->where('schema_drift_detected', true)),
                 default => null,
             };
         }
@@ -187,6 +190,18 @@ class EndpointInventoryService
 
         if (($endpoint->open_findings_count ?? 0) > 0) {
             $flags[] = ['key' => 'open_findings', 'label' => __('messages.endpoint_inventory.flags.open_findings', ['count' => $endpoint->open_findings_count]), 'css' => 'danger'];
+        }
+
+        if ($endpoint->latestScanResult?->sensitive_data_detected) {
+            $flags[] = ['key' => 'sensitive_data', 'label' => __('messages.endpoint_inventory.flags.sensitive_data', ['count' => $endpoint->latestScanResult->sensitive_data_count]), 'css' => 'danger'];
+        }
+
+        if ($endpoint->latestScanResult?->broken_auth_detected) {
+            $flags[] = ['key' => 'broken_auth', 'label' => __('messages.endpoint_inventory.flags.broken_auth'), 'css' => 'danger'];
+        }
+
+        if ($endpoint->latestScanResult?->schema_drift_detected) {
+            $flags[] = ['key' => 'schema_drift', 'label' => __('messages.endpoint_inventory.flags.schema_drift', ['count' => $endpoint->latestScanResult->schema_drift_count]), 'css' => 'warning'];
         }
 
         if (($endpoint->assertion_rules_count ?? 0) === 0) {
@@ -276,6 +291,9 @@ class EndpointInventoryService
             'not_scanned' => max(0, $endpoints->count() - $scanned->count()),
             'failed_scan' => $scanned->filter(fn (Endpoint $endpoint): bool => $endpoint->latestScanResult?->status === ScanResult::STATUS_FAILED)->count(),
             'open_findings' => $endpoints->sum('open_findings_count'),
+            'sensitive_data' => $scanned->filter(fn (Endpoint $endpoint): bool => (bool) $endpoint->latestScanResult?->sensitive_data_detected)->count(),
+            'broken_auth' => $scanned->filter(fn (Endpoint $endpoint): bool => (bool) $endpoint->latestScanResult?->broken_auth_detected)->count(),
+            'schema_drift' => $scanned->filter(fn (Endpoint $endpoint): bool => (bool) $endpoint->latestScanResult?->schema_drift_detected)->count(),
             'avg_response_time' => $responseTimes->isEmpty() ? null : (int) round($responseTimes->avg()),
             'scan_coverage_percent' => $endpoints->isEmpty() ? 0 : (int) round(($scanned->count() / max(1, $endpoints->count())) * 100),
         ];
@@ -291,7 +309,7 @@ class EndpointInventoryService
             'auth' => ['required', 'public', 'profile', 'missing_profile'],
             'scan' => ['scanned', 'not_scanned', 'passed', 'failed', 'skipped'],
             'findings' => ['open', 'none'],
-            'coverage' => ['missing_assertions', 'missing_test_cases', 'missing_expected_status', 'missing_expected_content_type'],
+            'coverage' => ['missing_assertions', 'missing_test_cases', 'missing_expected_status', 'missing_expected_content_type', 'sensitive_data', 'broken_auth', 'schema_drift'],
             'source' => ['postman', 'openapi', 'manual'],
             'status' => ['active', 'inactive', 'excluded'],
             'sort' => ['risk', 'method', 'path', 'newest', 'oldest'],

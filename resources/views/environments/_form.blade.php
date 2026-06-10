@@ -5,6 +5,15 @@
     <span class="help-block">{{ __('messages.environments.name_help') }}</span>
 </div>
 <div class="form-group">
+    <label for="environment_type">{{ __('messages.environments.environment_type') }}</label>
+    <select name="environment_type" id="environment_type" class="form-control" required>
+        @foreach(($typeOptions ?? \App\Models\Environment::typeOptions()) as $type => $label)
+            <option value="{{ $type }}" @selected(old('environment_type', $environment->environment_type ?: \App\Models\Environment::TYPE_CUSTOM) === $type)>{{ $label }}</option>
+        @endforeach
+    </select>
+    <span class="help-block">{{ __('messages.environments.environment_type_help') }}</span>
+</div>
+<div class="form-group">
     <label for="base_url">{{ __('messages.common.base_url') }}</label>
     <input type="url" name="base_url" id="base_url" class="form-control" value="{{ old('base_url', $environment->base_url) }}" required placeholder="https://staging.example.com">
     <span class="help-block">{{ __('messages.environments.base_url_help') }}</span>
@@ -30,9 +39,16 @@
     </label>
     <span class="help-block">{{ __('messages.environments.is_production_help') }}</span>
 </div>
+<div class="checkbox checkbox-success">
+    <label>
+        <input type="checkbox" name="make_default" value="1" {{ old('make_default', $isDefaultEnvironment ?? false) ? 'checked' : '' }}>
+        {{ __('messages.environments.make_default') }}
+    </label>
+    <span class="help-block">{{ __('messages.environments.make_default_help') }}</span>
+</div>
 <div class="alert alert-info">
-    {{ __('messages.projects.important_text') }}
+    {{ __('messages.environments.manager_intro') }}
 </div>
 <div class="hr-line-dashed"></div>
 <button type="submit" class="btn btn-success">{{ __('messages.common.save') }}</button>
-<a href="{{ route('projects.show', $project) }}" class="btn btn-default">{{ __('messages.common.cancel') }}</a>
+<a href="{{ route('projects.environments.index', $project) }}" class="btn btn-default">{{ __('messages.common.cancel') }}</a>

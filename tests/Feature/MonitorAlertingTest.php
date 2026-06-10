@@ -190,6 +190,57 @@ class MonitorAlertingTest extends TestCase
         ]);
     }
 
+
+    public function test_monitor_alert_service_sends_new_alert_when_problem_trigger_fingerprint_changes(): void
+    {
+        $monitor = $this->monitor([
+            'last_status' => ApiMonitor::STATUS_FAILED,
+            'notify_dashboard' => true,
+        ]);
+
+        app(MonitorAlertService::class)->notify($monitor, [
+            'status' => ApiMonitor::STATUS_FAILED,
+            'message' => 'Critical API risk detected.',
+            'alert_triggers' => ['http_5xx'],
+            'alert_trigger_summary' => 'HTTP 5xx responses: 1',
+            'scan_alert_summary' => ['http_5xx' => 1, 'triggers' => ['http_5xx']],
+        ], ApiMonitor::STATUS_FAILED);
+
+        $this->assertDatabaseHas('monitor_alert_events', [
+            'api_monitor_id' => $monitor->id,
+            'channel' => MonitorAlertEvent::CHANNEL_DASHBOARD,
+            'status' => ApiMonitor::STATUS_FAILED,
+            'message' => 'Critical API risk detected.',
+        ]);
+        $this->assertNotNull($monitor->fresh()->last_alert_fingerprint);
+    }
+
+    public function test_monitor_test_notification_records_dashboard_and_sends_configured_channels(): void
+    {
+        Mail::fake();
+        Http::fake([
+            'https://hooks.example.test/*' => Http::response(['ok' => true], 200),
+        ]);
+
+        $monitor = $this->monitor([
+            'notify_dashboard' => true,
+            'alert_email' => 'qa@example.test',
+            'alert_webhook_url' => 'https://hooks.example.test/aptoria-test',
+        ]);
+
+        $events = app(MonitorAlertService::class)->sendTest($monitor);
+
+        $this->assertCount(3, $events);
+        Mail::assertSent(MonitorAlertMail::class, fn (MonitorAlertMail $mail): bool => $mail->hasTo('qa@example.test')
+            && ($mail->payload['event'] ?? null) === 'monitor_test_notification');
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://hooks.example.test/aptoria-test'
+            && $request['event'] === 'monitor_test_notification');
+        $this->assertDatabaseHas('monitor_alert_events', [
+            'api_monitor_id' => $monitor->id,
+            'status' => MonitorAlertEvent::STATUS_TEST,
+        ]);
+    }
+
     /** @param array<string, mixed> $attributes */
     private function monitor(array $attributes = []): ApiMonitor
     {

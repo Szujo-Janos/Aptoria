@@ -33,12 +33,14 @@ class MonitorAlertService
     {
         $status = (string) ($result['status'] ?? '');
 
-        if (! $this->shouldAlert($monitor, $status, $previousStatus)) {
+        $monitor->loadMissing(['project', 'environment', 'testSuite']);
+        $payload = $this->payload($monitor, $result, $previousStatus);
+        $fingerprint = $this->fingerprint($payload);
+
+        if (! $this->shouldAlert($monitor, $status, $previousStatus, $fingerprint)) {
             return [];
         }
 
-        $monitor->loadMissing(['project', 'environment']);
-        $payload = $this->payload($monitor, $result, $previousStatus);
         $events = [];
 
         if ($monitor->notify_dashboard) {
@@ -95,13 +97,14 @@ class MonitorAlertService
             $monitor->update([
                 'last_alert_at' => now(),
                 'last_alert_status' => $status,
+                'last_alert_fingerprint' => $fingerprint,
             ]);
         }
 
         return $events;
     }
 
-    public function shouldAlert(ApiMonitor $monitor, string $status, ?string $previousStatus): bool
+    public function shouldAlert(ApiMonitor $monitor, string $status, ?string $previousStatus, ?string $fingerprint = null): bool
     {
         if ($status === '' || $status === ApiMonitor::STATUS_NEVER_RUN) {
             return false;
@@ -116,7 +119,11 @@ class MonitorAlertService
             return false;
         }
 
-        return $status !== $previousStatus;
+        if ($status !== $previousStatus) {
+            return true;
+        }
+
+        return filled($fingerprint) && $fingerprint !== $monitor->last_alert_fingerprint;
     }
 
     /** @param array<string, mixed> $result */
@@ -131,17 +138,91 @@ class MonitorAlertService
             'project_id' => $monitor->project_id,
             'project' => $monitor->project?->name,
             'environment' => $monitor->environment?->name,
+            'suite' => $monitor->testSuite?->name,
             'status' => $result['status'] ?? null,
             'previous_status' => $previousStatus,
             'severity' => $this->severity((string) ($result['status'] ?? '')),
             'message' => $result['message'] ?? null,
+            'triggers' => $result['alert_triggers'] ?? [],
+            'trigger_summary' => $result['alert_trigger_summary'] ?? null,
+            'scan_summary' => $result['scan_alert_summary'] ?? [],
             'scan_run_id' => $result['scan_run_id'] ?? null,
             'snapshot_id' => $result['snapshot_id'] ?? null,
             'compare_run_id' => $result['compare_run_id'] ?? null,
+            'suite_summary' => $result['suite_summary'] ?? null,
             'next_run_at' => $result['next_run_at'] ?? null,
             'alert_email' => $monitor->alert_email,
             'triggered_at' => now()->toIso8601String(),
         ];
+    }
+
+    /** @return array<int, MonitorAlertEvent> */
+    public function sendTest(ApiMonitor $monitor): array
+    {
+        $monitor->loadMissing(['project', 'environment', 'testSuite']);
+        $payload = [
+            'app' => 'Aptoria',
+            'version' => config('aptoria.version'),
+            'event' => 'monitor_test_notification',
+            'monitor_id' => $monitor->id,
+            'monitor' => $monitor->name,
+            'project_id' => $monitor->project_id,
+            'project' => $monitor->project?->name,
+            'environment' => $monitor->environment?->name,
+            'suite' => $monitor->testSuite?->name,
+            'status' => MonitorAlertEvent::STATUS_TEST,
+            'previous_status' => $monitor->last_status,
+            'severity' => 'info',
+            'message' => 'Aptoria test notification. Delivery channels are configured correctly if you received this alert.',
+            'triggers' => ['test_notification'],
+            'trigger_summary' => 'Test notification',
+            'triggered_at' => now()->toIso8601String(),
+        ];
+
+        $events = [];
+
+        if ($monitor->notify_dashboard) {
+            $events[] = MonitorAlertEvent::query()->create([
+                'api_monitor_id' => $monitor->id,
+                'project_id' => $monitor->project_id,
+                'channel' => MonitorAlertEvent::CHANNEL_DASHBOARD,
+                'severity' => 'info',
+                'status' => MonitorAlertEvent::STATUS_TEST,
+                'previous_status' => $monitor->last_status,
+                'message' => $payload['message'],
+                'payload_json' => $payload,
+                'delivery_status' => MonitorAlertEvent::DELIVERY_RECORDED,
+                'delivery_message' => 'Test alert recorded for dashboard review.',
+                'delivered_at' => now(),
+            ]);
+        }
+
+        if ($this->validWebhookUrl($monitor->alert_webhook_url)) {
+            $events[] = $this->sendWebhook($monitor, $payload, MonitorAlertEvent::STATUS_TEST, $monitor->last_status);
+        }
+
+        if ($this->validEmail($monitor->alert_email)) {
+            $events[] = $this->sendEmail($monitor, $payload, MonitorAlertEvent::STATUS_TEST, $monitor->last_status);
+        }
+
+        return $events;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function fingerprint(array $payload): ?string
+    {
+        if (empty($payload['triggers']) && empty($payload['trigger_summary'])) {
+            return null;
+        }
+
+        $basis = [
+            'status' => $payload['status'] ?? null,
+            'triggers' => $payload['triggers'] ?? [],
+            'summary' => $payload['trigger_summary'] ?? null,
+            'scan' => $payload['scan_summary'] ?? [],
+        ];
+
+        return sha1(json_encode($basis, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: 'aptoria-alert');
     }
 
     private function severity(string $status): string

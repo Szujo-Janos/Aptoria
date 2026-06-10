@@ -34,6 +34,31 @@
 </div>
 
 <div class="row">
+    <div class="col-lg-6">
+        <div class="hpanel hgreen">
+            <div class="panel-heading hbuilt">{{ __('messages.reports.executive_report') }}</div>
+            <div class="panel-body">
+                <p class="text-muted">{{ __('messages.reports.executive_report_help') }}</p>
+                <a href="{{ route('projects.reports.executive.markdown', $project) }}" class="btn btn-success">MD</a>
+                <a href="{{ route('projects.reports.executive.html', $project) }}" class="btn btn-default">HTML</a>
+                <a href="{{ route('projects.reports.executive.pdf', $project) }}" class="btn btn-default">PDF</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="hpanel hblue">
+            <div class="panel-heading hbuilt">{{ __('messages.reports.technical_report') }}</div>
+            <div class="panel-body">
+                <p class="text-muted">{{ __('messages.reports.technical_report_help') }}</p>
+                <a href="{{ route('projects.reports.technical.markdown', $project) }}" class="btn btn-primary">MD</a>
+                <a href="{{ route('projects.reports.technical.html', $project) }}" class="btn btn-default">HTML</a>
+                <a href="{{ route('projects.reports.technical.pdf', $project) }}" class="btn btn-default">PDF</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-lg-3">
         <div class="hpanel hred">
             <div class="panel-heading hbuilt">{{ __('messages.release_readiness.title') }}</div>

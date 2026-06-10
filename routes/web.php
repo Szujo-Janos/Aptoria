@@ -5,8 +5,10 @@ use App\Http\Controllers\AuthProfileController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\AssertionRuleController;
 use App\Http\Controllers\ApiMonitorController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ContractValidationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoProjectController;
 use App\Http\Controllers\EnvironmentController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\EndpointController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\QaCoverageMatrixController;
 use App\Http\Controllers\QaReleaseGateController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReleaseReadinessController;
+use App\Http\Controllers\RegressionSuiteBuilderController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SetupController;
@@ -69,6 +72,12 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('/how-it-works', [HelpController::class, 'howItWorks'])->name('how-it-works');
     Route::get('/help', [HelpController::class, 'index'])->name('help.index');
     Route::get('/monitors', [ApiMonitorController::class, 'globalIndex'])->name('monitors.index');
+    Route::get('/monitor-alerts', [ApiMonitorController::class, 'globalAlerts'])->name('monitors.alerts.index');
+    Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
+    Route::get('/demo-project', [DemoProjectController::class, 'index'])->name('demo-project.index');
+    Route::post('/demo-project/import', [DemoProjectController::class, 'store'])->name('demo-project.import');
+    Route::delete('/demo-project', [DemoProjectController::class, 'destroy'])->name('demo-project.remove');
+    Route::get('/audit-log.json', [AuditLogController::class, 'json'])->name('audit-log.json');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('/calendar/day', [CalendarController::class, 'day'])->name('calendar.day');
     Route::get('/calendar/create', [CalendarController::class, 'create'])->name('calendar.create');
@@ -84,8 +93,9 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('projects/wizard', [ProjectWizardController::class, 'store'])->name('projects.wizard.store');
     Route::get('projects/{project}/wizard/complete', [ProjectWizardController::class, 'complete'])->name('projects.wizard.complete');
     Route::resource('projects', ProjectController::class);
+    Route::patch('projects/{project}/environments/{environment}/default', [EnvironmentController::class, 'setDefault'])->name('projects.environments.default');
     Route::resource('projects.environments', EnvironmentController::class)
-        ->except(['index', 'show'])
+        ->except(['show'])
         ->parameters(['environments' => 'environment']);
     Route::resource('projects.auth-profiles', AuthProfileController::class)
         ->except(['index', 'show'])
@@ -101,6 +111,8 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::put('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'update'])->name('projects.assertion-rules.update');
     Route::delete('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'destroy'])->name('projects.assertion-rules.destroy');
     Route::get('projects/{project}/calendar', [CalendarController::class, 'project'])->name('projects.calendar.index');
+    Route::get('projects/{project}/audit-log', [AuditLogController::class, 'project'])->name('projects.audit-log.index');
+    Route::get('projects/{project}/audit-log.json', [AuditLogController::class, 'json'])->name('projects.audit-log.json');
     Route::get('projects/{project}/monitors', [ApiMonitorController::class, 'index'])->name('projects.monitors.index');
     Route::get('projects/{project}/monitors/create', [ApiMonitorController::class, 'create'])->name('projects.monitors.create');
     Route::post('projects/{project}/monitors', [ApiMonitorController::class, 'store'])->name('projects.monitors.store');
@@ -109,8 +121,12 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::delete('projects/{project}/monitors/{monitor}', [ApiMonitorController::class, 'destroy'])->name('projects.monitors.destroy');
     Route::get('projects/{project}/monitors/{monitor}/alerts', [ApiMonitorController::class, 'alerts'])->name('projects.monitors.alerts');
     Route::post('projects/{project}/monitors/{monitor}/alerts/{alert}/acknowledge', [ApiMonitorController::class, 'acknowledge'])->name('projects.monitors.alerts.acknowledge');
+    Route::post('projects/{project}/monitors/{monitor}/alerts/test', [ApiMonitorController::class, 'testNotification'])->name('projects.monitors.alerts.test');
     Route::post('projects/{project}/monitors/{monitor}/alerts/{alert}/follow-up', [CalendarController::class, 'storeAlertFollowUp'])->name('projects.monitors.alerts.follow-up');
     Route::post('projects/{project}/monitors/{monitor}/run', [ApiMonitorController::class, 'run'])->name('projects.monitors.run');
+    Route::get('projects/{project}/test-suites/builder', [RegressionSuiteBuilderController::class, 'create'])->name('projects.test-suites.builder');
+    Route::post('projects/{project}/test-suites/builder', [RegressionSuiteBuilderController::class, 'store'])->name('projects.test-suites.builder.store');
+    Route::post('projects/{project}/test-suites/{testSuite}/run', [RegressionSuiteBuilderController::class, 'run'])->name('projects.test-suites.run');
     Route::resource('projects.test-suites', TestSuiteController::class)->parameters(['test-suites' => 'testSuite']);
     Route::resource('projects.test-cases', TestCaseController::class)->parameters(['test-cases' => 'testCase']);
     Route::post('projects/{project}/test-cases/{testCase}/results', [TestCaseController::class, 'markResult'])->name('projects.test-cases.results.store');
@@ -135,8 +151,10 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::resource('projects.contract-validations', ContractValidationController::class)
         ->only(['index', 'create', 'store', 'show'])
         ->parameters(['contract-validations' => 'contractValidation']);
+    Route::patch('projects/{project}/findings/{finding}/lifecycle', [FindingController::class, 'transition'])->name('projects.findings.lifecycle.update');
     Route::resource('projects.findings', FindingController::class)->parameters(['findings' => 'finding']);
     Route::post('projects/{project}/findings/{finding}/evidence', [FindingEvidenceController::class, 'store'])->name('projects.findings.evidence.store');
+    Route::get('projects/{project}/findings/{finding}/evidence/{evidence}/download', [FindingEvidenceController::class, 'download'])->name('projects.findings.evidence.download');
     Route::delete('projects/{project}/findings/{finding}/evidence/{evidence}', [FindingEvidenceController::class, 'destroy'])->name('projects.findings.evidence.destroy');
     Route::get('projects/{project}/scans', [ScanController::class, 'index'])->name('projects.scans.index');
     Route::get('projects/{project}/scans/create', [ScanController::class, 'create'])->name('projects.scans.create');
@@ -167,6 +185,12 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('projects/{project}/reports/full-project.md', [ReportController::class, 'fullProjectMarkdown'])->name('projects.reports.full-project.markdown');
     Route::get('projects/{project}/reports/full-project.html', [ReportController::class, 'fullProjectHtml'])->name('projects.reports.full-project.html');
     Route::get('projects/{project}/reports/full-project.pdf', [ReportController::class, 'fullProjectPdf'])->name('projects.reports.full-project.pdf');
+    Route::get('projects/{project}/reports/executive.md', [ReportController::class, 'executiveMarkdown'])->name('projects.reports.executive.markdown');
+    Route::get('projects/{project}/reports/executive.html', [ReportController::class, 'executiveHtml'])->name('projects.reports.executive.html');
+    Route::get('projects/{project}/reports/executive.pdf', [ReportController::class, 'executivePdf'])->name('projects.reports.executive.pdf');
+    Route::get('projects/{project}/reports/technical.md', [ReportController::class, 'technicalMarkdown'])->name('projects.reports.technical.markdown');
+    Route::get('projects/{project}/reports/technical.html', [ReportController::class, 'technicalHtml'])->name('projects.reports.technical.html');
+    Route::get('projects/{project}/reports/technical.pdf', [ReportController::class, 'technicalPdf'])->name('projects.reports.technical.pdf');
     Route::get('projects/{project}/reports/endpoints.csv', [ReportController::class, 'endpointsCsv'])->name('projects.reports.endpoints.csv');
     Route::get('projects/{project}/reports/scans/{scanRun}.md', [ReportController::class, 'scanMarkdown'])->name('projects.reports.scans.markdown');
     Route::get('projects/{project}/reports/scans/{scanRun}.html', [ReportController::class, 'scanHtml'])->name('projects.reports.scans.html');

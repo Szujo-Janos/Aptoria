@@ -111,8 +111,10 @@ class ProjectHealthService
             'critical_open' => (int) $project->findings()->whereIn('status', Finding::OPEN_STATUSES)->where('severity', Finding::SEVERITY_CRITICAL)->count(),
             'high_open' => (int) $project->findings()->whereIn('status', Finding::OPEN_STATUSES)->where('severity', Finding::SEVERITY_HIGH)->count(),
             'fixed' => (int) ($findingStatusCounts[Finding::STATUS_FIXED] ?? 0),
-            'closed' => (int) ($findingStatusCounts[Finding::STATUS_CLOSED] ?? 0),
+            'false_positive' => (int) ($findingStatusCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0),
             'accepted_risk' => (int) ($findingStatusCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0),
+            'reopened' => (int) ($findingStatusCounts[Finding::STATUS_REOPENED] ?? 0),
+            'closed' => (int) ($findingStatusCounts[Finding::STATUS_CLOSED] ?? 0),
         ];
 
         $qaCoverage = $this->coverageMatrix->summarize($project)['summary'];

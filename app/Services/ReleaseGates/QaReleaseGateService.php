@@ -163,6 +163,12 @@ class QaReleaseGateService
         $lines[] = '# Aptoria QA Release Gate';
         $lines[] = '';
         $lines[] = '**Project:** '.$this->md($gate->project->name);
+        foreach ($this->credits->projectBrandingMarkdownLines($gate->project) as $brandingLine) {
+            $lines[] = $this->mdBrandingLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($gate->project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         $lines[] = '**Release:** '.$this->md($gate->release_name);
         $lines[] = '**Target environment:** '.$this->md($gate->target_environment ?: 'n/a');
         $lines[] = '**Generated:** '.$gate->created_at->format('Y-m-d H:i:s');
@@ -301,6 +307,17 @@ class QaReleaseGateService
         $lines[] = '';
 
         return $lines;
+    }
+
+    private function mdBrandingLine(string $line): string
+    {
+        if (! str_contains($line, ':** ')) {
+            return $this->md($line);
+        }
+
+        [$label, $value] = explode(':** ', $line, 2);
+
+        return $label.':** '.$this->md($value);
     }
 
     private function md(?string $value): string

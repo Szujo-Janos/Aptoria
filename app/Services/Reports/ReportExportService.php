@@ -40,7 +40,7 @@ class ReportExportService
     public function fullProjectMarkdown(Project $project): string
     {
         $project->load([
-            'environments',
+            'environments.authProfile',
             'authProfiles',
             'endpoints.environment.authProfile',
             'endpoints.authProfile',
@@ -53,7 +53,7 @@ class ReportExportService
             'contractValidationRuns.scanRun',
             'findings.endpoint',
             'findings.testCase',
-            'findings.evidence',
+            'findings.evidence.capturedBy',
             'qaReleaseGates',
         ]);
         $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates']);
@@ -81,6 +81,16 @@ class ReportExportService
         $latestReleaseGate = $project->qaReleaseGates()
             ->latest()
             ->first();
+
+        $latestSensitiveResults = $latestScan
+            ? $latestScan->results->where('sensitive_data_detected', true)->count()
+            : 0;
+        $latestBrokenAuthResults = $latestScan
+            ? $latestScan->results->where('broken_auth_detected', true)->count()
+            : 0;
+        $latestSchemaDriftResults = $latestScan
+            ? $latestScan->results->where('schema_drift_detected', true)->count()
+            : 0;
 
         $coverageMatrix = $this->coverageMatrix->summarize($project);
         $coverageSummary = $coverageMatrix['summary'];
@@ -155,6 +165,12 @@ class ReportExportService
         $lines[] = '';
         $lines[] = '**Project:** '.$project->name;
         $lines[] = '**Base URL:** '.$this->md($project->display_base_url);
+        foreach ($this->credits->projectBrandingMarkdownLines($project) as $brandingLine) {
+            $lines[] = $this->mdBrandingLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         if ($this->settings->boolean('exports.include_timestamps', true)) {
             $lines[] = '**Generated:** '.$this->runtime->formatDate(now());
         }
@@ -167,6 +183,7 @@ class ReportExportService
         $lines[] = '|---|---:|';
         $lines[] = '| Endpoints | '.$project->endpoints_count.' |';
         $lines[] = '| Environments | '.$project->environments->count().' |';
+        $lines[] = '| Default environment | '.$this->md($project->defaultEnvironment()?->name ?: 'n/a').' |';
         $lines[] = '| Auth profiles | '.$project->authProfiles->count().' |';
         $lines[] = '| Scan runs | '.$project->scan_runs_count.' |';
         $lines[] = '| Snapshots | '.$project->snapshots_count.' |';
@@ -176,6 +193,9 @@ class ReportExportService
         $lines[] = '| Contract validations | '.$project->contract_validation_runs_count.' |';
         $lines[] = '| Release gates | '.$project->qa_release_gates_count.' |';
         $lines[] = '| Latest release gate | '.$this->md($latestReleaseGate ? '#'.$latestReleaseGate->id.' '.$latestReleaseGate->final_decision_label : 'n/a').' |';
+        $lines[] = '| Latest scan sensitive data results | '.$latestSensitiveResults.' |';
+        $lines[] = '| Latest scan broken auth results | '.$latestBrokenAuthResults.' |';
+        $lines[] = '| Latest scan schema drift results | '.$latestSchemaDriftResults.' |';
         $lines[] = '| Findings | '.$project->findings_count.' |';
         $lines[] = '| Open Findings | '.$openFindings->count().' |';
         $lines[] = '| Critical Open Findings | '.$criticalFindings.' |';
@@ -192,8 +212,26 @@ class ReportExportService
         $lines[] = '| Assertion WARNING | '.$assertionSummary[AssertionEvaluationService::STATUS_WARNING].' |';
         $lines[] = '| Assertion FAIL | '.$assertionSummary[AssertionEvaluationService::STATUS_FAIL].' |';
         $lines[] = '| Regression status | '.$this->md($regression['label'] ?? __('messages.regressions.statuses.none')).' |';
+        if ($latestCompare) {
+            $latestCompareSummary = $latestCompare->summary_json ?: [];
+            $lines[] = '| Latest compare breaking changes | '.(int) ($latestCompareSummary['breaking_count'] ?? 0).' |';
+            $lines[] = '| Latest compare schema changes | '.(int) ($latestCompareSummary['schema_count'] ?? 0).' |';
+            $lines[] = '| Latest compare header changes | '.(int) ($latestCompareSummary['header_count'] ?? 0).' |';
+            $lines[] = '| Latest compare body changes | '.(int) ($latestCompareSummary['body_count'] ?? 0).' |';
+        }
         $lines[] = '| Latest contract validation | '.$this->md($latestContractValidation ? '#'.$latestContractValidation->id.' '.$latestContractValidation->health_label : 'n/a').' |';
         $lines[] = '';
+
+        if ($project->environments->isNotEmpty()) {
+            $lines[] = '## Environment Matrix';
+            $lines[] = '';
+            $lines[] = '| Environment | Type | Base URL | Auth profile | Production |';
+            $lines[] = '|---|---|---|---|---|';
+            foreach ($project->environments as $environment) {
+                $lines[] = '| '.$this->md($environment->name).' | '.$this->md($environment->environment_type_label).' | '.$this->md($environment->display_base_url).' | '.$this->md($environment->authProfile?->name ?: __('messages.environments.use_project_default_auth')).' | '.($environment->is_production ? __('messages.common.yes') : __('messages.common.no')).' |';
+            }
+            $lines[] = '';
+        }
 
         if ($latestScan) {
             $lines[] = '## Latest Scan';
@@ -312,6 +350,22 @@ class ReportExportService
                 $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
                 $testCase = $finding->testCase?->title ?: 'n/a';
                 $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->source_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$this->md($testCase).' | '.$finding->evidence->count().' |';
+            }
+
+            $evidenceRows = $openFindings
+                ->flatMap(fn (Finding $finding) => $finding->evidence->map(fn ($evidence) => [$finding, $evidence]))
+                ->take(25);
+            if ($evidenceRows->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = '### Finding Evidence Index';
+                $lines[] = '';
+                $lines[] = '| Finding | Type | Captured | Attachment | Summary |';
+                $lines[] = '|---|---|---|---|---|';
+                foreach ($evidenceRows as [$finding, $evidence]) {
+                    $captured = $evidence->captured_at ? $evidence->captured_at->format('Y-m-d H:i') : 'n/a';
+                    $attachment = $evidence->has_attachment ? $evidence->attachment_original_name.' ('.$evidence->attachment_size_label.')' : 'n/a';
+                    $lines[] = '| '.$this->md($finding->title).' | '.$this->md($evidence->type_label).' | '.$this->md($captured).' | '.$this->md($attachment).' | '.$this->md($evidence->summary).' |';
+                }
             }
         }
         $lines[] = '';
@@ -585,6 +639,12 @@ class ReportExportService
         $lines[] = '# Aptoria Scan Report';
         $lines[] = '';
         $lines[] = '**Project:** '.$scanRun->project->name;
+        foreach ($this->credits->projectBrandingMarkdownLines($scanRun->project) as $brandingLine) {
+            $lines[] = $this->mdBrandingLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($scanRun->project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         $lines[] = '**Environment:** '.($scanRun->environment?->name ?: __('messages.endpoints.project_default'));
         $lines[] = '**Status:** '.$scanRun->status;
         $lines[] = '**Started:** '.$this->dateValue($scanRun->started_at);
@@ -713,6 +773,12 @@ class ReportExportService
         $lines[] = '# Aptoria Snapshot Compare Report';
         $lines[] = '';
         $lines[] = '**Project:** '.$compareRun->project->name;
+        foreach ($this->credits->projectBrandingMarkdownLines($compareRun->project) as $brandingLine) {
+            $lines[] = $this->mdBrandingLine($brandingLine);
+        }
+        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($compareRun->project)) !== '') {
+            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
+        }
         $lines[] = '**Baseline snapshot:** '.($compareRun->snapshotA?->name ?: 'n/a');
         $lines[] = '**Target snapshot:** '.($compareRun->snapshotB?->name ?: 'n/a');
         $lines[] = '**Created:** '.$this->dateValue($compareRun->created_at);
@@ -731,6 +797,14 @@ class ReportExportService
         $lines[] = '| Changed endpoints/fields | '.($summary['changed_count'] ?? 0).' |';
         $lines[] = '| Critical changes | '.($summary['critical_count'] ?? 0).' |';
         $lines[] = '| High changes | '.($summary['high_count'] ?? 0).' |';
+        $lines[] = '| Breaking changes | '.($summary['breaking_count'] ?? 0).' |';
+        $lines[] = '| Status code changes | '.($summary['status_code_count'] ?? 0).' |';
+        $lines[] = '| Header changes | '.($summary['header_count'] ?? 0).' |';
+        $lines[] = '| Body changes | '.($summary['body_count'] ?? 0).' |';
+        $lines[] = '| Schema changes | '.($summary['schema_count'] ?? 0).' |';
+        $lines[] = '| Sensitive data changes | '.($summary['sensitive_data_count'] ?? 0).' |';
+        $lines[] = '| Broken auth changes | '.($summary['broken_auth_count'] ?? 0).' |';
+        $lines[] = '| Schema drift changes | '.($summary['schema_drift_count'] ?? 0).' |';
         $lines[] = '| Regression status | '.$regression['label'].' |';
         $lines[] = '| Regression detected endpoints | '.$regression['detected_count'].' |';
         $lines[] = '| Regression warning endpoints | '.$regression['warning_count'].' |';
@@ -747,14 +821,14 @@ class ReportExportService
             return implode("\n", $lines)."\n";
         }
 
-        $lines[] = '| Type | Severity | Method | Endpoint | Field | Old | New | Assertion | Regression | Failed rules | Warning rules |';
-        $lines[] = '|---|---|---|---|---|---|---|---|---|---|---|';
+        $lines[] = '| Type | Severity | Group | Breaking | Method | Endpoint | Field | Old | New | Assertion | Regression | Failed rules | Warning rules |';
+        $lines[] = '|---|---|---|---|---|---|---|---|---|---|---|---|---|';
         foreach ($compareRun->items->sortBy([['severity', 'asc'], ['change_type', 'asc'], ['method', 'asc'], ['path', 'asc']]) as $item) {
             $key = strtoupper($item->method).' '.strtolower($item->path);
             $targetItem = $targetItems->get($key);
             $assertion = $targetItem?->endpoint ? $this->assertions->evaluate($targetItem->endpoint, null, $targetItem) : null;
             $endpointRegression = $regression['endpoints'][$key] ?? null;
-            $lines[] = '| '.$this->md($item->change_label).' | '.$this->md($item->severity_label).' | '.$this->md($item->method).' | '.$this->md($item->path).' | '.$this->md($item->field_changed ?: 'n/a').' | '.$this->md($item->old_value ?: 'n/a').' | '.$this->md($item->new_value ?: 'n/a').' | '.$this->md($assertion['label'] ?? __('messages.assertions.statuses.not_configured')).' | '.$this->md($endpointRegression['label'] ?? __('messages.regressions.statuses.none')).' | '.$this->md($assertion ? implode('; ', array_column($assertion['failed_rules'], 'rule_label')) : '').' | '.$this->md($assertion ? implode('; ', array_column($assertion['warning_rules'], 'rule_label')) : '').' |';
+            $lines[] = '| '.$this->md($item->change_label).' | '.$this->md($item->severity_label).' | '.$this->md($item->diff_group_label).' | '.$this->md($item->breaking_change ? __('messages.common.yes') : __('messages.common.no')).' | '.$this->md($item->method).' | '.$this->md($item->path).' | '.$this->md($item->field_changed ?: 'n/a').' | '.$this->md($item->old_value ?: 'n/a').' | '.$this->md($item->new_value ?: 'n/a').' | '.$this->md($assertion['label'] ?? __('messages.assertions.statuses.not_configured')).' | '.$this->md($endpointRegression['label'] ?? __('messages.regressions.statuses.none')).' | '.$this->md($assertion ? implode('; ', array_column($assertion['failed_rules'], 'rule_label')) : '').' | '.$this->md($assertion ? implode('; ', array_column($assertion['warning_rules'], 'rule_label')) : '').' |';
         }
 
         $lines[] = '';
@@ -762,6 +836,7 @@ class ReportExportService
         $lines[] = '';
         $lines[] = '- New and removed endpoints should be reviewed against the expected API contract.';
         $lines[] = '- Risk/status/content-type changes should be reviewed before release acceptance.';
+        $lines[] = '- Schema, header, body and security diff groups help separate breaking changes from informational drift.';
         $lines[] = '- This compare report is based on saved snapshots and does not execute requests.';
         $lines[] = '';
         $this->credits->appendMarkdownFooter($lines, 'snapshot_compare_report', $compareRun->project);
@@ -819,6 +894,17 @@ class ReportExportService
     private function riskLabel(string $risk): string
     {
         return __('messages.endpoints.risks.'.$risk);
+    }
+
+    private function mdBrandingLine(string $line): string
+    {
+        if (! str_contains($line, ':** ')) {
+            return $this->md($line);
+        }
+
+        [$label, $value] = explode(':** ', $line, 2);
+
+        return $label.':** '.$this->md($value);
     }
 
     private function md(mixed $value): string

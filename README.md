@@ -2,7 +2,7 @@
 
 **Aptoria** is a self-hosted Laravel application for API QA, endpoint visibility, regression monitoring, release evidence and lightweight security review.
 
-Current release: **v1.1.1**  
+Current release: **v1.1.18**  
 Product status: **post-MVP / early beta**
 
 The application is designed for teams or individual QA engineers who want to keep API endpoint inventories, safe scan evidence, assertions, snapshots, findings, test cases and release readiness decisions in one self-hosted workspace.
@@ -22,10 +22,13 @@ Aptoria helps you answer practical QA questions before a release:
 - Which endpoints have linked test cases?
 - Are OpenAPI contract checks failing?
 - Are there open critical or high findings?
+- Is any response exposing sensitive-looking data, tokens, personal data or debug traces?
 - Is the project ready for release, warning-only, blocked or failed?
 - Did scheduled monitors create state-change alerts or webhook notifications?
 - Which QA tasks, retests, release checkpoints and alert follow-ups are due next?
 - Can we export QA evidence and calendar milestones for sign-off?
+- Can a new installation be demonstrated immediately with realistic sample QA data?
+- Can users find project, report, monitor and admin workflows from a cleaner navigation structure?
 
 The goal is not to replace Postman, Playwright, OWASP tools or a full test management platform. Aptoria is a self-hosted evidence and workflow layer for API QA and release review.
 
@@ -52,6 +55,7 @@ Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 - Single endpoint probe
 - Response metadata capture
 - Response preview capture with size limits
+- Sensitive data detector for response headers and body previews
 - Security header and HTTPS checks
 - SSRF-style private/internal target blocking defaults
 
@@ -65,7 +69,8 @@ Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 - Automatic onboarding baseline snapshot from the first guided safe scan
 - Snapshot compare reports
 - Regression evaluation
-- Scheduled monitor state-change alerts and optional webhook JSON delivery
+- Scheduled monitor dashboard/email/webhook notifications with configurable trigger rules
+- Cron-ready monitor runner with project, environment, suite, dry-run and saved JSON output filters
 
 ### QA workflow
 
@@ -113,6 +118,7 @@ Admin users can use **Settings → Database maintenance** to export the complete
 ### Application foundation
 
 - First-run setup wizard
+- Demo project / sample data generator for immediate evaluation after install
 - First-use guided project wizard that avoids empty or half-configured projects
 - Windows/XAMPP helper scripts
 - Linux install helper script
@@ -163,18 +169,18 @@ The release ZIP intentionally does **not** include `vendor/`, `.env`, `database/
 
 Fresh installs are guarded by the first-run setup flow. Until `storage/app/installed.lock` exists, normal application pages and login attempts are redirected to `/setup`; creating database users alone is not enough to open the app. After setup is locked, `/setup` is closed and the first successful login sends the admin to **My Profile** so report identity details can be completed before QA work starts.
 
-Use this exact PowerShell template for the v1.1.1 release ZIP:
+Use this exact PowerShell template for the v1.1.18 release ZIP:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.1.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.1"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.18.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.18"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.1\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.18\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -264,10 +270,10 @@ Production environments are never auto-scanned from the wizard; start those scan
 
 ## Scheduled monitor runner
 
-Run this command every 5–15 minutes from Windows Task Scheduler:
+Run this command every 5–15 minutes from Windows Task Scheduler or cron:
 
 ```powershell
-C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50
+C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --limit=50 --save-json
 ```
 
 Before enabling the live task, verify matching monitors without sending API requests:
@@ -280,9 +286,12 @@ Useful operational options:
 
 ```powershell
 C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --project=project-slug
+C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --environment=staging
+C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --suite="Smoke Regression"
 C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --monitor=12
 C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --force
 C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --json
+C:\xampp\php\php.exe C:\xampp\htdocs\aptoria\artisan aptoria:run-monitors --save-json
 ```
 
 See `docs/SCHEDULED_MONITORING_OPERATIONS.md` for Windows Task Scheduler and Linux cron details.
@@ -318,6 +327,8 @@ Scheduled monitor runner checks:
 C:\xampp\php\php.exe artisan test --filter=ScheduledMonitorCommandTest
 C:\xampp\php\php.exe artisan aptoria:run-monitors --dry-run
 C:\xampp\php\php.exe artisan aptoria:run-monitors --dry-run --json
+C:\xampp\php\php.exe artisan aptoria:run-monitors --project=project-slug --environment=staging --suite="Smoke Regression" --dry-run
+C:\xampp\php\php.exe artisan aptoria:run-monitors --save-json
 ```
 
 The test suite uses the `testing` environment and in-memory SQLite configuration.
@@ -445,7 +456,7 @@ Before pushing public, review:
 - `docs/QA_CHECKLIST.md` – current release QA checklist
 - `docs/MVP_PLAN.md` – current product status and roadmap
 - `docs/PORTFOLIO_SHOWCASE.md` – portfolio/showcase overview
-- `docs/SYSTEM_AUDIT_v1.1.1.md` – current system audit
+- `docs/SYSTEM_AUDIT_v1.1.18.md` – current system audit
 - `docs/DATABASE_MAINTENANCE_OPERATIONS.md` – database export/import and hard reset guide
 - `docs/GITHUB_REPOSITORY_CHECKLIST.md` – GitHub preparation checklist
 - `docs/APTORIA_UI_TEMPLATE_AUDIT.md` – Aptoria UI template integration audit
@@ -479,12 +490,3 @@ The immediate priority is not more features. The next priorities are:
 ## License and third-party assets
 
 Aptoria application code is source-available under `LICENSE`. Third-party dependencies and bundled frontend assets keep their own licenses; review `THIRD_PARTY_NOTICES.md` before redistribution or commercial packaging.
-
-### Endpoint inventory
-
-Aptoria v1.1.1 adds a dedicated **Endpoint Inventory** view for each project. It consolidates method, path, environment, authentication state, risk level, latest scan status, HTTP status, response time, open finding count, import source and coverage gaps into one audit-oriented catalogue. Use it after Postman/OpenAPI/Newman imports to quickly find unscanned endpoints, missing assertions, missing test cases, high-risk routes and endpoints with open findings.
-
-### API collection import
-
-Aptoria v1.1.1 supports endpoint inventory import from CSV, simple JSON endpoint lists, OpenAPI/Swagger JSON/YAML and Postman Collection JSON. The import flow always renders a preview first, then writes endpoint inventory only after confirmation. Postman imports now support a matching Postman Environment JSON, variable resolution, optional environment creation from `baseUrl`, optional auth profile creation from Postman auth, response example/test-script assertion extraction, and optional folder-to-test-suite mapping. Secrets are masked in preview and stored only in encrypted auth profile fields when an auth profile is explicitly created.
-

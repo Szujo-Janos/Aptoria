@@ -9,6 +9,7 @@
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
                     <a href="{{ route('projects.monitors.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.back') }}</a>
+                    <form method="POST" action="{{ route('projects.monitors.alerts.test', [$project, $monitor]) }}" style="display:inline">@csrf<button type="submit" class="btn btn-xs btn-success">{{ __('messages.monitors.send_test_notification') }}</button></form>
                     <a href="{{ route('projects.monitors.edit', [$project, $monitor]) }}" class="btn btn-xs btn-primary">{{ __('messages.common.edit') }}</a>
                 </div>
                 {{ __('messages.monitors.alert_history') }} — {{ $monitor->name }}
@@ -88,7 +89,12 @@
                                             <br><small class="text-muted">{{ $alert->delivery_message }}</small>
                                         @endif
                                     </td>
-                                    <td>{{ $alert->message ?: __('messages.common.not_available') }}</td>
+                                    <td>
+                                        {{ $alert->message ?: __('messages.common.not_available') }}
+                                        @if(is_array($alert->payload_json) && filled($alert->payload_json['trigger_summary'] ?? null))
+                                            <br><small class="text-muted">{{ __('messages.monitors.trigger_summary') }}: {{ $alert->payload_json['trigger_summary'] }}</small>
+                                        @endif
+                                    </td>
                                     <td>{{ $alert->delivered_at?->format('Y-m-d H:i:s') ?: __('messages.common.not_available') }}</td>
                                     <td>
                                         @if($alert->acknowledged_at)

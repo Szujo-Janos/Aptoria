@@ -26,7 +26,7 @@ class FindingRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'source' => ['required', Rule::in(Finding::SOURCES)],
             'severity' => ['required', Rule::in(Finding::SEVERITIES)],
-            'status' => ['required', Rule::in(Finding::STATUSES)],
+            'status' => ['required', Rule::in(Finding::LIFECYCLE_STATUSES)],
             'reproduction_steps' => ['nullable', 'string'],
             'expected_result' => ['nullable', 'string'],
             'actual_result' => ['nullable', 'string'],

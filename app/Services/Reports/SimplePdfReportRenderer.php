@@ -36,9 +36,13 @@ class SimplePdfReportRenderer
         $preparedBy = (string) ($this->identity['prepared_by'] ?? '');
         $organization = (string) ($this->identity['organization'] ?? '');
         $roleTitle = (string) ($this->identity['role_title'] ?? '');
+        $clientName = (string) ($this->identity['client_name'] ?? '');
+        $confidentiality = (string) ($this->identity['confidentiality_label'] ?? '');
+        $disclaimer = trim((string) ($this->identity['disclaimer'] ?? ''));
 
         $metaRows = [
             'Project' => $projectName !== null && $projectName !== '' ? $projectName : 'Report export',
+            'Client' => $clientName !== '' ? $clientName : ($organization !== '' ? $organization : 'Not configured'),
             'Organization / client' => $organization !== '' ? $organization : 'Not configured',
             'Base URL' => $baseUrl !== null && $baseUrl !== '' ? $baseUrl : 'Not configured',
             'Prepared by' => $preparedBy !== '' ? $preparedBy : 'Not configured',
@@ -47,6 +51,9 @@ class SimplePdfReportRenderer
         if ($roleTitle !== '') {
             $metaRows['Role / title'] = $roleTitle;
         }
+        if ($confidentiality !== '') {
+            $metaRows['Confidentiality'] = $confidentiality;
+        }
 
         foreach ($metaRows as $label => $value) {
             $this->addLine($y, $label.': '.$value, 'F1', 9);
@@ -54,7 +61,14 @@ class SimplePdfReportRenderer
         }
 
         $this->addLine($y, 'Generated: '.$this->generatedAt.' | '.$this->productName.' version: '.$this->version, 'F1', 8.5);
-        $y -= 24;
+        $y -= 18;
+
+        if ($disclaimer !== '') {
+            $this->addLine($y, 'Report disclaimer: '.$disclaimer, 'F1', 8.2);
+            $y -= 24;
+        } else {
+            $y -= 12;
+        }
 
         foreach ($this->markdownToTextLines($markdown) as $line) {
             [$text, $font, $size, $spacingBefore, $spacingAfter] = $line;
@@ -107,7 +121,12 @@ class SimplePdfReportRenderer
             }
             if (str_starts_with($line, '|') && str_ends_with($line, '|')) {
                 $cells = array_map(fn (string $cell): string => $this->plain(trim($cell)), explode('|', trim($line, '|')));
-                $result[] = [implode('   |   ', $cells), 'F1', 8.6, 0.0, 1.0];
+                $cellCount = count($cells);
+                $maxCellLength = $cellCount >= 7 ? 24 : ($cellCount >= 5 ? 34 : 52);
+                $cells = array_map(fn (string $cell): string => $this->truncate($cell, $maxCellLength), $cells);
+                $size = $cellCount >= 7 ? 7.0 : ($cellCount >= 5 ? 7.6 : 8.4);
+                $separator = $cellCount >= 5 ? ' | ' : '   |   ';
+                $result[] = [implode($separator, $cells), 'F1', $size, 0.0, 1.0];
                 continue;
             }
             if (preg_match('/^-\s+(.*)$/', $line, $match)) {
@@ -131,6 +150,20 @@ class SimplePdfReportRenderer
         $lines = [];
         $current = '';
         foreach ($words as $word) {
+            if (strlen($word) > $maxChars) {
+                if ($current !== '') {
+                    $lines[] = $current;
+                    $current = '';
+                }
+                foreach (str_split($word, $maxChars) as $chunk) {
+                    if (strlen($chunk) === $maxChars) {
+                        $lines[] = $chunk;
+                    } else {
+                        $current = $chunk;
+                    }
+                }
+                continue;
+            }
             if ($current === '') {
                 $current = $word;
                 continue;

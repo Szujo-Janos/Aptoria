@@ -73,6 +73,8 @@ class TestCase extends Model
         'type',
         'priority',
         'status',
+        'execution_order',
+        'builder_metadata_json',
         'last_run_status',
         'last_run_at',
     ];
@@ -81,6 +83,8 @@ class TestCase extends Model
     {
         return [
             'last_run_at' => 'datetime',
+            'builder_metadata_json' => 'array',
+            'execution_order' => 'integer',
         ];
     }
 
@@ -101,6 +105,10 @@ class TestCase extends Model
 
             if (! $testCase->last_run_status) {
                 $testCase->last_run_status = self::RUN_NOT_RUN;
+            }
+
+            if ($testCase->execution_order === null) {
+                $testCase->execution_order = 0;
             }
         });
     }

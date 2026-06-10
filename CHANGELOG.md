@@ -1,5 +1,162 @@
 # Changelog
 
+## v1.1.18 - Navigation & Profile Menu Cleanup Pass
+
+- Reorganized the sidebar into clear global groups: Projects, Release & reports, Operations, Audit & admin, and Help & workflow.
+- Reworked current-project navigation into grouped sections for setup, API inventory, QA workflow, risk/evidence, release/reporting and automation/audit.
+- Added project Monitors to the current project module list and moved global monitor alerts under Operations.
+- Cleaned the profile dropdown so it only contains account-level actions and has no blank operational duplicates.
+- Renamed profile report identity copy to Default Report Identity and clarified project override behavior.
+- Added English/Hungarian localization, navigation CSS polish and regression coverage.
+
+## v1.1.17 - Demo Project Sample Data Generator Pass
+
+- Added an authenticated Demo Project page for importing, re-importing and removing the comprehensive Northstar Commerce sample QA workspace.
+- Added a CLI generator: `php artisan aptoria:demo-project`, with `--json` and `--remove` modes for repeatable deployment checks.
+- Reused and hardened the comprehensive demo importer with audit-safe seeding and a single auditable import/remove system event.
+- Added dashboard/navigation access to the demo generator and summary cards for endpoints, scans, snapshots, findings, evidence, test cases, release gates and monitors.
+- Added English/Hungarian localization, feature tests and system audit documentation for the demo workflow.
+
+## v1.1.16 - Audit Log Activity Timeline Pass
+
+- Added a dedicated audit log table, model, service and observer-based activity recorder.
+- Added global and project-specific Audit Log / Activity Timeline pages with filters and JSON export.
+- Records authentication, data changes, report generation, database export/import and hard reset requests.
+- Captures user, project, subject, route, URL, IP, user agent, before/after values and metadata with sensitive value masking.
+- Added English/Hungarian localization, navigation entries, feature tests and system audit documentation.
+
+## v1.1.15 - System Health Diagnostics Pass
+
+- Expanded System Health diagnostics with cache, import/export, reporting/evidence and queue categories.
+- Added temporary cache write/read/delete probe and deployment-focused PHP/runtime details.
+- Added checks for report output, project logo storage, finding evidence storage and PHP temporary upload directory readiness.
+- Added DOMPDF availability note while keeping Aptoria's built-in dependency-free PDF renderer as the primary fallback.
+- Added queue readiness checks and clearer scheduler/CLI diagnostics guidance.
+- Updated System Health UI with CLI command examples, English/Hungarian localization, documentation and feature coverage.
+
+## v1.1.14 - Email / Webhook Notification Pass
+
+- Added monitor notification trigger settings for critical findings, high findings, HTTP 5xx responses, sensitive data, broken auth and schema drift.
+- Added global monitor alert center with channel, severity and open-alert filters.
+- Added monitor test notification workflow for dashboard/email/webhook delivery verification.
+- Added alert trigger summaries and fingerprinting to reduce repeated notifications for unchanged problem states.
+- Extended scheduled monitor summaries with scan alert signal metadata.
+- Updated email/text alert content, English/Hungarian localization, documentation and feature coverage.
+
+## v1.1.13 - Scheduled Monitor Runner Pass
+
+- Extended scheduled monitors with optional regression test suite binding per monitor.
+- Added project/environment/suite filters to the `aptoria:run-monitors` Artisan runner for unattended Windows Task Scheduler and cron jobs.
+- Added saved JSON run summaries through `--save-json` and `--output` for auditable scheduled execution evidence.
+- Added environment and suite columns to monitor command output and monitor UI tables.
+- Updated monitor forms with test suite selection and cron/Task Scheduler command guidance.
+- Added English/Hungarian localization and feature coverage for filtered saved runner output.
+
+## v1.1.12 - Project Report Branding Pass
+
+- Added project-level report branding overrides for client name, organization, prepared-by, role/title, confidentiality label and report disclaimer.
+- Added optional project report logo upload/removal with private storage and HTML report embedding.
+- Updated Markdown, HTML and PDF report presentation so project branding overrides global profile identity where configured.
+- Extended Executive, Technical, Full Project, Release Readiness, QA Release Gate, QA Evidence, Scan and Snapshot Compare exports with project branding context.
+- Added English/Hungarian localization, project form UI and regression coverage for branded report exports.
+
+## v1.1.11 - Executive / Technical Report Split Pass
+
+- Added dedicated Executive Report exports for decision-focused release readiness, main risk and recommendation summaries.
+- Added dedicated Technical Report exports for QA/developer handoff with endpoint inventory, findings, evidence, contract validation, scan/snapshot/regression context and request/response evidence.
+- Added Markdown, HTML and PDF routes for both report profiles.
+- Added report center cards for quick Executive and Technical exports.
+- Extended the custom report builder with an optional technical request/response evidence table.
+- Added English/Hungarian localization, regression coverage and v1.1.11 system audit documentation.
+
+## v1.1.10 - Evidence Attachment Pass
+
+- Extended finding evidence into an auditable attachment workflow with active evidence types for note, screenshot, JSON response, cURL command, request/response excerpt, file attachment and external link.
+- Added attachment upload/download support for finding evidence with original filename, MIME type, size and SHA-256 checksum metadata.
+- Added captured-at and captured-by metadata for evidence auditability.
+- Added dedicated request excerpt, response excerpt and cURL command fields to finding evidence.
+- Updated finding detail UI with expanded evidence creation and evidence table details.
+- Updated Release Readiness, Full Project reports and QA Evidence pack output with evidence/attachment visibility.
+- Added English/Hungarian localization and feature tests for attachment upload, download and cleanup.
+
+## v1.1.9 - Finding Lifecycle Pass
+
+- Added canonical finding lifecycle statuses: Open, Confirmed, In progress, Fixed, False positive, Accepted risk and Reopened.
+- Added quick lifecycle transition UI, lifecycle note, changed-by, changed-at and reopened count metadata for findings.
+- Added `finding_lifecycle_events` timeline storage for auditable status history.
+- Added status-based finding filtering and project-level lifecycle status summaries.
+- Updated release readiness scoring/reporting so reopened findings count as open risk while fixed, false-positive and accepted-risk findings do not block the release score.
+- Added lifecycle status breakdowns to release readiness and full QA reports.
+- Added English/Hungarian localization, regression coverage and v1.1.9 system audit documentation.
+
+## v1.1.8 - Release Readiness Score Pass
+
+- Added weighted release readiness score components for evidence, endpoint coverage, QA coverage, assertions, regression execution, snapshot regression status, security/auth readiness, findings, contract validation and report/sign-off readiness.
+- Added a score breakdown table to the project Release Readiness dashboard with earned points, maximum points, status and supporting checks.
+- Updated release readiness Markdown reports with a score breakdown section for audit/release evidence.
+- Added regression coverage for the weighted score model and dashboard rendering.
+- Updated English/Hungarian localization and release documentation for v1.1.8.
+
+## v1.1.7 - Regression Test Suite Builder Pass
+
+- Added Regression Test Suite Builder for creating executable suites from endpoint inventory.
+- Added generated hybrid test cases with execution order and builder metadata.
+- Added optional expected-status and required JSON path assertion generation.
+- Added one-click suite execution that runs safe GET/HEAD probes and records test case results.
+- Linked Suite Builder from Test Suites and Test Execution dashboards.
+- Added English/Hungarian localization and regression coverage for the builder workflow.
+
+## v1.1.6 - Schema Drift Detector Pass
+
+- Added response JSON schema extraction to safe scan results.
+- Added schema drift comparison against the previous completed scan for the same endpoint.
+- Detects added fields, removed fields, type changes and nullability changes.
+- Stores schema drift summary, change count and current response schema on scan results.
+- Creates regression findings with HTTP evidence when schema drift is detected.
+- Added schema drift flags to Scan Results and Endpoint Inventory, including a dedicated inventory filter.
+- Added schema drift risk signal integration and full project report metrics.
+- Extended snapshot compare schema grouping with added/removed/type/nullability field labels.
+- Added English/Hungarian localization and regression coverage for the Schema Drift Detector.
+
+## v1.1.5 - Baseline Diff Viewer Pass
+
+- Added richer baseline vs current snapshot diff grouping for inventory, status, performance, headers, body, schema, security, risk and metadata drift.
+- Added response body preview hashing/excerpts and JSON schema path comparison to snapshot metadata.
+- Added sensitive-data and unauthenticated-access comparison deltas to compare summaries.
+- Added breaking-change metrics to the snapshot compare UI and full project report.
+- Added quick Compare snapshots action from Endpoint Inventory.
+- Updated English/Hungarian localization and regression coverage for the diff viewer.
+
+## v1.1.4 - Broken Auth Comparison Scan Pass
+
+- Added broken authentication comparison for auth-required GET/HEAD endpoints.
+- Safe probes now compare authenticated responses with no-auth responses where an auth profile is available.
+- Added broken auth flags to scan results, Endpoint Inventory and full project reports.
+- Added automatic finding and masked HTTP evidence when unauthenticated access looks suspicious.
+- Added global security settings for enabling broken auth comparison and storing masked unauthenticated previews.
+- Added English and Hungarian translations plus regression coverage for broken auth detection.
+
+## v1.1.3 - Sensitive Data Detector Pass
+
+- Added response header/body sensitive data detection during safe GET/HEAD probes.
+- Detects sensitive-looking JSON fields, Authorization/Set-Cookie headers, JWTs, bearer tokens, API keys, private keys, email addresses, phone numbers and debug traces.
+- Stores only masked evidence summaries and never raw detected secret values in the detector output.
+- Adds sensitive data flags to scan results and Endpoint Inventory.
+- Generates scan findings with HTTP evidence for sensitive data detections.
+- Adds sensitive data risk signal integration and release/report visibility through existing finding evidence.
+- Added English/Hungarian translations and regression tests for the Sensitive Data Detector.
+
+## v1.1.2 - Environment Manager Pass
+
+- Added a dedicated project Environment Manager page at `/projects/{project}/environments`.
+- Added environment type support for local, development, staging, production and custom targets.
+- Added default environment selection from the environment manager.
+- Added environment-level auth profile visibility and default handoff.
+- Added environment metrics for endpoint, scan and snapshot usage.
+- Added Environment Manager navigation from the project sidebar and project details.
+- Added environment matrix output to full project reports.
+- Added English/Hungarian translations and feature tests for the Environment Manager.
+
 ## v1.1.1 - Endpoint Inventory Pass
 
 - Added a dedicated project Endpoint Inventory page at `/projects/{project}/endpoint-inventory`.

@@ -48,7 +48,7 @@ class TestSuiteController extends Controller
         $this->ensureSuiteBelongsToProject($project, $testSuite);
 
         $testSuite->load([
-            'testCases' => fn ($query) => $query->with(['endpoint', 'latestResult'])->latest(),
+            'testCases' => fn ($query) => $query->with(['endpoint', 'latestResult'])->orderBy('execution_order')->orderBy('id'),
         ]);
 
         $summary = $this->summary($testSuite->testCases);

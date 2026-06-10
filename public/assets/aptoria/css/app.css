@@ -3364,3 +3364,135 @@ body.aptoria-pro-ui.aptoria-theme-dark .text-muted {
         color: #f5f7fa !important;
     }
 }
+
+/* 1.1.8 release readiness risk summary polish */
+body.aptoria-pro-ui .aptoria-risk-summary-panel .panel-body {
+    padding: 16px 18px;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-list {
+    display: grid;
+    gap: 9px;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-item {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid #edf1f5;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-item:last-child {
+    border-bottom: 0;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-copy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-copy .label {
+    min-width: 62px;
+    text-align: center;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-copy strong {
+    font-size: 14px;
+    color: #263645;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-progress {
+    height: 7px;
+    border-radius: 999px;
+    background: #edf2f6;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+body.aptoria-pro-ui .aptoria-risk-summary-progress .progress-bar {
+    border-radius: 999px;
+    box-shadow: none;
+}
+
+body.aptoria-pro-ui.aptoria-theme-dark .aptoria-risk-summary-item,
+body.aptoria-pro-ui.aptoria-theme-system .aptoria-risk-summary-item {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.aptoria-pro-ui.aptoria-theme-dark .aptoria-risk-summary-copy strong,
+body.aptoria-pro-ui.aptoria-theme-system .aptoria-risk-summary-copy strong {
+    color: #d8e1ea;
+}
+
+@media (max-width: 767px) {
+    body.aptoria-pro-ui .aptoria-risk-summary-item {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+}
+
+/* 1.1.18 navigation information architecture cleanup */
+body.aptoria-pro-ui #side-menu.aptoria-ia-sidebar .nav-header {
+    padding: 13px 20px 5px 20px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #8b98a7;
+    background: transparent;
+}
+
+body.aptoria-pro-ui #side-menu.aptoria-ia-sidebar .nav-header span {
+    display: block;
+    padding-top: 8px;
+    border-top: 1px solid rgba(42, 63, 84, .08);
+}
+
+body.aptoria-pro-ui #side-menu.aptoria-ia-sidebar .nav-header:first-child span {
+    border-top: 0;
+    padding-top: 0;
+}
+
+body.aptoria-pro-ui #side-menu.aptoria-ia-sidebar .nav-second-level li a {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+body.aptoria-pro-ui #side-menu.aptoria-ia-sidebar .nav-second-level li a i {
+    width: 16px;
+    text-align: center;
+    margin-right: 4px;
+}
+
+body.aptoria-pro-ui .aptoria-clean-profile-menu > li > a,
+body.aptoria-pro-ui .aptoria-clean-profile-menu .menu-form button {
+    padding: 9px 18px;
+}
+
+body.aptoria-pro-ui .aptoria-clean-profile-menu > li > a i,
+body.aptoria-pro-ui .aptoria-clean-profile-menu .menu-form button i {
+    width: 16px;
+    text-align: center;
+    margin-right: 6px;
+}
+
+body.aptoria-pro-ui .aptoria-profile-menu-title {
+    padding: 12px 18px 10px;
+    border-bottom: 1px solid #edf1f5;
+    margin-bottom: 4px;
+}
+
+body.aptoria-pro-ui .aptoria-clean-profile-menu .divider {
+    margin: 4px 0;
+}
+
+body.aptoria-pro-ui.aptoria-theme-dark #side-menu.aptoria-ia-sidebar .nav-header span,
+body.aptoria-pro-ui.aptoria-theme-system #side-menu.aptoria-ia-sidebar .nav-header span,
+body.aptoria-pro-ui.aptoria-theme-dark .aptoria-profile-menu-title,
+body.aptoria-pro-ui.aptoria-theme-system .aptoria-profile-menu-title {
+    border-color: rgba(255, 255, 255, .08);
+}

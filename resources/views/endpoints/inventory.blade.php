@@ -8,6 +8,7 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
+                    <a href="{{ route('projects.snapshots.index', $project) }}" class="btn btn-xs btn-warning"><i class="fa fa-exchange"></i> {{ __('messages.snapshots.compare_snapshots') }}</a>
                     <a href="{{ route('projects.endpoints.import.form', $project) }}" class="btn btn-xs btn-info"><i class="fa fa-upload"></i> {{ __('messages.endpoints.import_title') }}</a>
                     <a href="{{ route('projects.endpoints.create', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-plus"></i> {{ __('messages.endpoints.new') }}</a>
                     <a href="{{ route('projects.endpoints.index', $project) }}" class="btn btn-xs btn-default"><i class="fa fa-list"></i> {{ __('messages.endpoints.view_all') }}</a>
@@ -38,7 +39,15 @@
         <div class="hpanel hblue"><div class="panel-body"><h2>{{ $summary['auth_required'] }}</h2><small>{{ __('messages.endpoint_inventory.metrics.auth_required') }}</small></div></div>
     </div>
     <div class="col-md-2 col-sm-4">
-        <div class="hpanel hviolet"><div class="panel-body"><h2>{{ $summary['avg_response_time'] !== null ? $summary['avg_response_time'].' ms' : '—' }}</h2><small>{{ __('messages.endpoint_inventory.metrics.avg_response_time') }}</small></div></div>
+        <div class="hpanel hred"><div class="panel-body"><h2>{{ $summary['sensitive_data'] }}</h2><small>{{ __('messages.endpoint_inventory.metrics.sensitive_data') }}</small></div></div>
+    </div>
+</div>
+<div class="row text-center">
+    <div class="col-md-2 col-sm-4">
+        <div class="hpanel hred"><div class="panel-body"><h2>{{ $summary['broken_auth'] }}</h2><small>{{ __('messages.endpoint_inventory.metrics.broken_auth') }}</small></div></div>
+    </div>
+    <div class="col-md-2 col-sm-4">
+        <div class="hpanel hyellow"><div class="panel-body"><h2>{{ $summary['schema_drift'] }}</h2><small>{{ __('messages.endpoint_inventory.metrics.schema_drift') }}</small></div></div>
     </div>
 </div>
 
@@ -206,6 +215,9 @@
                                     <th>{{ __('messages.endpoint_inventory.last_scan') }}</th>
                                     <th>{{ __('messages.scans.http_status') }}</th>
                                     <th>{{ __('messages.scans.response_time') }}</th>
+                                    <th>{{ __('messages.sensitive_data.short_title') }}</th>
+                                    <th>{{ __('messages.broken_auth.short_title') }}</th>
+                                    <th>{{ __('messages.schema_drift.short_title') }}</th>
                                     <th>{{ __('messages.endpoint_inventory.findings_count') }}</th>
                                     <th>{{ __('messages.endpoint_inventory.source') }}</th>
                                     <th>{{ __('messages.endpoint_inventory.coverage') }}</th>
@@ -245,6 +257,33 @@
                                     </td>
                                     <td>{{ $endpoint->latestScanResult?->status_code ?: __('messages.common.not_available') }}</td>
                                     <td>{{ $endpoint->latestScanResult?->response_time_ms !== null ? $endpoint->latestScanResult->response_time_ms.' ms' : __('messages.common.not_available') }}</td>
+                                    <td>
+                                        @if($endpoint->latestScanResult?->sensitive_data_detected)
+                                            <span class="label label-danger">{{ __('messages.sensitive_data.detected') }}</span>
+                                            <br><small>{{ $endpoint->latestScanResult->sensitive_data_count }}</small>
+                                        @else
+                                            <span class="label label-success">{{ __('messages.sensitive_data.not_detected') }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($endpoint->latestScanResult?->broken_auth_detected)
+                                            <span class="label label-danger">{{ __('messages.broken_auth.detected') }}</span>
+                                        @elseif(is_array($endpoint->latestScanResult?->broken_auth_summary_json))
+                                            <span class="label label-success">{{ __('messages.broken_auth.not_detected') }}</span>
+                                        @else
+                                            <span class="label label-default">{{ __('messages.broken_auth.not_checked') }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($endpoint->latestScanResult?->schema_drift_detected)
+                                            <span class="label label-warning">{{ __('messages.schema_drift.detected') }}</span>
+                                            <br><small>{{ $endpoint->latestScanResult->schema_drift_count }} · {{ $endpoint->latestScanResult->schema_drift_summary_label }}</small>
+                                        @elseif(is_array($endpoint->latestScanResult?->schema_drift_summary_json))
+                                            <span class="label label-success">{{ __('messages.schema_drift.not_detected') }}</span>
+                                        @else
+                                            <span class="label label-default">{{ __('messages.schema_drift.not_checked') }}</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if(($endpoint->open_findings_count ?? 0) > 0)
                                             <a href="{{ route('projects.findings.index', ['project' => $project, 'endpoint_id' => $endpoint->id]) }}" class="label label-danger">{{ $endpoint->open_findings_count }}</a>

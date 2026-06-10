@@ -152,6 +152,28 @@ class RiskAnalyzer
                 }
             }
 
+
+            if ($scanResult->sensitive_data_detected) {
+                $summary = is_array($scanResult->sensitive_data_summary_json) ? $scanResult->sensitive_data_summary_json : [];
+                $severity = (string) ($summary['highest_severity'] ?? 'high');
+                $level = $severity === 'critical' ? Endpoint::RISK_CRITICAL : Endpoint::RISK_HIGH;
+                $signals[] = $this->signal('sensitive_data_exposed', $level, $level === Endpoint::RISK_CRITICAL ? 75 : 55);
+            }
+
+            if ($scanResult->broken_auth_detected) {
+                $summary = is_array($scanResult->broken_auth_summary_json) ? $scanResult->broken_auth_summary_json : [];
+                $severity = (string) ($summary['severity'] ?? 'high');
+                $level = $severity === 'critical' ? Endpoint::RISK_CRITICAL : Endpoint::RISK_HIGH;
+                $signals[] = $this->signal('broken_auth_exposure', $level, $level === Endpoint::RISK_CRITICAL ? 90 : 70);
+            }
+
+            if ($scanResult->schema_drift_detected) {
+                $summary = is_array($scanResult->schema_drift_summary_json) ? $scanResult->schema_drift_summary_json : [];
+                $severity = (string) ($summary['highest_severity'] ?? 'high');
+                $level = $severity === 'critical' ? Endpoint::RISK_CRITICAL : Endpoint::RISK_HIGH;
+                $signals[] = $this->signal('schema_drift_detected', $level, $level === Endpoint::RISK_CRITICAL ? 80 : 60);
+            }
+
             if ($this->settings->boolean('risk.enable_security_header_checks', true) && is_array($scanResult->headers_json)) {
                 $headers = $this->normalizedHeaders($scanResult->headers_json);
                 if ($headers !== [] && (! array_key_exists('x-content-type-options', $headers) || ! array_key_exists('strict-transport-security', $headers))) {

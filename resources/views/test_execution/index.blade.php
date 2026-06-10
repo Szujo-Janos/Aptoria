@@ -8,6 +8,7 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
+                    <a href="{{ route('projects.test-suites.builder', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-magic"></i> {{ __('messages.regression_builder.short_title') }}</a>
                     <a href="{{ route('projects.newman-import.create', $project) }}" class="btn btn-xs btn-info"><i class="fa fa-upload"></i> {{ __('messages.newman_import.short_title') }}</a>
                     <a href="{{ route('projects.test-cases.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.test_cases.create') }}</a>
                     <a href="{{ route('projects.test-cases.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.test_cases.view_all') }}</a>
@@ -100,7 +101,10 @@
                                     <td><span class="label label-danger">{{ $row['run_counts'][\App\Models\TestCase::RUN_FAIL] }}</span></td>
                                     <td><span class="label label-warning">{{ $row['run_counts'][\App\Models\TestCase::RUN_BLOCKED] }}</span></td>
                                     <td><span class="label label-info">{{ $row['run_counts'][\App\Models\TestCase::RUN_NOT_RUN] }}</span></td>
-                                    <td class="text-right"><a href="{{ route('projects.test-execution.index', ['project' => $project, 'suite_id' => $row['suite']->id]) }}" class="btn btn-xs btn-default">{{ __('messages.common.filter') }}</a></td>
+                                    <td class="text-right">
+                                        <form method="POST" action="{{ route('projects.test-suites.run', [$project, $row['suite']]) }}" style="display:inline" data-aptoria-suite-run-form="true">@csrf<button type="submit" class="btn btn-xs btn-success" data-aptoria-submit-label="<i class=&quot;fa fa-spinner fa-spin&quot;></i> {{ __('messages.regression_builder.running_label') }}">{{ __('messages.regression_builder.run_suite') }}</button></form>
+                                        <a href="{{ route('projects.test-execution.index', ['project' => $project, 'suite_id' => $row['suite']->id]) }}" class="btn btn-xs btn-default">{{ __('messages.common.filter') }}</a>
+                                    </td>
                                 </tr>
                             @endforeach
                             </tbody>

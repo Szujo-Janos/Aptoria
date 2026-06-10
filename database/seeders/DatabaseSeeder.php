@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
                 ['name' => 'staging'],
                 [
                     'base_url' => 'https://jsonplaceholder.typicode.com',
+                    'environment_type' => \App\Models\Environment::TYPE_STAGING,
                     'is_production' => false,
                 ]
             );
@@ -54,6 +55,7 @@ class DatabaseSeeder extends Seeder
                 ['name' => 'production'],
                 [
                     'base_url' => $project->base_url,
+                    'environment_type' => \App\Models\Environment::TYPE_PRODUCTION,
                     'is_production' => true,
                 ]
             );

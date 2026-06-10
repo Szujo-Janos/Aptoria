@@ -32,6 +32,57 @@
 </div>
 
 <div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel hblue">
+            <div class="panel-heading hbuilt">
+                <div class="panel-tools"><span class="label label-primary">{{ $summary['score'] }}/100</span></div>
+                {{ __('messages.release_readiness.score_breakdown_title') }}
+            </div>
+            <div class="panel-body">
+                <p class="text-muted">{{ __('messages.release_readiness.score_breakdown_intro') }}</p>
+                <div class="table-responsive">
+                    <table class="table table-striped table-condensed m-b-none">
+                        <thead>
+                        <tr>
+                            <th>{{ __('messages.release_readiness.readiness_basis') }}</th>
+                            <th>{{ __('messages.release_readiness.earned_points') }}</th>
+                            <th>{{ __('messages.release_readiness.max_points') }}</th>
+                            <th>{{ __('messages.common.status') }}</th>
+                            <th style="width: 28%">{{ __('messages.release_readiness.score') }}</th>
+                            <th>{{ __('messages.common.details') }}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach($summary['score_components'] as $component)
+                            <tr>
+                                <td><strong>{{ $component['label'] }}</strong></td>
+                                <td>{{ $component['earned_points'] }}</td>
+                                <td>{{ $component['max_points'] }}</td>
+                                <td><span class="label label-{{ $component['css'] }}">{{ $component['status_label'] }}</span></td>
+                                <td>
+                                    <div class="progress full progress-small m-b-none">
+                                        <div style="width: {{ $component['percent'] }}%" aria-valuenow="{{ $component['percent'] }}" aria-valuemin="0" aria-valuemax="100" role="progressbar" class="progress-bar progress-bar-{{ $component['css'] }}">
+                                            <span class="sr-only">{{ $component['percent'] }}%</span>
+                                        </div>
+                                    </div>
+                                    <small>{{ $component['percent'] }}%</small>
+                                </td>
+                                <td>
+                                    @foreach($component['checks'] as $check)
+                                        <div class="small text-muted">{{ $check }}</div>
+                                    @endforeach
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-lg-4">
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">{{ __('messages.release_readiness.evidence') }}</div>
@@ -62,12 +113,40 @@
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="hpanel hred">
+        <div class="hpanel hred aptoria-risk-summary-panel">
             <div class="panel-heading hbuilt">{{ __('messages.release_readiness.risk_summary') }}</div>
             <div class="panel-body">
-                @foreach($summary['risk_counts'] as $risk => $count)
-                    <div class="m-b-xs"><span class="label label-{{ $risk === 'critical' ? 'danger' : ($risk === 'high' ? 'warning' : ($risk === 'low' ? 'success' : 'default')) }}">{{ __('messages.endpoints.risks.'.$risk) }}</span> <strong>{{ $count }}</strong></div>
-                @endforeach
+                @php
+                    $riskOrder = ['critical', 'high', 'review', 'public', 'low'];
+                    $riskClassMap = [
+                        'critical' => 'danger',
+                        'high' => 'warning',
+                        'review' => 'default',
+                        'public' => 'info',
+                        'low' => 'success',
+                    ];
+                    $riskTotal = max(1, array_sum($summary['risk_counts'] ?? []));
+                @endphp
+                <div class="aptoria-risk-summary-list">
+                    @foreach($riskOrder as $risk)
+                        @php
+                            $count = (int) ($summary['risk_counts'][$risk] ?? 0);
+                            $labelClass = $riskClassMap[$risk] ?? 'default';
+                            $percent = min(100, max(0, (int) round(($count / $riskTotal) * 100)));
+                        @endphp
+                        <div class="aptoria-risk-summary-item">
+                            <div class="aptoria-risk-summary-copy">
+                                <span class="label label-{{ $labelClass }}">{{ __('messages.endpoints.risks.'.$risk) }}</span>
+                                <strong>{{ $count }}</strong>
+                            </div>
+                            <div class="progress aptoria-risk-summary-progress m-b-none">
+                                <div class="progress-bar progress-bar-{{ $labelClass }}" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ $percent }}%">
+                                    <span class="sr-only">{{ $percent }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </div>
     </div>
@@ -86,6 +165,13 @@
                     <div class="col-xs-3"><h3>{{ $summary['finding_counts']['critical_open'] ?? 0 }}</h3><small>{{ __('messages.findings.severities.critical') }}</small></div>
                     <div class="col-xs-3"><h3>{{ $summary['finding_counts']['high_open'] ?? 0 }}</h3><small>{{ __('messages.findings.severities.high') }}</small></div>
                     <div class="col-xs-3"><h3>{{ $summary['finding_counts']['medium_open'] ?? 0 }}</h3><small>{{ __('messages.findings.severities.medium') }}</small></div>
+                </div>
+                <hr>
+                <div class="row text-center small">
+                    <div class="col-xs-3"><span class="label label-danger">{{ $summary['finding_counts']['reopened'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.reopened') }}</small></div>
+                    <div class="col-xs-3"><span class="label label-success">{{ $summary['finding_counts']['fixed'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.fixed') }}</small></div>
+                    <div class="col-xs-3"><span class="label label-default">{{ $summary['finding_counts']['false_positive'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.false_positive') }}</small></div>
+                    <div class="col-xs-3"><span class="label label-warning">{{ $summary['finding_counts']['accepted_risk'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.accepted_risk') }}</small></div>
                 </div>
             </div>
         </div>
@@ -192,14 +278,16 @@
                 @else
                     <div class="table-responsive">
                         <table class="table table-striped table-condensed m-b-none">
-                            <thead><tr><th>{{ __('messages.findings.severity') }}</th><th>{{ __('messages.findings.title_field') }}</th><th>{{ __('messages.endpoints.title') }}</th><th>{{ __('messages.findings.evidence') }}</th><th></th></tr></thead>
+                            <thead><tr><th>{{ __('messages.findings.severity') }}</th><th>{{ __('messages.common.status') }}</th><th>{{ __('messages.findings.title_field') }}</th><th>{{ __('messages.endpoints.title') }}</th><th>{{ __('messages.findings.evidence') }}</th><th>{{ __('messages.findings.attachment') }}</th><th></th></tr></thead>
                             <tbody>
                             @foreach($summary['open_findings'] as $finding)
                                 <tr>
                                     <td><span class="label label-{{ $finding->severity_css }}">{{ $finding->severity_label }}</span></td>
+                                    <td><span class="label label-{{ $finding->status_css }}">{{ $finding->status_label }}</span></td>
                                     <td><strong>{{ $finding->title }}</strong></td>
                                     <td>@if($finding->endpoint)<code>{{ $finding->endpoint->method }} {{ $finding->endpoint->path }}</code>@else<span class="text-muted">{{ __('messages.common.none') }}</span>@endif</td>
                                     <td>{{ $finding->evidence->count() }}</td>
+                                    <td>{{ $finding->evidence->filter(fn ($evidence) => $evidence->has_attachment)->count() }}</td>
                                     <td class="text-right"><a href="{{ route('projects.findings.show', [$project, $finding]) }}" class="btn btn-xs btn-default">{{ __('messages.common.details') }}</a></td>
                                 </tr>
                             @endforeach

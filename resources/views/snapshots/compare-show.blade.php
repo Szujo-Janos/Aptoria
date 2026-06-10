@@ -47,6 +47,16 @@
                     <div class="col-sm-2"><h3>{{ $regressionEvaluation['recovered_count'] }}</h3><small>{{ __('messages.regressions.recovered_count') }}</small></div>
                     <div class="col-sm-3"><h3>{{ $regressionEvaluation['improved_count'] }}</h3><small>{{ __('messages.regressions.improved_count') }}</small></div>
                 </div>
+
+                <hr>
+                <div class="row text-center">
+                    <div class="col-sm-2"><h3>{{ $compareRun->summary_json['breaking_count'] ?? 0 }}</h3><small>{{ __('messages.snapshots.breaking_changes') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $compareRun->summary_json['schema_count'] ?? 0 }}</h3><small>{{ __('messages.snapshots.diff_groups.schema') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $compareRun->summary_json['header_count'] ?? 0 }}</h3><small>{{ __('messages.snapshots.diff_groups.headers') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $compareRun->summary_json['body_count'] ?? 0 }}</h3><small>{{ __('messages.snapshots.diff_groups.body') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $compareRun->summary_json['sensitive_data_count'] ?? 0 }}</h3><small>{{ __('messages.sensitive_data.title') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $compareRun->summary_json['broken_auth_count'] ?? 0 }}</h3><small>{{ __('messages.broken_auth.title') }}</small></div>
+                </div>
             </div>
         </div>
     </div>
@@ -55,7 +65,7 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="hpanel hyellow">
-            <div class="panel-heading hbuilt">{{ __('messages.snapshots.detected_changes') }}</div>
+            <div class="panel-heading hbuilt">{{ __('messages.snapshots.diff_viewer_title') }}</div>
             <div class="panel-body">
                 @if($compareRun->items->isEmpty())
                     <p class="text-muted m-b-none">{{ __('messages.snapshots.no_changes_detected') }}</p>
@@ -66,6 +76,8 @@
                             <tr>
                                 <th>{{ __('messages.snapshots.change_type') }}</th>
                                 <th>{{ __('messages.snapshots.severity') }}</th>
+                                <th>{{ __('messages.snapshots.diff_group') }}</th>
+                                <th>{{ __('messages.snapshots.breaking') }}</th>
                                 <th>{{ __('messages.endpoints.method') }}</th>
                                 <th>{{ __('messages.endpoints.path') }}</th>
                                 <th>{{ __('messages.snapshots.field_changed') }}</th>
@@ -83,6 +95,14 @@
                                 <tr>
                                     <td><span class="label label-{{ $item->change_css }}">{{ $item->change_label }}</span></td>
                                     <td><span class="label label-{{ $item->severity_css }}">{{ $item->severity_label }}</span></td>
+                                    <td><span class="label label-{{ $item->diff_group_css }}">{{ $item->diff_group_label }}</span></td>
+                                    <td>
+                                        @if($item->breaking_change)
+                                            <span class="label label-danger">{{ __('messages.common.yes') }}</span>
+                                        @else
+                                            <span class="label label-default">{{ __('messages.common.no') }}</span>
+                                        @endif
+                                    </td>
                                     <td><span class="label label-default">{{ $item->method }}</span></td>
                                     <td><code>{{ $item->path }}</code></td>
                                     <td>{{ $item->field_changed ? __('messages.snapshots.fields.'.$item->field_changed) : __('messages.common.not_available') }}</td>
@@ -105,7 +125,7 @@
 @push('scripts')
 <script>
     $(function () {
-        $('#compare-items-table').DataTable({ pageLength: 25, order: [[1, 'asc'], [0, 'asc']] });
+        $('#compare-items-table').DataTable({ pageLength: 25, order: [[1, 'asc'], [2, 'asc'], [0, 'asc']] });
     });
 </script>
 @endpush

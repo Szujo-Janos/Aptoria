@@ -27,7 +27,7 @@ class UserProfileTest extends TestCase
             ->assertSee('My Profile')
             ->assertSee('Account information')
             ->assertSee('Activity summary')
-            ->assertSee('Report identity')
+            ->assertSee('Default Report Identity')
             ->assertSee('Aptoria v'.config('aptoria.version'));
     }
 

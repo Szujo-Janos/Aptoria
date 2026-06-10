@@ -1,6 +1,6 @@
 # Aptoria Installation
 
-Current version: **v1.1.1**
+Current version: **v1.1.18**
 
 Aptoria is built for self-hosted Laravel deployment. The primary tested local workflow is Windows/XAMPP, with Linux/VPS scripts provided as helpers.
 
@@ -28,15 +28,15 @@ The update script installs dependencies and prepares local runtime folders.
 Use this exact PowerShell template for ZIP-based local updates:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.1.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.1"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.18.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.18"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.1\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.18\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -51,6 +51,7 @@ C:\xampp\php\php.exe artisan migrate
 
 C:\xampp\php\php.exe artisan aptoria:health
 C:\xampp\php\php.exe artisan aptoria:security-audit
+C:\xampp\php\php.exe artisan aptoria:demo-project --json
 
 C:\xampp\php\php.exe artisan test
 
@@ -112,7 +113,7 @@ On the first successful login after creating the admin account, Aptoria redirect
 
 ## First project onboarding
 
-After profile review, open **Projects → Guided Project**. The v1.1.1 onboarding wizard creates the first usable project workspace in one pass:
+After profile review, open **Projects → Guided Project**. The v1.1.6 onboarding wizard creates the first usable project workspace in one pass:
 
 - project name and base URL;
 - first environment;
@@ -253,3 +254,55 @@ After creating a project, open **Project → Endpoints → Import Endpoints**. U
 ## Endpoint inventory check
 
 After importing endpoints or creating a guided project, open **Project → Endpoint Inventory**. This page should show a consolidated audit catalogue with scan coverage, risk, auth state, findings and coverage gaps.
+
+
+## Environment Manager check
+
+After installing v1.1.6, open **Project → Environments** and confirm that local/dev/staging/production/custom environments, default environment selection and environment-level auth profile display work as expected.
+
+
+## v1.1.6 Sensitive Data Detector check
+
+After installing v1.1.6, run a safe GET/HEAD probe against a non-production endpoint that returns sample personal data or token-like fields. Scan results and Endpoint Inventory should show sensitive data flags, and an open finding with masked evidence should be created.
+
+## v1.1.6 Broken Auth Comparison check
+
+After installing v1.1.6, run a safe GET/HEAD probe against a non-production endpoint marked as auth-required with a complete auth profile. Aptoria should compare the authenticated request with a no-auth request, mark 401/403 as protected, and create a finding/evidence when a no-auth 2xx/3xx response is returned.
+
+
+## v1.1.6 Baseline Diff Viewer check
+
+After installing v1.1.6, create or reuse two snapshots for a project, run a snapshot comparison and confirm that the diff viewer separates status, performance, header, body, schema and security changes. The full project report should include latest compare breaking/schema/header/body summary metrics.
+
+## v1.1.6 Schema Drift Detector check
+
+After installing v1.1.6, run a safe GET/HEAD probe twice against the same JSON endpoint after changing the response shape. Aptoria should store the response schema, flag schema drift on the second run, create a regression finding with evidence when enabled, and expose the schema drift flag in Endpoint Inventory.
+
+## v1.1.7 Regression Test Suite Builder check
+
+After installing v1.1.7 or later, open **Project → Test Suites → Suite Builder**, create a regression suite from selected endpoints, confirm generated test cases and assertion rules, then run the suite from the suite detail page and verify test results are recorded.
+
+
+
+## v1.1.8 Release Readiness Score check
+
+After installing v1.1.8 or later, open **Project → Release Readiness** and confirm the score breakdown table shows the weighted components, earned points, max points and status labels. Export the readiness Markdown report and confirm the score breakdown section is included.
+
+
+## v1.1.15 System Health Diagnostics check
+
+After installing v1.1.15 or later, open **System Health** from the global navigation or run `php artisan aptoria:health`. Confirm the report includes runtime, application, storage, cache, database, security, import/export, reporting/evidence, automation and queue categories. Export `/system/health.json` or run `php artisan aptoria:health --json` for machine-readable deployment evidence.
+
+## v1.1.11 Executive / Technical Report Split check
+
+After installing v1.1.11, open **Project → Reports** and export both the **Executive Report** and **Technical Report** in Markdown, HTML and PDF formats. Confirm the executive report stays decision-focused with release readiness, main risks and recommendations, while the technical report includes endpoint inventory, findings, evidence, contract validation and request/response evidence.
+
+## v1.1.16 Audit Log Activity Timeline check
+
+After installing v1.1.16 or later, open **Audit Log** from the global navigation. Create or edit a project, then confirm the timeline records the event with user, project, action, route and before/after metadata. Open a project-specific audit log and export JSON evidence from `/audit-log.json` or `projects/{project}/audit-log.json`.
+
+
+
+## v1.1.18 Navigation & Profile Menu Cleanup check
+
+After installing v1.1.18, review the sidebar and profile dropdown. Confirm global workflows are grouped into Release & reports, Operations, Audit & admin, and Help & workflow; project modules are grouped by task area; project monitors are available from the current project menu; and the profile dropdown contains only account-level actions with no empty rows.

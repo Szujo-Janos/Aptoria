@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\AuthProfile;
 use App\Models\Endpoint;
+use App\Models\Finding;
+use App\Models\FindingEvidence;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\ScanResult;
@@ -12,7 +14,10 @@ use App\Models\User;
 use App\Services\Auth\AuthProfileRuntimeService;
 use App\Services\Risk\RiskAnalyzer;
 use App\Services\Endpoints\PathParameterResolver;
+use App\Services\Security\BrokenAuthComparisonService;
 use App\Services\Security\NetworkTargetGuard;
+use App\Services\Security\SensitiveDataDetector;
+use App\Services\Schema\SchemaDriftDetector;
 use App\Services\Settings\ProjectSettingService;
 use App\Services\Settings\SettingService;
 use App\Services\Settings\SettingsRuntimeService;
@@ -42,6 +47,9 @@ class SafeProbeService
         private readonly SettingsRuntimeService $runtime,
         private readonly ProjectSettingService $projectSettings,
         private readonly NetworkTargetGuard $networkGuard,
+        private readonly SensitiveDataDetector $sensitiveDetector,
+        private readonly BrokenAuthComparisonService $brokenAuthComparison,
+        private readonly SchemaDriftDetector $schemaDriftDetector,
     ) {
     }
 
@@ -220,7 +228,21 @@ class SafeProbeService
             $body = (string) $response->body();
             $responseSize = strlen($body);
             $maxResponseSize = max(1, $this->settings->integer('scan.max_response_size_kb', 2048)) * 1024;
-            $headers = $this->settings->boolean('scan.store_response_headers', true) ? $this->authRuntime->maskHeaders($response->headers()) : null;
+            $rawHeaders = $response->headers();
+            $sensitiveData = $this->sensitiveDetector->inspectResponse($body, $rawHeaders, $contentType);
+            $headers = $this->settings->boolean('scan.store_response_headers', true) ? $this->authRuntime->maskHeaders($rawHeaders) : null;
+            $bodyPreview = ($this->settings->boolean('scan.store_response_body_preview', true) && $this->projectSettings->boolean($project, 'scan.store_response_body_preview', true)) ? $this->preview($body) : null;
+            $authPayload = [
+                'status_code' => $response->status(),
+                'response_time_ms' => $durationMs,
+                'content_type' => $contentType,
+                'body' => $body,
+                'body_preview' => $bodyPreview,
+                'sensitive_data' => $sensitiveData,
+            ];
+            $brokenAuth = $this->runBrokenAuthComparison($project, $endpoint, $authProfile, $method, $url, $authPayload);
+            $schemaDrift = $this->schemaDriftDetector->compareEndpointResponse($endpoint, $bodyPreview, $contentType);
+
             $this->storeResult($scanRun, $endpoint, [
                 'method' => $method,
                 'url' => $displayUrl,
@@ -233,7 +255,16 @@ class SafeProbeService
                 'content_type' => $contentType,
                 'response_size' => $responseSize,
                 'headers_json' => $headers,
-                'body_preview' => ($this->settings->boolean('scan.store_response_body_preview', true) && $this->projectSettings->boolean($project, 'scan.store_response_body_preview', true)) ? $this->preview($body) : null,
+                'body_preview' => $bodyPreview,
+                'response_schema_json' => $schemaDrift['schema'] ?? [],
+                'sensitive_data_detected' => $sensitiveData['detected'],
+                'sensitive_data_count' => $sensitiveData['count'],
+                'sensitive_data_summary_json' => $sensitiveData,
+                'broken_auth_detected' => (bool) ($brokenAuth['detected'] ?? false),
+                'broken_auth_summary_json' => $brokenAuth,
+                'schema_drift_detected' => (bool) ($schemaDrift['detected'] ?? false),
+                'schema_drift_count' => (int) ($schemaDrift['count'] ?? 0),
+                'schema_drift_summary_json' => $schemaDrift,
                 'error_message' => $responseSize > $maxResponseSize ? __('messages.scans.response_size_limit_exceeded', ['size' => round($responseSize / 1024, 2), 'limit' => round($maxResponseSize / 1024, 2)]) : null,
                 'expected_status_matched' => $endpoint->expected_status ? $response->status() === (int) $endpoint->expected_status : null,
                 'expected_content_type_matched' => $endpoint->expected_content_type ? str_contains(strtolower((string) $contentType), strtolower($endpoint->expected_content_type)) : null,
@@ -265,7 +296,20 @@ class SafeProbeService
             $body = (string) $response->body();
             $responseSize = strlen($body);
             $maxResponseSize = max(1, $this->settings->integer('scan.max_response_size_kb', 2048)) * 1024;
-            $headers = $this->settings->boolean('scan.store_response_headers', true) ? $this->authRuntime->maskHeaders($response->headers()) : null;
+            $rawHeaders = $response->headers();
+            $sensitiveData = $this->sensitiveDetector->inspectResponse($body, $rawHeaders, $contentType);
+            $headers = $this->settings->boolean('scan.store_response_headers', true) ? $this->authRuntime->maskHeaders($rawHeaders) : null;
+            $bodyPreview = ($this->settings->boolean('scan.store_response_body_preview', true) && $this->projectSettings->boolean($project, 'scan.store_response_body_preview', true)) ? $this->preview($body) : null;
+            $authPayload = [
+                'status_code' => $response->status(),
+                'response_time_ms' => $durationMs,
+                'content_type' => $contentType,
+                'body' => $body,
+                'body_preview' => $bodyPreview,
+                'sensitive_data' => $sensitiveData,
+            ];
+            $brokenAuth = $this->runBrokenAuthComparison($project, $endpoint, $authProfile, Endpoint::METHOD_GET, $url, $authPayload);
+            $schemaDrift = $this->schemaDriftDetector->compareEndpointResponse($endpoint, $bodyPreview, $contentType);
 
             $this->storeResult($scanRun, $endpoint, [
                 'method' => Endpoint::METHOD_GET,
@@ -279,7 +323,16 @@ class SafeProbeService
                 'content_type' => $contentType,
                 'response_size' => $responseSize,
                 'headers_json' => $headers,
-                'body_preview' => ($this->settings->boolean('scan.store_response_body_preview', true) && $this->projectSettings->boolean($project, 'scan.store_response_body_preview', true)) ? $this->preview($body) : null,
+                'body_preview' => $bodyPreview,
+                'response_schema_json' => $schemaDrift['schema'] ?? [],
+                'sensitive_data_detected' => $sensitiveData['detected'],
+                'sensitive_data_count' => $sensitiveData['count'],
+                'sensitive_data_summary_json' => $sensitiveData,
+                'broken_auth_detected' => (bool) ($brokenAuth['detected'] ?? false),
+                'broken_auth_summary_json' => $brokenAuth,
+                'schema_drift_detected' => (bool) ($schemaDrift['detected'] ?? false),
+                'schema_drift_count' => (int) ($schemaDrift['count'] ?? 0),
+                'schema_drift_summary_json' => $schemaDrift,
                 'error_message' => $responseSize > $maxResponseSize ? __('messages.scans.response_size_limit_exceeded', ['size' => round($responseSize / 1024, 2), 'limit' => round($maxResponseSize / 1024, 2)]) : 'HEAD failed; retried with GET by Settings policy.',
                 'expected_status_matched' => $endpoint->expected_status ? $response->status() === (int) $endpoint->expected_status : null,
                 'expected_content_type_matched' => $endpoint->expected_content_type ? str_contains(strtolower((string) $contentType), strtolower($endpoint->expected_content_type)) : null,
@@ -289,7 +342,7 @@ class SafeProbeService
         }
     }
 
-    private function request(Endpoint $endpoint, ?AuthProfile $authProfile, string $method, string $url): mixed
+    private function request(Endpoint $endpoint, ?AuthProfile $authProfile, string $method, string $url, bool $applyAuth = true): mixed
     {
         $userAgent = str_replace(
             '{version}',
@@ -324,7 +377,9 @@ class SafeProbeService
             $pendingRequest = $pendingRequest->retry($retryCount, $this->settings->integer('scan.retry_delay_ms', 250), null, false);
         }
 
-        $pendingRequest = $this->authRuntime->applyToRequest($pendingRequest, $authProfile);
+        if ($applyAuth) {
+            $pendingRequest = $this->authRuntime->applyToRequest($pendingRequest, $authProfile);
+        }
 
         return $pendingRequest->send($method, $url);
     }
@@ -353,6 +408,9 @@ class SafeProbeService
                 'risk_counts' => collect(Endpoint::RISKS)
                     ->mapWithKeys(fn (string $level): array => [$level => $results->where('risk_level', $level)->count()])
                     ->all(),
+                'sensitive_data_results' => $results->where('sensitive_data_detected', true)->count(),
+                'broken_auth_results' => $results->where('broken_auth_detected', true)->count(),
+                'schema_drift_results' => $results->where('schema_drift_detected', true)->count(),
             ],
         ]);
     }
@@ -405,7 +463,220 @@ class SafeProbeService
             $this->criticalFindingCount++;
         }
 
+        if ($result->sensitive_data_detected) {
+            $this->recordSensitiveDataFinding($scanRun, $endpoint, $result);
+        }
+
+        if ($result->broken_auth_detected) {
+            $this->recordBrokenAuthFinding($scanRun, $endpoint, $result);
+        }
+
+        if ($result->schema_drift_detected && $this->settings->boolean('security.schema_drift_create_findings', true)) {
+            $this->recordSchemaDriftFinding($scanRun, $endpoint, $result);
+        }
+
         return $result;
+    }
+
+
+    /**
+     * @param array<string, mixed> $authPayload
+     * @return array<string, mixed>|null
+     */
+    private function runBrokenAuthComparison(Project $project, Endpoint $endpoint, ?AuthProfile $authProfile, string $method, string $url, array $authPayload): ?array
+    {
+        if (! $this->settings->boolean('security.unauthenticated_access_comparison_enabled', true)) {
+            return null;
+        }
+
+        if (! $endpoint->auth_required || ! $this->authRuntime->shouldApply($authProfile)) {
+            return null;
+        }
+
+        if (! in_array(strtoupper($method), [Endpoint::METHOD_GET, Endpoint::METHOD_HEAD], true)) {
+            return null;
+        }
+
+        try {
+            $started = microtime(true);
+            $response = $this->request($endpoint, null, $method, $url, false);
+            $durationMs = (int) round((microtime(true) - $started) * 1000);
+            $contentType = $this->firstHeaderValue($response->header('Content-Type'));
+            $body = (string) $response->body();
+            $headers = $response->headers();
+            $sensitiveData = $this->sensitiveDetector->inspectResponse($body, $headers, $contentType);
+            $bodyPreview = $this->settings->boolean('security.unauthenticated_access_store_preview', true) ? $this->preview($body) : null;
+
+            return $this->brokenAuthComparison->evaluate($endpoint, $authPayload, [
+                'status_code' => $response->status(),
+                'response_time_ms' => $durationMs,
+                'content_type' => $contentType,
+                'body' => $body,
+                'body_preview' => $bodyPreview,
+                'sensitive_data' => $sensitiveData,
+            ]);
+        } catch (Throwable $exception) {
+            return [
+                'checked' => false,
+                'detected' => false,
+                'reason' => 'no_auth_request_failed',
+                'summary' => __('messages.broken_auth.reasons.no_auth_request_failed'),
+                'error' => Str::limit($this->authRuntime->maskValue($exception->getMessage()), 500),
+            ];
+        }
+    }
+
+
+    private function recordSensitiveDataFinding(ScanRun $scanRun, Endpoint $endpoint, ScanResult $result): void
+    {
+        $summary = is_array($result->sensitive_data_summary_json) ? $result->sensitive_data_summary_json : [];
+        $severity = $this->sensitiveDetector->severityForFinding($summary, (bool) $endpoint->auth_required);
+        $matches = is_array($summary['matches'] ?? null) ? $summary['matches'] : [];
+        $summaryText = (string) ($summary['summary'] ?? __('messages.sensitive_data.finding_summary_fallback'));
+
+        $finding = Finding::query()->create([
+            'project_id' => $endpoint->project_id,
+            'endpoint_id' => $endpoint->id,
+            'scan_run_id' => $scanRun->id,
+            'scan_result_id' => $result->id,
+            'title' => __('messages.sensitive_data.finding_title', ['method' => $endpoint->method, 'path' => $endpoint->path]),
+            'description' => __('messages.sensitive_data.finding_description', [
+                'count' => (int) $result->sensitive_data_count,
+                'summary' => $summaryText,
+            ]),
+            'source' => Finding::SOURCE_SCAN,
+            'severity' => $severity,
+            'status' => Finding::STATUS_OPEN,
+            'reproduction_steps' => __('messages.sensitive_data.finding_reproduction', ['url' => $result->url]),
+            'expected_result' => __('messages.sensitive_data.finding_expected'),
+            'actual_result' => __('messages.sensitive_data.finding_actual', ['summary' => $summaryText]),
+            'recommendation' => __('messages.sensitive_data.finding_recommendation'),
+            'detected_at' => now(),
+        ]);
+
+        FindingEvidence::query()->create([
+            'finding_id' => $finding->id,
+            'project_id' => $endpoint->project_id,
+            'type' => FindingEvidence::TYPE_HTTP,
+            'source_label' => __('messages.sensitive_data.evidence_source'),
+            'content' => json_encode([
+                'summary' => $summaryText,
+                'match_count' => (int) $result->sensitive_data_count,
+                'matches' => array_slice($matches, 0, 10),
+                'http_status' => $result->status_code,
+                'content_type' => $result->content_type,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            'url' => $result->url,
+            'metadata_json' => [
+                'scan_run_id' => $scanRun->id,
+                'scan_result_id' => $result->id,
+                'sensitive_data_count' => (int) $result->sensitive_data_count,
+            ],
+        ]);
+    }
+
+    private function recordBrokenAuthFinding(ScanRun $scanRun, Endpoint $endpoint, ScanResult $result): void
+    {
+        $summary = is_array($result->broken_auth_summary_json) ? $result->broken_auth_summary_json : [];
+        $summaryText = (string) ($summary['summary'] ?? __('messages.broken_auth.finding_summary_fallback'));
+        $severity = in_array(($summary['severity'] ?? null), Finding::SEVERITIES, true)
+            ? (string) $summary['severity']
+            : Finding::SEVERITY_HIGH;
+
+        $finding = Finding::query()->create([
+            'project_id' => $endpoint->project_id,
+            'endpoint_id' => $endpoint->id,
+            'scan_run_id' => $scanRun->id,
+            'scan_result_id' => $result->id,
+            'title' => __('messages.broken_auth.finding_title', ['method' => $endpoint->method, 'path' => $endpoint->path]),
+            'description' => __('messages.broken_auth.finding_description', [
+                'summary' => $summaryText,
+                'auth_status' => $summary['auth_status_code'] ?? __('messages.common.not_available'),
+                'no_auth_status' => $summary['no_auth_status_code'] ?? __('messages.common.not_available'),
+            ]),
+            'source' => Finding::SOURCE_SCAN,
+            'severity' => $severity,
+            'status' => Finding::STATUS_OPEN,
+            'reproduction_steps' => __('messages.broken_auth.finding_reproduction', ['url' => $result->url]),
+            'expected_result' => __('messages.broken_auth.finding_expected'),
+            'actual_result' => __('messages.broken_auth.finding_actual', ['summary' => $summaryText]),
+            'recommendation' => __('messages.broken_auth.finding_recommendation'),
+            'detected_at' => now(),
+        ]);
+
+        FindingEvidence::query()->create([
+            'finding_id' => $finding->id,
+            'project_id' => $endpoint->project_id,
+            'type' => FindingEvidence::TYPE_HTTP,
+            'source_label' => __('messages.broken_auth.evidence_source'),
+            'content' => json_encode([
+                'summary' => $summaryText,
+                'auth_status_code' => $summary['auth_status_code'] ?? null,
+                'no_auth_status_code' => $summary['no_auth_status_code'] ?? null,
+                'same_body_fingerprint' => $summary['same_body_fingerprint'] ?? false,
+                'no_auth_sensitive_data_detected' => $summary['no_auth_sensitive_data_detected'] ?? false,
+                'no_auth_sensitive_data_count' => $summary['no_auth_sensitive_data_count'] ?? 0,
+                'no_auth_body_preview' => $summary['no_auth_body_preview'] ?? null,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            'url' => $result->url,
+            'metadata_json' => [
+                'scan_run_id' => $scanRun->id,
+                'scan_result_id' => $result->id,
+                'reason' => $summary['reason'] ?? null,
+            ],
+        ]);
+    }
+
+
+
+    private function recordSchemaDriftFinding(ScanRun $scanRun, Endpoint $endpoint, ScanResult $result): void
+    {
+        $summary = is_array($result->schema_drift_summary_json) ? $result->schema_drift_summary_json : [];
+        $summaryText = (string) ($summary['summary'] ?? __('messages.schema_drift.finding_summary_fallback'));
+        $changes = is_array($summary['changes'] ?? null) ? $summary['changes'] : [];
+        $severity = in_array(($summary['highest_severity'] ?? null), Finding::SEVERITIES, true)
+            ? (string) $summary['highest_severity']
+            : Finding::SEVERITY_HIGH;
+
+        $finding = Finding::query()->create([
+            'project_id' => $endpoint->project_id,
+            'endpoint_id' => $endpoint->id,
+            'scan_run_id' => $scanRun->id,
+            'scan_result_id' => $result->id,
+            'title' => __('messages.schema_drift.finding_title', ['method' => $endpoint->method, 'path' => $endpoint->path]),
+            'description' => __('messages.schema_drift.finding_description', [
+                'count' => (int) $result->schema_drift_count,
+                'summary' => $summaryText,
+            ]),
+            'source' => Finding::SOURCE_REGRESSION,
+            'severity' => $severity,
+            'status' => Finding::STATUS_OPEN,
+            'reproduction_steps' => __('messages.schema_drift.finding_reproduction', ['url' => $result->url]),
+            'expected_result' => __('messages.schema_drift.finding_expected'),
+            'actual_result' => __('messages.schema_drift.finding_actual', ['summary' => $summaryText]),
+            'recommendation' => __('messages.schema_drift.finding_recommendation'),
+            'detected_at' => now(),
+        ]);
+
+        FindingEvidence::query()->create([
+            'finding_id' => $finding->id,
+            'project_id' => $endpoint->project_id,
+            'type' => FindingEvidence::TYPE_HTTP,
+            'source_label' => __('messages.schema_drift.evidence_source'),
+            'content' => json_encode([
+                'summary' => $summaryText,
+                'change_count' => (int) $result->schema_drift_count,
+                'baseline_scan_result_id' => $summary['baseline_scan_result_id'] ?? null,
+                'changes' => array_slice($changes, 0, 25),
+                'current_schema' => array_slice(is_array($result->response_schema_json) ? $result->response_schema_json : [], 0, 50, true),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            'url' => $result->url,
+            'metadata_json' => [
+                'scan_run_id' => $scanRun->id,
+                'scan_result_id' => $result->id,
+                'baseline_scan_result_id' => $summary['baseline_scan_result_id'] ?? null,
+            ],
+        ]);
     }
 
     private function activateScanProfile(string $profile): void

@@ -58,7 +58,7 @@
         <div class="form-group">
             <label for="status">{{ __('messages.common.status') }}</label>
             <select name="status" id="status" class="form-control" required>
-                @foreach(\App\Models\Finding::STATUSES as $status)
+                @foreach(\App\Models\Finding::LIFECYCLE_STATUSES as $status)
                     <option value="{{ $status }}" @selected(old('status', $finding->status ?: \App\Models\Finding::STATUS_OPEN) === $status)>{{ __('messages.findings.statuses.'.$status) }}</option>
                 @endforeach
             </select>

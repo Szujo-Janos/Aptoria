@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CompareItem;
 use App\Models\Endpoint;
+use App\Models\Finding;
 use App\Models\Project;
 use App\Models\ScanRun;
 use App\Models\Snapshot;
@@ -26,6 +27,95 @@ class ReportExportTest extends TestCase
             ->assertOk()
             ->assertSee('Reports')
             ->assertSee('Endpoint CSV');
+    }
+
+
+    public function test_executive_and_technical_report_profiles_download_distinct_content(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'QA Admin',
+            'email' => 'exec-tech-reports@example.com',
+            'password' => 'password',
+            'role' => 'admin',
+        ]);
+
+        $project = Project::query()->create([
+            'user_id' => $admin->id,
+            'name' => 'Profile Reports API',
+            'slug' => 'profile-reports-api',
+            'base_url' => 'https://api.example.test',
+            'is_active' => true,
+        ]);
+
+        $endpoint = Endpoint::query()->create([
+            'project_id' => $project->id,
+            'method' => Endpoint::METHOD_GET,
+            'path' => '/orders/42',
+            'name' => 'Order detail',
+            'auth_required' => true,
+            'expected_status' => 200,
+            'risk_level' => Endpoint::RISK_HIGH,
+            'is_active' => true,
+            'excluded_from_scan' => false,
+        ]);
+
+        $scanRun = ScanRun::query()->create([
+            'project_id' => $project->id,
+            'created_by' => $admin->id,
+            'status' => ScanRun::STATUS_COMPLETED,
+            'total_endpoints' => 1,
+            'scanned_count' => 1,
+            'skipped_count' => 0,
+            'success_count' => 1,
+        ]);
+
+        $scanRun->results()->create([
+            'endpoint_id' => $endpoint->id,
+            'method' => Endpoint::METHOD_GET,
+            'url' => 'https://api.example.test/orders/42',
+            'status' => 'completed',
+            'status_code' => 200,
+            'response_time_ms' => 88,
+            'content_type' => 'application/json',
+            'response_size' => 128,
+            'body_preview' => '{"id":42,"status":"paid"}',
+            'risk_level' => Endpoint::RISK_HIGH,
+            'sensitive_data_detected' => true,
+            'sensitive_data_count' => 1,
+            'broken_auth_detected' => false,
+            'schema_drift_detected' => false,
+            'schema_drift_count' => 0,
+        ]);
+
+        Finding::query()->create([
+            'project_id' => $project->id,
+            'endpoint_id' => $endpoint->id,
+            'title' => 'Order detail returns sensitive customer metadata',
+            'source' => Finding::SOURCE_SCAN,
+            'severity' => Finding::SEVERITY_HIGH,
+            'status' => Finding::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('projects.reports.executive.markdown', $project))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8')
+            ->assertSee('Aptoria Executive Release Readiness Report', false)
+            ->assertSee('## Release Readiness', false)
+            ->assertSee('## Recommendations', false)
+            ->assertDontSee('## Technical Request / Response Evidence', false)
+            ->assertDontSee('| Method | Endpoint | URL | HTTP |', false);
+
+        $this->actingAs($admin)
+            ->get(route('projects.reports.technical.markdown', $project))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8')
+            ->assertSee('Aptoria Technical QA Evidence Report', false)
+            ->assertSee('## Endpoint Inventory', false)
+            ->assertSee('## Findings & Evidence', false)
+            ->assertSee('## Technical Request / Response Evidence', false)
+            ->assertSee('/orders/42', false)
+            ->assertSee('{"id":42,"status":"paid"}', false);
     }
 
     public function test_endpoint_inventory_csv_downloads(): void

@@ -56,7 +56,7 @@
                     </div>
 
                     <hr>
-                    <h4 class="m-t-md"><i class="fa fa-id-card-o"></i> {{ __('messages.profile.report_identity_title') }}</h4>
+                    <h4 id="default-report-identity" class="m-t-md"><i class="fa fa-id-card-o"></i> {{ __('messages.profile.report_identity_title') }}</h4>
                     <p class="text-muted">{{ __('messages.profile.report_identity_intro') }}</p>
 
                     <div class="row">

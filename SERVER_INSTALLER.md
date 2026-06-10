@@ -1,6 +1,6 @@
 # Aptoria Server First-Run Installer
 
-Current version: **v1.1.1**
+Current version: **v1.1.18**
 
 Aptoria contains a first-run setup flow for fresh deployments. Until the application is installed and locked, normal web pages redirect to `/setup`.
 
@@ -19,7 +19,7 @@ The setup flow can help with:
 - optional demo QA project import;
 - setup lock creation.
 
-After setup and migrations, open **System Health** or run `php artisan aptoria:health` to verify runtime, storage, database, security and automation readiness. Then use **Projects → Guided Project** to create the first project, environment, auth profile, endpoint, safe scan, snapshot and report readiness flow in one guided pass.
+After setup and migrations, open **System Health** or run `php artisan aptoria:health` to verify runtime, storage, database, security and automation readiness. Then either use **Demo Project** to import a complete synthetic sample workspace, or use **Projects → Guided Project** to create the first project, environment, auth profile, endpoint, safe scan, snapshot and report readiness flow in one guided pass.
 
 The setup lock is stored locally at:
 
@@ -34,15 +34,15 @@ This file must never be included in release ZIPs or committed to Git.
 ## Windows/XAMPP recommended update flow
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.1.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.1"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.18.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.18"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.1\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.18\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -126,3 +126,41 @@ Admin users can also open **System Health** in the sidebar. The JSON endpoint is
 ## Post-install endpoint inventory smoke test
 
 After installation and migration, create or import a project, then open **Project → Endpoint Inventory** to confirm endpoint catalogue rendering, filters and localization.
+
+
+## v1.1.6 Baseline Diff Viewer
+
+After deployment, clear caches, run migrations and open Project → Snapshots. Compare two snapshots and verify the richer baseline/current diff categories.
+
+## v1.1.6 Schema Drift Detector
+
+Run `php artisan migrate` after deployment. The release adds schema drift metadata columns to scan results and uses them during safe probes, Endpoint Inventory filtering and report generation.
+
+## v1.1.7 Regression Test Suite Builder check
+
+After installing v1.1.7 or later, open **Project → Test Suites → Suite Builder**, create a regression suite from selected endpoints, confirm generated test cases and assertion rules, then run the suite from the suite detail page and verify test results are recorded.
+
+
+
+## v1.1.8 Release Readiness Score check
+
+After installing v1.1.8 or later, open **Project → Release Readiness**, confirm the weighted score breakdown is visible, then export the readiness report and check that the component table is present.
+
+
+## v1.1.15 System Health Diagnostics check
+
+After installing v1.1.15 or later, open **System Health** from the global navigation or run `php artisan aptoria:health`. Confirm the report includes runtime, application, storage, cache, database, security, import/export, reporting/evidence, automation and queue categories. Export `/system/health.json` or run `php artisan aptoria:health --json` for machine-readable deployment evidence.
+
+## v1.1.11 Executive / Technical Report Split check
+
+After installing v1.1.11, open **Project → Reports** and export both the **Executive Report** and **Technical Report** in Markdown, HTML and PDF formats. Confirm the executive report stays decision-focused with release readiness, main risks and recommendations, while the technical report includes endpoint inventory, findings, evidence, contract validation and request/response evidence.
+
+## v1.1.16 Audit Log Activity Timeline check
+
+After installing v1.1.16 or later, open **Audit Log** from the global navigation. Create or edit a project, then confirm the timeline records the event with user, project, action, route and before/after metadata. Open a project-specific audit log and export JSON evidence from `/audit-log.json` or `projects/{project}/audit-log.json`.
+
+
+
+## v1.1.18 Navigation & Profile Menu Cleanup check
+
+After installing v1.1.18, review the sidebar and profile dropdown. Confirm global workflows are grouped into Release & reports, Operations, Audit & admin, and Help & workflow; project modules are grouped by task area; project monitors are available from the current project menu; and the profile dropdown contains only account-level actions with no empty rows.

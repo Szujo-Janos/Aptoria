@@ -20,6 +20,14 @@ class Project extends Model
         'slug',
         'description',
         'base_url',
+        'report_client_name',
+        'report_organization',
+        'report_prepared_by',
+        'report_role_title',
+        'report_confidentiality_label',
+        'report_disclaimer',
+        'report_logo_path',
+        'report_logo_original_name',
         'is_active',
     ];
 
@@ -190,6 +198,30 @@ class Project extends Model
         }
 
         return $this->authProfiles()->where('is_default', true)->first();
+    }
+
+    public function hasProjectReportBranding(): bool
+    {
+        foreach ([
+            'report_client_name',
+            'report_organization',
+            'report_prepared_by',
+            'report_role_title',
+            'report_confidentiality_label',
+            'report_disclaimer',
+            'report_logo_path',
+        ] as $field) {
+            if (trim((string) $this->getAttribute($field)) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getReportClientOrOrganizationAttribute(): string
+    {
+        return trim((string) ($this->report_client_name ?: $this->report_organization));
     }
 
     public function getDisplayBaseUrlAttribute(): string

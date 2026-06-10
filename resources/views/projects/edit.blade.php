@@ -8,7 +8,7 @@
         <div class="hpanel">
             <div class="panel-heading hbuilt">{{ __('messages.projects.edit_title') }}</div>
             <div class="panel-body">
-                <form method="POST" action="{{ route('projects.update', $project) }}">
+                <form method="POST" action="{{ route('projects.update', $project) }}" enctype="multipart/form-data">
                     @method('PUT')
                     @include('projects._form')
                 </form>

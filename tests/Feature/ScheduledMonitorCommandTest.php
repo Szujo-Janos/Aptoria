@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\ApiMonitor;
+use App\Models\Environment;
 use App\Models\Project;
+use App\Models\TestSuite;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class ScheduledMonitorCommandTest extends TestCase
@@ -81,6 +84,80 @@ class ScheduledMonitorCommandTest extends TestCase
             ->expectsOutputToContain('Included Project')
             ->doesntExpectOutputToContain('Excluded Project')
             ->assertExitCode(0);
+    }
+
+
+    public function test_monitor_runner_filters_by_environment_and_suite_and_saves_json_summary(): void
+    {
+        $user = User::factory()->create();
+        $project = Project::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Cron Runner Project',
+            'slug' => 'cron-runner-project',
+            'base_url' => 'https://cron.example.test',
+            'is_active' => true,
+        ]);
+
+        $environment = Environment::query()->create([
+            'project_id' => $project->id,
+            'name' => 'Staging',
+            'base_url' => 'https://staging.example.test',
+            'environment_type' => Environment::TYPE_STAGING,
+            'is_production' => false,
+        ]);
+
+        $suite = TestSuite::query()->create([
+            'project_id' => $project->id,
+            'name' => 'Smoke Regression',
+            'status' => TestSuite::STATUS_ACTIVE,
+        ]);
+
+        ApiMonitor::query()->create([
+            'project_id' => $project->id,
+            'environment_id' => $environment->id,
+            'test_suite_id' => $suite->id,
+            'name' => 'Staging smoke monitor',
+            'frequency' => ApiMonitor::FREQUENCY_DAILY,
+            'is_enabled' => true,
+            'auto_snapshot' => true,
+            'auto_compare' => true,
+            'notify_dashboard' => true,
+            'next_run_at' => now()->subMinute(),
+        ]);
+
+        ApiMonitor::query()->create([
+            'project_id' => $project->id,
+            'name' => 'Whole project monitor',
+            'frequency' => ApiMonitor::FREQUENCY_DAILY,
+            'is_enabled' => true,
+            'auto_snapshot' => true,
+            'auto_compare' => true,
+            'notify_dashboard' => true,
+            'next_run_at' => now()->subMinute(),
+        ]);
+
+        $output = storage_path('app/monitor-runs/cron-runner-test.json');
+        File::delete($output);
+
+        $this->artisan('aptoria:run-monitors', [
+            '--dry-run' => true,
+            '--project' => 'cron-runner-project',
+            '--environment' => 'staging',
+            '--suite' => 'Smoke Regression',
+            '--output' => $output,
+        ])
+            ->assertExitCode(0);
+
+        $this->assertFileExists($output);
+        $payload = json_decode((string) file_get_contents($output), true);
+
+        $this->assertSame('cron-runner-project', $payload['filters']['project']);
+        $this->assertSame('staging', $payload['filters']['environment']);
+        // The suite assertion is checked from the saved JSON summary instead of
+        // console text so the test is independent from Symfony table formatting.
+        $this->assertSame('Smoke Regression', $payload['filters']['suite']);
+        $this->assertSame('Staging', $payload['monitors'][0]['environment']);
+        $this->assertSame('Smoke Regression', $payload['monitors'][0]['suite']);
     }
 
     public function test_monitor_runner_marks_inactive_project_monitor_failed_without_network_call(): void

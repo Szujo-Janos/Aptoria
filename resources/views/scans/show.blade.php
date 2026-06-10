@@ -144,6 +144,9 @@
                                 <th>{{ __('messages.scans.response_time') }}</th>
                                 <th>{{ __('messages.scans.content_type') }}</th>
                                 <th>{{ __('messages.risk.final_level') }}</th>
+                                <th>{{ __('messages.sensitive_data.short_title') }}</th>
+                                <th>{{ __('messages.broken_auth.short_title') }}</th>
+                                <th>{{ __('messages.schema_drift.short_title') }}</th>
                                 <th>{{ __('messages.assertions.assertion_status') }}</th>
                                 <th>{{ __('messages.regressions.regression_status') }}</th>
                                 <th>{{ __('messages.common.actions') }}</th>
@@ -175,6 +178,36 @@
                                     <br><small>{{ __('messages.risk.score') }}: {{ $analysis['score'] }} / {{ __('messages.risk.signals_count') }}: {{ count($analysis['signals']) }}</small>
                                 </td>
                                 <td>
+                                    @if($result->sensitive_data_detected)
+                                        <span class="label label-danger">{{ __('messages.sensitive_data.detected') }}</span>
+                                        <br><small>{{ $result->sensitive_data_count }} · {{ $result->sensitive_data_summary_label }}</small>
+                                    @else
+                                        <span class="label label-success">{{ __('messages.sensitive_data.not_detected') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($result->broken_auth_detected)
+                                        <span class="label label-danger">{{ __('messages.broken_auth.detected') }}</span>
+                                        <br><small>{{ $result->broken_auth_summary_label }}</small>
+                                    @elseif(is_array($result->broken_auth_summary_json))
+                                        <span class="label label-success">{{ __('messages.broken_auth.not_detected') }}</span>
+                                        <br><small>{{ $result->broken_auth_summary_label }}</small>
+                                    @else
+                                        <span class="label label-default">{{ __('messages.broken_auth.not_checked') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($result->schema_drift_detected)
+                                        <span class="label label-warning">{{ __('messages.schema_drift.detected') }}</span>
+                                        <br><small>{{ $result->schema_drift_count }} · {{ $result->schema_drift_summary_label }}</small>
+                                    @elseif(is_array($result->schema_drift_summary_json))
+                                        <span class="label label-success">{{ __('messages.schema_drift.not_detected') }}</span>
+                                        <br><small>{{ $result->schema_drift_summary_label }}</small>
+                                    @else
+                                        <span class="label label-default">{{ __('messages.schema_drift.not_checked') }}</span>
+                                    @endif
+                                </td>
+                                <td>
                                     <span class="label label-{{ $assertion['css'] ?? 'default' }}">{{ $assertion['label'] ?? __('messages.assertions.statuses.not_configured') }}</span>
                                     @if($assertion && ($assertion['failed_rules'] || $assertion['warning_rules']))
                                         <br><small>{{ count($assertion['failed_rules']) }} {{ __('messages.assertions.failed_rules') }} / {{ count($assertion['warning_rules']) }} {{ __('messages.assertions.warning_rules') }}</small>
@@ -194,15 +227,27 @@
                                     @endif
                                 </td>
                             </tr>
-                            @if($result->headers_json || $result->body_preview)
+                            @if($result->headers_json || $result->body_preview || is_array($result->broken_auth_summary_json) || is_array($result->schema_drift_summary_json))
                                 <tr>
                                     <td></td>
-                                    <td colspan="10">
+                                    <td colspan="13">
                                         <details>
                                             <summary>{{ __('messages.scans.response_preview') }}</summary>
                                             @if($result->headers_json)
                                                 <strong>{{ __('messages.scans.headers') }}</strong>
                                                 <pre class="code-block"><code>{{ json_encode($result->headers_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                            @endif
+                                            @if($result->sensitive_data_detected && is_array($result->sensitive_data_summary_json))
+                                                <strong>{{ __('messages.sensitive_data.evidence_panel_title') }}</strong>
+                                                <pre class="code-block"><code>{{ json_encode($result->sensitive_data_summary_json['matches'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                            @endif
+                                            @if(is_array($result->broken_auth_summary_json))
+                                                <strong>{{ __('messages.broken_auth.evidence_panel_title') }}</strong>
+                                                <pre class="code-block"><code>{{ json_encode($result->broken_auth_summary_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                            @endif
+                                            @if(is_array($result->schema_drift_summary_json))
+                                                <strong>{{ __('messages.schema_drift.evidence_panel_title') }}</strong>
+                                                <pre class="code-block"><code>{{ json_encode($result->schema_drift_summary_json['changes'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</code></pre>
                                             @endif
                                             @if($result->body_preview)
                                                 <strong>{{ __('messages.scans.body_preview') }}</strong>
