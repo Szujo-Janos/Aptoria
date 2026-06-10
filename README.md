@@ -1,4 +1,9 @@
-# Aptoria
+<p align="center">
+  <img src="public/assets/aptoria/img/aptoria-logo-horizontal.png" alt="Aptoria logo" width="360">
+</p>
+<p align="center">
+  QA / API Audit / Release Readiness workflow system for modern API projects.
+</p>
 
 **Aptoria** is a self-hosted Laravel application for API QA, endpoint visibility, regression monitoring, release evidence and lightweight security review.
 
