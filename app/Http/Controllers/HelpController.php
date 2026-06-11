@@ -53,6 +53,10 @@ class HelpController extends Controller
         foreach (($section['items'] ?? []) as $item) {
             $parts[] = $item['title'] ?? '';
             $parts[] = $item['body'] ?? '';
+
+            foreach (($item['bullets'] ?? []) as $bullet) {
+                $parts[] = $bullet;
+            }
         }
 
         return $this->lower(implode(' ', array_filter($parts)));

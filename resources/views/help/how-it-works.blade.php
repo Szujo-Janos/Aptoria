@@ -10,6 +10,9 @@
                 <a href="{{ route('help.index') }}" class="btn btn-default btn-sm">
                     <i class="fa fa-book"></i> {{ __('messages.help.title') }}
                 </a>
+                <a href="{{ route('demo-project.index') }}" class="btn btn-success btn-sm">
+                    <i class="fa fa-play-circle"></i> {{ __('messages.how_it_works.open_demo') }}
+                </a>
                 <a href="{{ route('projects.wizard.create') }}" class="btn btn-primary btn-sm">
                     <i class="fa fa-magic"></i> {{ __('messages.wizard.short_title') }}
                 </a>
@@ -35,6 +38,20 @@
                             <div class="aptoria-timeline-content">
                                 <h4>{{ $step['title'] }}</h4>
                                 <p>{{ $step['body'] }}</p>
+
+                                @if(!empty($step['actions']) && is_array($step['actions']))
+                                    <h5 class="text-muted m-t-sm">{{ __('messages.help.learn_more') }}</h5>
+                                    <ul class="aptoria-check-list">
+                                        @foreach($step['actions'] as $action)
+                                            <li><i class="fa fa-check text-success"></i> {{ $action }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if(!empty($step['output']))
+                                    <div class="alert alert-success m-b-sm"><strong>Output:</strong> {{ $step['output'] }}</div>
+                                @endif
+
                                 @if(!empty($step['tip']))
                                     <div class="alert alert-info m-b-none"><strong>{{ __('messages.help.tip') }}</strong> {{ $step['tip'] }}</div>
                                 @endif
@@ -82,8 +99,8 @@
             </div>
             <div class="panel-body">
                 <p>{{ __('messages.how_it_works.demo_body') }}</p>
-                <a href="{{ route('projects.wizard.create') }}" class="btn btn-success btn-block">
-                    {{ __('messages.wizard.short_title') }}
+                <a href="{{ route('demo-project.index') }}" class="btn btn-success btn-block">
+                    {{ __('messages.how_it_works.open_demo') }}
                 </a>
             </div>
         </div>

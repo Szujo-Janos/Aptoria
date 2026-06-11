@@ -43,7 +43,8 @@ class ReleaseDocumentationConsistencyTest extends TestCase
             }
         }
 
-        $this->assertStringContainsString("# Aptoria", file_get_contents(base_path('README.md')));
+        $this->assertStringContainsString('public/assets/aptoria/img/aptoria-logo-horizontal.png', file_get_contents(base_path('README.md')));
+        $this->assertStringNotContainsString('<h1 align="center">Aptoria</h1>', file_get_contents(base_path('README.md')));
         $this->assertStringContainsString($shortZip, file_get_contents(base_path('docs/INSTALLATION.md')));
         $this->assertStringContainsString($shortZip, file_get_contents(base_path('docs/QA_CHECKLIST.md')));
         $this->assertStringContainsString($canonicalRepo, file_get_contents(base_path('README.md')));

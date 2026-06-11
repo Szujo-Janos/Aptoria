@@ -1,5 +1,22 @@
 # Changelog
 
+### v1.1.18 Help / How it works completeness polish
+
+- Re-expanded Help Center into a detailed module-by-module user guide instead of a shortened summary.
+- Rebuilt How it works as a full operational workflow with actions, outputs and safety notes.
+- Added complete Hungarian translations for Help Center and How it works.
+- Fixed the Help Center snapshot search regression by restoring the expected Snapshots and compare section and making Reports searchable for snapshot/export context.
+
+
+## v1.1.18 - Help Center & README Logo Polish Hotfix
+
+- Updated Help Center documentation to match the current v1.1.18 QA platform workflow, including demo data, finding lifecycle, evidence attachments, executive/technical reports, branding, scheduled monitoring, notifications, system health and audit log.
+- Updated How it works to the current end-to-end flow from setup and demo import through release readiness, reporting, monitoring and audit evidence.
+- Replaced outdated milestone/MVP tutorial wording with current workflow language.
+- Pointed the demo CTA to the Demo Project generator.
+- Updated the README header so the existing Aptoria horizontal logo replaces the separate Aptoria title text.
+- Updated documentation-related regression expectations.
+
 ## v1.1.18 - Navigation & Profile Menu Cleanup Pass
 
 - Reorganized the sidebar into clear global groups: Projects, Release & reports, Operations, Audit & admin, and Help & workflow.

@@ -68,7 +68,7 @@
         </div>
 
         @forelse($sections as $section)
-            <div class="hpanel aptoria-doc-section" id="help-{{ $section['id'] }}" data-aptoria-help-section="true" data-search-text="{{ strtolower($section['title'].' '.$section['summary'].' '.$section['keywords']) }} @foreach($section['items'] as $item) {{ strtolower(($item['title'] ?? '').' '.($item['body'] ?? '')) }} @endforeach">
+            <div class="hpanel aptoria-doc-section" id="help-{{ $section['id'] }}" data-aptoria-help-section="true" data-search-text="{{ strtolower($section['title'].' '.$section['summary'].' '.$section['keywords']) }} @foreach($section['items'] as $item) {{ strtolower(($item['title'] ?? '').' '.($item['body'] ?? '')) }} @foreach(($item['bullets'] ?? []) as $bullet) {{ strtolower($bullet) }} @endforeach @endforeach">
                 <div class="panel-heading hbuilt">
                     <span class="label label-success pull-right">{{ $section['keywords'] }}</span>
                     <i class="fa fa-book"></i> {{ $section['title'] }}
@@ -81,6 +81,14 @@
                                 <div class="aptoria-doc-card">
                                     <h4>{{ $item['title'] }}</h4>
                                     <p>{{ $item['body'] }}</p>
+                                    @if(!empty($item['bullets']) && is_array($item['bullets']))
+                                        <h5 class="text-muted m-t-sm">{{ __('messages.help.learn_more') }}</h5>
+                                        <ul class="aptoria-check-list m-b-none">
+                                            @foreach($item['bullets'] as $bullet)
+                                                <li><i class="fa fa-check text-success"></i> {{ $bullet }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

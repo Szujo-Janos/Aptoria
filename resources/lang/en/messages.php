@@ -1971,702 +1971,437 @@ return array (
   'help' => 
   array (
     'title' => 'Help Center',
-    'subtitle' => 'Searchable application documentation for Aptoria features, workflows and safe operating rules.',
+    'subtitle' => 'Complete Aptoria user guide for the v1.1.18 QA, API audit, monitoring and release readiness workflow.',
     'search_title' => 'Search documentation',
     'search_label' => 'Keyword',
-    'search_placeholder' => 'Try: snapshot, risk, export, GET, settings...',
+    'search_placeholder' => 'Try: demo, import, snapshot, assertion, finding, evidence, monitor, release, audit...',
     'search_button' => 'Search',
     'clear_search' => 'Clear search',
     'quick_nav' => 'Quick navigation',
     'tip' => 'Tip:',
+    'learn_more' => 'What to check',
     'no_results_title' => 'No documentation match found',
-    'no_results_body' => 'Try another keyword such as endpoint, scan, risk, snapshot, report or settings.',
+    'no_results_body' => 'Try another keyword such as endpoint, scan, finding, evidence, monitor, release or audit.',
     'no_live_results' => 'No visible help section matches this keyword.',
     'search_results_for' => 'Search results for “:query”: :count section(s).',
-    'sections' => 
-    array (
-      0 => 
-      array (
-        'id' => 'overview',
-        'title' => 'What Aptoria is for',
-        'summary' => 'Aptoria is a self-hosted QA and regression review tool for maintaining API endpoint visibility and evidence.',
-        'keywords' => 'overview purpose QA security review regression monitor',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Main purpose',
-            'body' => 'Use Aptoria to document API projects, list endpoints, run safe GET/HEAD checks, review risk signals, save snapshots and export QA evidence.',
+    'sections' => array (
+      0 => array (
+        'id' => 'overview-navigation',
+        'title' => 'Overview and navigation',
+        'summary' => 'Aptoria is a self-hosted QA workspace that turns API projects into auditable inventories, evidence, findings, reports and release decisions.',
+        'keywords' => 'overview navigation dashboard sidebar project modules workflow menu current project release reports operations audit admin help',
+        'items' => array (
+          0 => array (
+            'title' => 'What Aptoria is for',
+            'body' => 'Use Aptoria when you need a repeatable QA workflow around an API: endpoint inventory, safe scans, auth checks, regression evidence, findings, reports, monitoring and release readiness in one place.',
+            'bullets' => array (
+              0 => 'Track what exists in the API.',
+              1 => 'Record what was tested and when.',
+              2 => 'Keep evidence attached to findings and reports.',
+              3 => 'Make release decisions traceable instead of opinion-based.',
+            ),
           ),
-          1 => 
-          array (
-            'title' => 'What it is not',
-            'body' => 'Aptoria is not an exploit scanner. It does not brute force, fuzz or automatically execute POST, PUT, PATCH or DELETE requests.',
+          1 => array (
+            'title' => 'Main menu logic',
+            'body' => 'The sidebar is grouped by the way the product is used: Projects for workspaces, Release & reports for sign-off, Operations for monitoring, Audit & admin for system-level control, and Help & workflow for learning.',
+            'bullets' => array (
+              0 => 'Project-specific work belongs inside the project modules.',
+              1 => 'Global monitoring and alert review stays under Operations.',
+              2 => 'System Health, Settings, Audit Log and Demo Project stay under Audit & admin.',
+            ),
           ),
-          2 => 
-          array (
-            'title' => 'Best fit',
-            'body' => 'It is best for QA engineers, developers and security-conscious teams who want API visibility and regression review without destructive testing.',
+          2 => array (
+            'title' => 'Current project modules',
+            'body' => 'When a project is open, the project module navigation keeps related QA work together.',
+            'bullets' => array (
+              0 => 'API inventory: endpoints, environments, auth profiles and imports.',
+              1 => 'Quality workflow: scans, snapshots, compares, schema drift and regression suites.',
+              2 => 'Risk & evidence: findings, lifecycle history and evidence attachments.',
+              3 => 'Release & reports: readiness, gates, executive/technical exports.',
+              4 => 'Automation & audit: project monitors and project audit timeline.',
+            ),
           ),
-          3 => 
-          array (
-            'title' => 'Self-hosted model',
-            'body' => 'The application runs on your own server or local XAMPP environment and stores data in your configured database.',
+          3 => array (
+            'title' => 'Recommended path',
+            'body' => 'Start with Demo Project to understand the system, then create a real project with the wizard, import endpoints, run safe checks, triage findings and generate the correct report.',
           ),
         ),
       ),
-      1 => 
-      array (
-        'id' => 'projects',
+      1 => array (
+        'id' => 'setup-profile-identity',
+        'title' => 'Setup, profile and report identity',
+        'summary' => 'Setup protects first run access, while Default Report Identity gives every report a consistent prepared-by and confidentiality context.',
+        'keywords' => 'setup install first run profile default report identity branding prepared by title role organization confidentiality disclaimer logo project override',
+        'items' => array (
+          0 => array (
+            'title' => 'First-run setup',
+            'body' => 'Fresh installations start in setup mode. Create the admin user, verify the setup lock, then use System Health to confirm database, cache, storage, report and evidence folders are writable.',
+            'bullets' => array (
+              0 => 'Run migrations before use.',
+              1 => 'Run aptoria:health after deployment.',
+              2 => 'Keep .env, database/database.sqlite and setup-token files out of release ZIPs.',
+            ),
+          ),
+          1 => array (
+            'title' => 'Default Report Identity',
+            'body' => 'Profile → Default Report Identity is the global fallback identity used by reports when the project has no branding override.',
+            'bullets' => array (
+              0 => 'Prepared by',
+              1 => 'Role / title',
+              2 => 'Organization',
+              3 => 'Confidentiality label',
+              4 => 'Default disclaimer',
+            ),
+          ),
+          2 => array (
+            'title' => 'Project branding override',
+            'body' => 'Project Report Branding overrides the profile defaults only for that project/client. Use it when a report must be branded for a specific client, engagement or organization.',
+            'bullets' => array (
+              0 => 'Client / organization',
+              1 => 'Prepared for / prepared by context',
+              2 => 'Project-specific confidentiality label',
+              3 => 'Project-specific disclaimer',
+              4 => 'Optional report logo',
+            ),
+          ),
+          3 => array (
+            'title' => 'How branding is selected',
+            'body' => 'Report exports use project branding first. If a field is empty at project level, Aptoria falls back to the Default Report Identity where applicable.',
+          ),
+        ),
+      ),
+      2 => array (
+        'id' => 'projects-environments-auth',
         'title' => 'Projects, environments and auth profiles',
-        'summary' => 'A project represents one API. Environments and auth profiles let you separate staging, production and authentication contexts.',
-        'keywords' => 'project environment auth bearer basic header staging production',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Projects',
-            'body' => 'Create one project per API or product area. The project base URL is used to build full endpoint URLs.',
+        'summary' => 'Projects hold API workspaces; environments separate base URLs; auth profiles define how requests are authenticated and compared.',
+        'keywords' => 'project onboarding wizard environment local dev staging production auth profile bearer token basic custom header no-auth variables test authentication',
+        'items' => array (
+          0 => array (
+            'title' => 'Project onboarding',
+            'body' => 'The guided project wizard creates a project, environment, auth profile, first endpoint, optional first safe probe, baseline snapshot and report context so the workspace does not start empty.',
+            'bullets' => array (
+              0 => 'Use it for a new API review.',
+              1 => 'Skip automatic scan on production unless you intentionally run it later.',
+              2 => 'Review generated endpoint and report context after creation.',
+            ),
           ),
-          1 => 
-          array (
-            'title' => 'Environments',
-            'body' => 'Use environments for local, staging and production URLs. Production environments receive stronger confirmation messaging before scans.',
+          1 => array (
+            'title' => 'Environment manager',
+            'body' => 'Use environments to model local, dev, staging and production URLs without creating separate projects for the same API.',
+            'bullets' => array (
+              0 => 'Each environment can have a base URL and auth context.',
+              1 => 'Scans, monitors, reports and imports can reference an environment.',
+              2 => 'Default environment controls common actions.',
+            ),
           ),
-          2 => 
-          array (
+          2 => array (
             'title' => 'Auth profiles',
-            'body' => 'Auth profiles store reusable no-auth, bearer token, basic auth or custom header settings. Safe scans resolve endpoint, environment and project default profiles in that order; secret values are stored encrypted and masked in UI and exports.',
+            'body' => 'Auth profiles support no-auth, bearer token, basic auth and custom header patterns. They allow Aptoria to test authenticated and unauthenticated behavior consistently.',
+            'bullets' => array (
+              0 => 'Use a no-auth profile for broken-auth comparison.',
+              1 => 'Use bearer/basic/custom profiles for authenticated checks.',
+              2 => 'Use the auth tester before running broader scans.',
+            ),
           ),
-          3 => 
-          array (
-            'title' => 'Project settings',
-            'body' => 'Project settings can override global scan defaults, risk keywords and response preview storage for a specific API.',
+          3 => array (
+            'title' => 'Variables and imports',
+            'body' => 'Postman environments, Postman globals and collection variables help resolve parameterized URLs and headers into reusable Aptoria records.',
           ),
         ),
       ),
-      2 => 
-      array (
-        'id' => 'endpoints',
-        'title' => 'Endpoint inventory',
-        'summary' => 'Endpoint Inventory is the source of truth for method, path, expected response and QA review metadata.',
-        'keywords' => 'endpoint inventory method path CSV JSON import expected status content type',
-        'items' => 
-        array (
-          0 => 
-          array (
+      3 => array (
+        'id' => 'api-import-inventory',
+        'title' => 'API import and Endpoint inventory',
+        'summary' => 'Endpoint Inventory is the source of truth for methods, paths, auth requirements, expected results, latest scan data and finding counts.',
+        'keywords' => 'endpoint inventory import openapi swagger postman collection environment globals examples auth assertions newman junit folder suite mapping method path status response time risk finding count',
+        'items' => array (
+          0 => array (
             'title' => 'Manual endpoint entry',
-            'body' => 'Add endpoints manually with method, path, environment, auth profile, expected status, expected content type, tags and QA notes.',
+            'body' => 'Add endpoints manually when you have only a small API surface or when an imported specification needs correction.',
+            'bullets' => array (
+              0 => 'Method and path',
+              1 => 'Environment and auth profile',
+              2 => 'Expected status and content type',
+              3 => 'Tags and QA notes',
+              4 => 'Path parameter test values',
+            ),
           ),
-          1 => 
-          array (
-            'title' => 'CSV and JSON import',
-            'body' => 'Import endpoint inventory without sending requests. Importing only creates or updates records.',
+          1 => array (
+            'title' => 'OpenAPI / Swagger import',
+            'body' => 'Import OpenAPI or Swagger JSON/YAML to create endpoint records with methods, paths, request metadata and contract context.',
           ),
-          2 => 
-          array (
-            'title' => 'Expected results',
-            'body' => 'Expected status and content type are used by the risk engine and scan details to detect mismatches.',
+          2 => array (
+            'title' => 'Postman import',
+            'body' => 'Import Postman collections, environments and globals. Folder-to-test-suite mapping can turn collection structure into regression planning records.',
+            'bullets' => array (
+              0 => 'Requests become endpoints.',
+              1 => 'Examples can become request/response evidence.',
+              2 => 'Basic assertions can seed Aptoria assertion rules.',
+            ),
           ),
-          3 => 
-          array (
-            'title' => 'Excluded endpoints',
-            'body' => 'Endpoints can be excluded from future scans while remaining visible in the inventory for documentation and review.',
+          3 => array (
+            'title' => 'Newman / JUnit import',
+            'body' => 'Import Newman JSON or JUnit XML output as execution evidence. Failed assertions can be used to create findings with attached evidence.',
           ),
-        ),
-      ),
-      3 => 
-      array (
-        'id' => 'safe-scans',
-        'title' => 'Safe GET/HEAD scans',
-        'summary' => 'Safe scans collect status, response time, content type, headers and limited body previews without destructive methods.',
-        'keywords' => 'safe scan GET HEAD probe timeout headers body preview private network auth bearer basic custom header token masking',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Allowed methods',
-            'body' => 'Only GET and HEAD endpoints are executed automatically. POST, PUT, PATCH, DELETE and OPTIONS are skipped by design.',
-          ),
-          1 => 
-          array (
-            'title' => 'Request limits',
-            'body' => 'Timeout, connect timeout, redirect count, body preview size and request delay are controlled in Settings.',
-          ),
-          2 => 
-          array (
-            'title' => 'Private network protection',
-            'body' => 'Localhost and private network targets are blocked by default unless explicitly allowed in safe project settings.',
-          ),
-          3 => 
-          array (
-            'title' => 'Scan evidence',
-            'body' => 'Each scan stores metadata such as HTTP status, response time, content type, masked auth summary, masked headers and limited previews according to settings.',
+          4 => array (
+            'title' => 'Inventory review',
+            'body' => 'Use the Endpoint Inventory page to see method, path, environment, auth requirement, last status, last response time, risk level, last scan and finding count in one place.',
           ),
         ),
       ),
-      4 => 
-      array (
-        'id' => 'risk',
-        'title' => 'Risk engine and QA review',
-        'summary' => 'The risk engine converts endpoint and scan data into review-oriented signals, explanations and recommended actions.',
-        'keywords' => 'risk analyzer score signals QA bug report developer checklist sensitive internal public 5xx slow',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Manual vs calculated risk',
-            'body' => 'Endpoint detail shows manual risk, calculated risk and final risk so reviewers can compare human judgment with system signals.',
+      4 => array (
+        'id' => 'safe-scans-security',
+        'title' => 'Safe scans and security signals',
+        'summary' => 'Safe scans collect non-destructive request/response evidence and feed security-oriented signals such as sensitive data and broken auth.',
+        'keywords' => 'safe scan GET HEAD sensitive data detector broken auth no-auth comparison status response time token jwt api key 5xx debug trace private network timeout preview ssl',
+        'items' => array (
+          0 => array (
+            'title' => 'Safe execution model',
+            'body' => 'Automatic scanner and runner actions are intentionally limited to GET and HEAD. State-changing methods are kept as inventory and manual-test planning records.',
+            'bullets' => array (
+              0 => 'POST, PUT, PATCH and DELETE are not auto-executed.',
+              1 => 'Private-network scanning can be blocked unless explicitly allowed.',
+              2 => 'Timeouts and response preview limits reduce risk.',
+            ),
           ),
-          1 => 
-          array (
-            'title' => 'Risk signals',
-            'body' => 'Signals include sensitive-looking public paths, internal/admin keywords, 5xx responses, status mismatches, content type mismatches and slow responses.',
+          1 => array (
+            'title' => 'Sensitive data detector',
+            'body' => 'Aptoria flags response content that looks like email, phone, JWT, API key, bearer token, access token, refresh token, password field, debug stack trace or personal-data-like fields.',
           ),
-          2 => 
-          array (
-            'title' => 'QA bug draft',
-            'body' => 'The detail page generates a concrete QA bug report draft with environment, method, URL, expected result, actual result and next action.',
+          2 => array (
+            'title' => 'Broken auth comparison',
+            'body' => 'Authenticated and unauthenticated responses can be compared. If no-auth access exposes protected data, Aptoria turns that into review evidence and finding context.',
           ),
-          3 => 
-          array (
-            'title' => 'Developer checklist',
-            'body' => 'Developer guidance stays review-oriented: verify authentication, authorization, data minimization, status contracts, tests and ownership.',
+          3 => array (
+            'title' => 'Scan result review',
+            'body' => 'Open a scan run to inspect status code, response time, content type, response size, body preview, error, sensitive-data flag, broken-auth flag and schema-drift flag.',
           ),
         ),
       ),
-      5 => 
-      array (
-        'id' => 'snapshots',
+      5 => array (
+        'id' => 'snapshots-diff-schema',
         'title' => 'Snapshots and compare',
-        'summary' => 'Snapshots preserve API state after scans and compare two baselines for regression review.',
-        'keywords' => 'snapshot compare baseline regression new removed changed status content type response time',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Save snapshot',
-            'body' => 'After a completed scan, save a snapshot to preserve endpoint inventory and latest scan metadata as a baseline.',
+        'summary' => 'Snapshots preserve API state; compare runs and schema drift review show what changed between a baseline and a current state.',
+        'keywords' => 'snapshot snapshots compare baseline current diff schema drift report export response body header status type nullability breaking change regression release evidence',
+        'items' => array (
+          0 => array (
+            'title' => 'Create a baseline snapshot',
+            'body' => 'After a scan or milestone review, save a snapshot to freeze endpoint inventory, latest statuses, response times, selected headers and schema evidence.',
           ),
-          1 => 
-          array (
-            'title' => 'Compare snapshots',
-            'body' => 'Compare two snapshots to detect new endpoints, removed endpoints and changed metadata.',
+          1 => array (
+            'title' => 'Compare baseline and current',
+            'body' => 'Use Baseline vs Current compare to detect new endpoints, removed endpoints, changed status codes, changed headers, changed bodies and response-time differences.',
           ),
-          2 => 
-          array (
-            'title' => 'Detected changes',
-            'body' => 'Compare checks risk level, HTTP status, content type, auth requirement and meaningful response time changes.',
+          2 => array (
+            'title' => 'Schema drift detector',
+            'body' => 'Schema drift flags removed fields, new fields, type changes, nullability changes and object/array shape changes. These are useful for frontend/backend integration review.',
           ),
-          3 => 
-          array (
-            'title' => 'Read-only workflow',
-            'body' => 'Snapshot/Compare does not send HTTP requests. It analyzes saved Aptoria data only.',
+          3 => array (
+            'title' => 'When to use compare',
+            'body' => 'Use compare before a release, after a backend deployment, after an OpenAPI import update or when a monitor indicates a regression.',
           ),
-        ),
-      ),
-      6 => 
-      array (
-        'id' => 'reports',
-        'title' => 'Reports and exports',
-        'summary' => 'Reports convert stored evidence into CSV, Markdown and JSON files for QA, GitHub and release review.',
-        'keywords' => 'reports export CSV Markdown JSON endpoint scan snapshot compare GitHub evidence',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Endpoint CSV',
-            'body' => 'Download endpoint inventory with method, path, full URL, auth, risk and latest scan metadata.',
-          ),
-          1 => 
-          array (
-            'title' => 'Scan Markdown',
-            'body' => 'Export a scan report with summary, risk overview and scan result table.',
-          ),
-          2 => 
-          array (
-            'title' => 'Snapshot JSON',
-            'body' => 'Export saved baselines as JSON for archiving, sharing or later regression review.',
-          ),
-          3 => 
-          array (
-            'title' => 'Compare Markdown',
-            'body' => 'Export snapshot comparison results as GitHub-friendly Markdown.',
+          4 => array (
+            'title' => 'Read-only analysis',
+            'body' => 'Snapshot compare and schema drift use stored Aptoria evidence only. They do not send HTTP requests while generating the comparison.',
           ),
         ),
       ),
-      7 => 
-      array (
-        'id' => 'settings',
-        'title' => 'Settings Center',
-        'summary' => 'Global and project settings control scan safety, risk keywords, retention, localization and diagnostics.',
-        'keywords' => 'settings general localization scan safety risk engine retention system info project settings',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Global settings',
-            'body' => 'Configure default language, pagination, scan limits, private network blocking, response storage and risk thresholds.',
+      6 => array (
+        'id' => 'regression-assertions',
+        'title' => 'Regression test suites and execution',
+        'summary' => 'Regression suites connect endpoints, expected results, assertions and imported execution evidence into repeatable QA coverage.',
+        'keywords' => 'regression test suite execution test case assertion assertions expected status response field contains json path newman junit pass fail coverage matrix',
+        'items' => array (
+          0 => array (
+            'title' => 'Build a suite',
+            'body' => 'Create a suite, add endpoint-based test cases, set execution order and define expected status codes or response expectations.',
           ),
-          1 => 
-          array (
-            'title' => 'Project settings',
-            'body' => 'Override scan defaults, auth profile, environment, response preview policy and extra risk keywords for a single project.',
+          1 => array (
+            'title' => 'Assertions',
+            'body' => 'Assertions can check expected status, body contains, JSON path / field existence and response-body conditions. They support PASS, WARNING and FAIL review outcomes.',
           ),
-          2 => 
-          array (
-            'title' => 'System info',
-            'body' => 'The System Info tab shows version, Laravel, PHP, database driver, debug mode, writable folders and Composer/vendor status.',
+          2 => array (
+            'title' => 'Run and record evidence',
+            'body' => 'Suite execution stores test case results and can be included in Release Readiness, reports, monitors and audit evidence.',
           ),
-          3 => 
-          array (
-            'title' => 'Reset and export',
-            'body' => 'Settings can be exported as JSON and reset to safe defaults with SweetAlert confirmation.',
+          3 => array (
+            'title' => 'Import external runs',
+            'body' => 'Newman JSON and JUnit XML imports let Aptoria store external automation outcomes next to manual and safe-scan evidence.',
+          ),
+          4 => array (
+            'title' => 'Coverage matrix',
+            'body' => 'Use QA coverage views to see which endpoints have tests, assertions, scans, findings and release evidence before sign-off.',
           ),
         ),
       ),
-      8 => 
-      array (
-        'id' => 'advanced-settings',
-        'title' => 'Advanced Settings Expansion',
-        'summary' => 'Advanced settings make scan timeout, SSL verification, redirects, risk threshold, assertion defaults, snapshot retention, export settings and privacy controls configurable.',
-        'keywords' => 'settings configuration scan timeout SSL verification redirects risk threshold assertion defaults snapshot retention export settings privacy token masking audit log',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'General and Scan Settings',
-            'body' => 'General settings control application name, language, timezone and pagination. Scan settings control request timeout, connect timeout, redirects, SSL verification, max response size, User-Agent, retry count and rate limiting.',
+      7 => array (
+        'id' => 'findings-lifecycle-evidence',
+        'title' => 'Findings, lifecycle and evidence',
+        'summary' => 'Findings are auditable QA records with lifecycle status, history, risk context and attached proof.',
+        'keywords' => 'finding lifecycle evidence open confirmed in progress fixed false positive accepted risk reopened timeline screenshot json curl request response attachment hash severity audit',
+        'items' => array (
+          0 => array (
+            'title' => 'Lifecycle statuses',
+            'body' => 'Use Open, Confirmed, In progress, Fixed, False positive, Accepted risk and Reopened to reflect the real remediation state.',
+            'bullets' => array (
+              0 => 'Open: detected and not yet reviewed.',
+              1 => 'Confirmed: validated issue.',
+              2 => 'In progress: fix is underway.',
+              3 => 'Fixed: resolved and ready for verification.',
+              4 => 'False positive: reviewed and rejected.',
+              5 => 'Accepted risk: knowingly accepted.',
+              6 => 'Reopened: returned after a failed or regressed fix.',
+            ),
           ),
-          1 => 
-          array (
-            'title' => 'Probe Safety and Risk Engine',
-            'body' => 'Probe Safety keeps the app GET/HEAD-only, blocks destructive methods, and controls private network or localhost access. Risk Engine settings control thresholds, keywords, exposure checks, HTTPS checks, security header checks and response size checks.',
+          1 => array (
+            'title' => 'Status history',
+            'body' => 'Each status change records who changed it, when, optional note and reopened count. This makes the remediation process audit-friendly.',
           ),
-          2 => 
-          array (
-            'title' => 'Assertion and Snapshot Defaults',
-            'body' => 'Assertion defaults provide fallback expected status, max response time and max risk score when no project rule exists. Snapshot settings prepare auto-save, retention limit, cleanup and failed snapshot retention behavior.',
+          2 => array (
+            'title' => 'Evidence attachments',
+            'body' => 'Attach screenshots, JSON response samples, cURL commands, request/response excerpts, files, links and notes. File attachments store original filename, MIME type, size and SHA-256 hash.',
           ),
-          3 => 
-          array (
-            'title' => 'Export, UI and Privacy',
-            'body' => 'Export settings define report content defaults. UI settings control logo visibility, SweetAlert and dashboard preferences. Privacy settings control token masking, token hiding in exports, session timeout and audit log preparation.',
+          3 => array (
+            'title' => 'Release impact',
+            'body' => 'Open, confirmed, in-progress and reopened critical/high findings count as active release risk. Fixed, false positive and accepted risk remain visible without behaving like unresolved blockers.',
           ),
         ),
       ),
-      9 => 
-      array (
-        'id' => 'safety',
-        'title' => 'Safety model',
-        'summary' => 'Aptoria is intentionally non-destructive in MVP mode and should only be used on systems you own or are authorized to test.',
-        'keywords' => 'safety authorization destructive methods POST PUT PATCH DELETE private localhost',
-        'items' => 
-        array (
-          0 => 
-          array (
+      8 => array (
+        'id' => 'release-readiness-gates',
+        'title' => 'Release readiness and release gates',
+        'summary' => 'Release Readiness turns QA evidence into a 100-point release decision with lifecycle-aware risk handling.',
+        'keywords' => 'release readiness score release gate pass warning blocked score 100 finding lifecycle coverage regression sign-off report snapshot evidence',
+        'items' => array (
+          0 => array (
+            'title' => '100-point score',
+            'body' => 'The score considers critical/high findings, lifecycle state, tested endpoint ratio, auth review, regression status, latest report and scan freshness.',
+          ),
+          1 => array (
+            'title' => 'Lifecycle-aware scoring',
+            'body' => 'Reopened findings count as active risk. Fixed, false positive and accepted risk findings are summarized, but they do not block the same way as unresolved findings.',
+          ),
+          2 => array (
+            'title' => 'Release gate',
+            'body' => 'Create a release gate after a QA cycle to freeze readiness, coverage, test execution, findings and contract validation into pass/warning/blocked evidence.',
+          ),
+          3 => array (
+            'title' => 'Decision use',
+            'body' => 'Use readiness and release gates to decide whether a project is ready to ship, requires fixes or can proceed with accepted risk.',
+          ),
+        ),
+      ),
+      9 => array (
+        'id' => 'reports-branding-exports',
+        'title' => 'Reports, branding and exports',
+        'summary' => 'Aptoria separates executive and technical reports, applies branding, and exports stored QA evidence without running new scans.',
+        'keywords' => 'report reports export executive technical full project release readiness branding logo markdown html pdf csv json evidence snapshot compare qa release gate',
+        'items' => array (
+          0 => array (
+            'title' => 'Executive report',
+            'body' => 'Use Executive reports for stakeholders who need status, readiness, main risks, blockers, warnings and recommended decision without deep request/response detail.',
+          ),
+          1 => array (
+            'title' => 'Technical report',
+            'body' => 'Use Technical reports for QA and developers. They include endpoint inventory, findings, evidence, contract validation, scan/regression context and request/response evidence.',
+          ),
+          2 => array (
+            'title' => 'Full Project report',
+            'body' => 'Use Full Project reports when you need a broader evidence package with project context, endpoint data, scans, snapshots, findings and readiness sections.',
+          ),
+          3 => array (
+            'title' => 'Branding source',
+            'body' => 'Reports use Project Report Branding when configured. Otherwise they fall back to Default Report Identity from the profile.',
+          ),
+          4 => array (
+            'title' => 'Export safety',
+            'body' => 'Markdown, HTML, PDF, CSV, JSON and evidence exports use stored Aptoria data. They do not perform HTTP requests during export.',
+          ),
+        ),
+      ),
+      10 => array (
+        'id' => 'monitoring-alerts-notifications',
+        'title' => 'Scheduled monitoring, alerts and notifications',
+        'summary' => 'Monitors run safe scheduled checks and create alerts when important QA or security state changes.',
+        'keywords' => 'scheduled monitor cron windows task scheduler run-monitors email webhook dashboard alert critical high 5xx recovery json output suite environment notification',
+        'items' => array (
+          0 => array (
+            'title' => 'Cron-ready runner',
+            'body' => 'Use php artisan aptoria:run-monitors from cron or Windows Task Scheduler with project, environment, suite and monitor filters.',
+            'bullets' => array (
+              0 => '--dry-run to preview selection.',
+              1 => '--json for machine-readable output.',
+              2 => '--save-json to store run evidence.',
+              3 => '--fail-on-warning or --fail-on-regression for automation gates.',
+            ),
+          ),
+          1 => array (
+            'title' => 'Suite binding',
+            'body' => 'A monitor can be linked to a regression suite so scheduled checks include suite result summaries.',
+          ),
+          2 => array (
+            'title' => 'Notification triggers',
+            'body' => 'Dashboard, email and webhook notifications can trigger on critical/high findings, HTTP 5xx, sensitive data exposure, broken auth, schema drift and recovery to healthy.',
+          ),
+          3 => array (
+            'title' => 'Alert Center',
+            'body' => 'Use Monitor Alerts to filter alert events by channel, severity and open/closed status.',
+          ),
+        ),
+      ),
+      11 => array (
+        'id' => 'system-health-audit-demo',
+        'title' => 'System health, audit log and demo data',
+        'summary' => 'Admin tools verify installation health, trace user/system activity and seed realistic sample data for demonstrations.',
+        'keywords' => 'system health diagnostics audit log activity timeline demo project sample data generator json export queue cache database storage import export setup lock cli',
+        'items' => array (
+          0 => array (
+            'title' => 'System Health',
+            'body' => 'System Health checks runtime, application state, storage permissions, cache, database, security posture, import/export folders, reporting/evidence storage, automation and queue readiness.',
+          ),
+          1 => array (
+            'title' => 'Audit Log',
+            'body' => 'Audit Log records login/logout, project and model changes, report generation, database import/export, hard reset requests, settings changes and finding status changes.',
+          ),
+          2 => array (
+            'title' => 'Project audit timeline',
+            'body' => 'Open project-level Audit Log to see only the activity that belongs to the current project.',
+          ),
+          3 => array (
+            'title' => 'Demo Project',
+            'body' => 'The Northstar Commerce demo generator creates synthetic environments, endpoints, auth profiles, scans, snapshots, compare runs, findings, evidence, regression suites, release gate and monitor data without external API calls.',
+          ),
+          4 => array (
+            'title' => 'JSON evidence',
+            'body' => 'Health, audit and demo CLI workflows expose JSON output so operational state can be stored as evidence.',
+          ),
+        ),
+      ),
+      12 => array (
+        'id' => 'safety-privacy',
+        'title' => 'Safety and privacy model',
+        'summary' => 'Aptoria is conservative by design and should only be used on systems you own, operate or have explicit permission to test.',
+        'keywords' => 'safety privacy authorized use destructive methods private network secret masking sensitive response storage gd xampp windows local',
+        'items' => array (
+          0 => array (
             'title' => 'Authorized use only',
-            'body' => 'Only scan APIs you own, operate or have explicit permission to test.',
+            'body' => 'Only scan APIs you own, operate or have written authorization to test.',
           ),
-          1 => 
-          array (
+          1 => array (
             'title' => 'Destructive methods skipped',
-            'body' => 'State-changing methods are inventory-only and are not executed automatically.',
+            'body' => 'State-changing methods are not automatically executed. They are kept for inventory, planning, manual testing and imported evidence.',
           ),
-          2 => 
-          array (
+          2 => array (
             'title' => 'Secret masking',
-            'body' => 'Authorization, token, password, cookie and secret-like values are masked before display and storage where supported.',
+            'body' => 'Authorization, token, password, cookie and secret-like values are masked in UI, audit payloads and exports where supported.',
           ),
-          3 => 
-          array (
+          3 => array (
             'title' => 'Sensitive response storage',
-            'body' => 'Disable response body preview storage for APIs that may return sensitive, regulated or customer data.',
+            'body' => 'For regulated or customer-data-heavy APIs, disable response preview storage or keep evidence attachments minimal and intentional.',
           ),
-        ),
-      ),
-      10 => 
-      array (
-        'id' => 'assertions',
-        'title' => 'Assertion Rules and Regression Monitoring',
-        'summary' => 'Assertion rules classify endpoint evidence as PASS, WARNING or FAIL, including status, headers, response timing, response size, raw body text and JSON-path checks.',
-        'keywords' => 'assertion regression rule status code response time header risk score response body JSON path PASS WARNING FAIL',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Project-level rules',
-            'body' => 'Create default assertion rules in Project Settings for expected status code, maximum response time, required or forbidden headers, HTTPS, risk score, response size, redirects and stored response body checks. Header and body assertion rules are repeatable, so you can verify multiple expectations at once.',
-          ),
-          1 => 
-          array (
-            'title' => 'Endpoint-level overrides',
-            'body' => 'Create an endpoint-specific rule when one endpoint needs a different expectation. Singleton endpoint rules override project defaults with the same key, while repeatable header rules run together.',
-          ),
-          2 => 
-          array (
-            'title' => 'PASS, WARNING and FAIL',
-            'body' => 'A violated fail-severity rule produces FAIL. If no fail rule is violated but a warning rule is violated, the result is WARNING. When every active rule passes, the result is PASS.',
-          ),
-          3 => 
-          array (
-            'title' => 'Response body assertions',
-            'body' => 'Body assertions use the stored safe-scan body preview. You can check raw body text, JSON path values, JSON value types and array/object counts with dot notation such as data.id or $.items[0].name.',
-          ),
-          4 => 
-          array (
-            'title' => 'Regression monitoring',
-            'body' => 'Snapshot compare supplements assertion status with regression signals for worse status codes, slower responses, higher risk score, unavailable endpoints, HTTPS downgrade and new security header gaps. It also labels recovered and improved endpoints when conditions get better.',
-          ),
-        ),
-      ),
-      11 => 
-      array (
-        'id' => 'guided-project-wizard',
-        'title' => 'Guided Project Wizard and Import Preview',
-        'summary' => 'Create complete Aptoria projects faster and validate endpoint imports before saving, including OpenAPI JSON/YAML and URL-based definitions.',
-        'keywords' => 'wizard guided project import preview endpoint CSV JSON YAML OpenAPI Swagger URL validation duplicate created updated skipped',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Guided Project Wizard',
-            'body' => 'The wizard collects project basics, environment, auth profile, endpoint payload and default assertion rules on one screen, then creates the project in one transaction.',
-          ),
-          1 => 
-          array (
-            'title' => 'Endpoint Import Preview',
-            'body' => 'The preview shows rows to create, rows to update, duplicates, invalid paths and skipped records before the import writes anything to the database.',
-          ),
-          2 => 
-          array (
-            'title' => 'OpenAPI / Swagger JSON import',
-            'body' => 'The OpenAPI importer extracts endpoint inventory from pasted OpenAPI 3.x or Swagger 2.0 JSON/YAML, or from a remote OpenAPI URL. It reads paths, methods, operation names, tags, 2xx response codes, response media types and basic security requirements without scanning the target API.',
-          ),
-        ),
-      ),
-      12 => 
-      array (
-        'id' => 'path-parameters',
-        'title' => 'OpenAPI path parameter test values',
-        'summary' => 'Resolve OpenAPI placeholders such as {id}, {userId} and {postId} before safe scans.',
-        'keywords' => 'openapi swagger path parameter placeholder test values resolved url endpoint override project default',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Why this matters',
-            'body' => 'OpenAPI imports often contain paths such as /users/{id} or /posts/{postId}/comments. These placeholders must be replaced with safe test values before a GET/HEAD probe can run.',
-          ),
-          1 => 
-          array (
-            'title' => 'Project defaults',
-            'body' => 'Project Settings contains a Path Parameters tab where you can define one value per line, for example id=1, userId=1 or postId=1. OpenAPI import creates common defaults automatically when it detects placeholders.',
-          ),
-          2 => 
-          array (
-            'title' => 'Endpoint overrides',
-            'body' => 'Endpoint detail pages show the detected parameters, effective values, source and resolved scan URL. Use endpoint overrides when one endpoint needs a different value than the project default.',
-          ),
-          3 => 
-          array (
-            'title' => 'Safe scan behavior',
-            'body' => 'The safe probe engine substitutes configured values into the URL before sending GET/HEAD requests. Destructive methods are still skipped by design.',
-          ),
-        ),
-      ),
-      13 => 
-      array (
-        'id' => 'scheduled-monitors',
-        'title' => 'Scheduled regression monitoring',
-        'summary' => 'Run safe scans on a schedule, auto-save snapshots and compare them against a baseline or previous monitor run.',
-        'keywords' => 'monitor scheduled scan regression watch task scheduler artisan aptoria run-monitors baseline snapshot compare',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'What monitors do',
-            'body' => 'A monitor runs the safe GET/HEAD probe engine for a selected project and environment. It can automatically save a snapshot and compare it with a fixed baseline or with the previous monitor snapshot.',
-          ),
-          1 => 
-          array (
-            'title' => 'Windows Task Scheduler',
-            'body' => 'Use the command C:\\xampp\\php\\php.exe C:\\xampp\\htdocs\\aptoria\\artisan aptoria:run-monitors in Windows Task Scheduler. Running it every 5–15 minutes is enough; Aptoria checks the next due time for each monitor.',
-          ),
-          2 => 
-          array (
-            'title' => 'Regression watch',
-            'body' => 'When auto-compare is enabled, the monitor stores the latest regression status, detected/warning counts and links to the scan, snapshot and compare results.',
-          ),
-          3 => 
-          array (
-            'title' => 'Dashboard alerts',
-            'body' => 'Enable dashboard notifications on a monitor to show warning, failed or regression-detected monitor results on the main dashboard.',
-          ),
-        ),
-      ),
-      14 => 
-      array (
-        'id' => 'auth-scan-secret-masking',
-        'title' => 'Auth scan integration and secret masking',
-        'summary' => 'Bearer, Basic and custom header auth profiles can be applied to safe scans without exposing secrets in the UI or exports.',
-        'keywords' => 'auth bearer basic token custom header secret masking privacy authorization',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Auth resolution order',
-            'body' => 'Safe scans resolve auth in this order: endpoint-specific profile, environment profile, then project default profile. Auth-required endpoints are skipped when no usable profile exists.',
-          ),
-          1 => 
-          array (
-            'title' => 'Secret masking',
-            'body' => 'Tokens, passwords and custom header values are masked in forms, scan results, snapshots and reports. Do not store secrets in notes fields.',
-          ),
-          2 => 
-          array (
-            'title' => 'Auth profile testing',
-            'body' => 'The test action sends a safe GET/HEAD request to an allowed public URL and blocks localhost or private network targets.',
-          ),
-          3 => 
-          array (
-            'title' => 'Exports',
-            'body' => 'CSV and Markdown exports include effective auth metadata but never include raw credentials.',
-          ),
-        ),
-      ),
-      15 => 
-      array (
-        'id' => 'release-readiness',
-        'title' => 'Release Readiness Dashboard',
-        'summary' => 'Release Readiness combines safe scan evidence, assertions, regression compare results, risk signals and monitor state into one release decision view.',
-        'keywords' => 'release readiness score grade blocker warning coverage report QA sign-off',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Readiness score',
-            'body' => 'The score summarizes coverage, assertion status, regressions, risks and monitor evidence into a 0-100 release decision signal.',
-          ),
-          1 => 
-          array (
-            'title' => 'Blocking issues',
-            'body' => 'Blocking issues include failed scans, assertion failures, detected regressions, critical risk endpoints and very low endpoint coverage.',
-          ),
-          2 => 
-          array (
-            'title' => 'Warnings',
-            'body' => 'Warnings highlight assertion warnings, high-risk endpoints, missing monitors or incomplete evidence that should be reviewed before release.',
-          ),
-          3 => 
-          array (
-            'title' => 'Markdown report',
-            'body' => 'Download the Release Readiness Markdown report from the project dashboard or Reports Center for QA sign-off or pull request evidence.',
-          ),
-        ),
-      ),
-      16 => 
-      array (
-        'id' => 'test-suites-test-cases',
-        'title' => 'Test Suites & Test Cases',
-        'summary' => 'Plan QA coverage with suites, define test cases with steps and expected results, link them to endpoints and record pass/fail evidence.',
-        'keywords' => 'test suites test cases QA coverage manual automated results evidence endpoint',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Plan coverage',
-            'body' => 'Create suites for smoke, regression, auth, release or customer-specific coverage and keep archived suites for history.',
-          ),
-          1 => 
-          array (
-            'title' => 'Link to endpoints',
-            'body' => 'A test case can reference an endpoint so QA intent, scan evidence and endpoint risk are visible together.',
-          ),
-          2 => 
-          array (
-            'title' => 'Record execution',
-            'body' => 'Mark cases as passed, failed, blocked or skipped. Actual results and notes are kept in the result history.',
-          ),
-          3 => 
-          array (
-            'title' => 'Use in project health',
-            'body' => 'Project health now shows total, passed, failed, blocked, skipped and not-run test cases for release review preparation.',
-          ),
-        ),
-      ),
-      17 => 
-      array (
-        'id' => 'contract-validation',
-        'title' => 'OpenAPI Contract Validation',
-        'summary' => 'Validate implementation evidence against an OpenAPI or Swagger contract before release review.',
-        'keywords' => 'openapi swagger contract validation schema status content-type release readiness breaking change',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Purpose',
-            'body' => 'Contract Validation compares the Aptoria endpoint inventory and stored scan evidence against an OpenAPI/Swagger document. It does not send HTTP requests during validation.',
-          ),
-          1 => 
-          array (
-            'title' => 'What is checked',
-            'body' => 'The validator checks documented versus implemented operations, latest status code, response Content-Type and basic JSON response schema rules such as type and required fields.',
-          ),
-          2 => 
-          array (
-            'title' => 'Breaking signals',
-            'body' => 'Missing implemented endpoints, undocumented operations, status mismatches and schema mismatches are stored as evidence and can affect Project Health and Release Readiness.',
-          ),
-          3 => 
-          array (
-            'title' => 'Best workflow',
-            'body' => 'Import or maintain endpoint inventory, run a safe scan, then run Contract Validation with the OpenAPI definition. Review failed and warning rows before signing off a release.',
-          ),
-        ),
-      ),
-      18 => 
-      array (
-        'id' => 'findings-evidence',
-        'title' => 'Findings & Evidence Center',
-        'summary' => 'Capture QA findings, link them to endpoints, tests, scans and contract validation, then attach evidence for release reports.',
-        'keywords' => 'findings evidence bug defect severity status reproduction expected actual recommendation release gate',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'When to create a finding',
-            'body' => 'Create a finding when a scan error, assertion failure, failed test case, regression or OpenAPI contract mismatch needs triage and a visible QA decision.',
-          ),
-          1 => 
-          array (
-            'title' => 'Evidence-first workflow',
-            'body' => 'Link findings to stored scan results, contract validation rows, test cases or endpoints, then add notes, HTTP evidence, logs, screenshots or external links.',
-          ),
-          2 => 
-          array (
-            'title' => 'Release impact',
-            'body' => 'Critical open findings block release readiness. High and medium open findings are shown as warnings until fixed, closed or accepted as risk.',
-          ),
-        ),
-      ),
-      19 => 
-      array (
-        'id' => 'test-execution-dashboard',
-        'title' => 'Test Execution Dashboard',
-        'summary' => 'Use a project-level execution dashboard to see test coverage, suite progress, failed or blocked cases and recent QA results.',
-        'keywords' => 'test execution dashboard pass fail blocked skipped coverage suite queue QA run',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Execution coverage',
-            'body' => 'The dashboard separates total cases from executed cases so release review can see what has actually been run.',
-          ),
-          1 => 
-          array (
-            'title' => 'Suite matrix',
-            'body' => 'Suite rows show pass, fail, blocked and not-run counts, plus execution coverage and pass rate.',
-          ),
-          2 => 
-          array (
-            'title' => 'Execution queue',
-            'body' => 'Filter by suite, status, priority or type and quickly record pass, fail, blocked or skipped results.',
-          ),
-          3 => 
-          array (
-            'title' => 'Evidence trail',
-            'body' => 'Recorded results remain linked to the test case history and can still be connected to scan evidence from the test case detail page.',
-          ),
-        ),
-      ),
-      20 => 
-      array (
-        'id' => 'qa-coverage-matrix',
-        'title' => 'QA Coverage Matrix',
-        'summary' => 'Endpoint-level visibility for QA planning and release review.',
-        'keywords' => 'coverage matrix endpoint test assertion scan contract finding release',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'What it connects',
-            'body' => 'The matrix connects each endpoint with linked test cases, enabled assertion rules, stored scan evidence, latest contract validation results and open findings.',
-          ),
-          1 => 
-          array (
-            'title' => 'How to use it',
-            'body' => 'Filter by missing tests, missing assertions, not scanned endpoints, missing contract evidence or open findings to close QA gaps before reporting.',
-          ),
-          2 => 
-          array (
-            'title' => 'Release impact',
-            'body' => 'Blocked rows highlight failed tests, failed assertions, contract failures and critical open findings that should be resolved before release acceptance.',
-          ),
-          3 => 
-          array (
-            'title' => 'Report output',
-            'body' => 'The full project QA Markdown report includes the coverage summary and the highest-risk coverage gaps.',
-          ),
-        ),
-      ),
-      21 => 
-      array (
-        'id' => 'full-qa-report-builder',
-        'title' => 'Full QA Report Builder',
-        'summary' => 'Assemble a complete QA report from selected evidence sections instead of exporting one fixed template.',
-        'keywords' => 'report builder qa report markdown release evidence export',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'Choose the audience and decision',
-            'body' => 'Set whether the report is for internal QA, management, client handoff or release review, then document the current release decision.',
-          ),
-          1 => 
-          array (
-            'title' => 'Select sections',
-            'body' => 'Include executive summary, release readiness, coverage, test execution, findings, contract validation, endpoint inventory and appendix as needed.',
-          ),
-          2 => 
-          array (
-            'title' => 'Control detail level',
-            'body' => 'Limit rows, export only problem endpoints and optionally include detailed finding evidence notes.',
-          ),
-          3 => 
-          array (
-            'title' => 'Safe export',
-            'body' => 'The builder uses stored Aptoria data only. It does not run scans or send HTTP requests during export.',
-          ),
-        ),
-      ),
-      22 => 
-      array (
-        'id' => 'release-gate',
-        'title' => 'QA Release Gate',
-        'summary' => 'Use Release Gate to freeze readiness, coverage, test execution, findings and contract validation into an auditable release decision.',
-        'keywords' => 'release gate sign-off audit pass warning blocked',
-        'items' => 
-        array (
-          0 => 
-          array (
-            'title' => 'When to create a gate',
-            'body' => 'Create a gate after the QA cycle is complete, scans and contract validation are fresh, and findings have been reviewed.',
-          ),
-          1 => 
-          array (
-            'title' => 'How the decision is made',
-            'body' => 'Aptoria converts blockers and warnings from readiness, QA coverage, test execution, findings and contract checks into PASS, WARNING or BLOCKED.',
-          ),
-          2 => 
-          array (
-            'title' => 'Audit trail',
-            'body' => 'A saved gate is a snapshot. Later project changes do not rewrite the historical decision.',
-          ),
-          3 => 
-          array (
-            'title' => 'Markdown export',
-            'body' => 'Download the gate report for release sign-off, client handoff or internal QA evidence.',
+          4 => array (
+            'title' => 'Local deployment',
+            'body' => 'Aptoria is intended for self-hosted/local deployment. Windows/XAMPP workflows are supported by the included update script and System Health diagnostics.',
           ),
         ),
       ),
@@ -2675,272 +2410,237 @@ return array (
   'how_it_works' => 
   array (
     'title' => 'How it works',
-    'subtitle' => 'A complete guided tutorial from creating a project to exporting regression evidence.',
+    'subtitle' => 'A complete guided workflow from installation and demo data to release decision, reporting, monitoring and audit evidence.',
     'tutorial_title' => 'Complete Aptoria workflow',
-    'intro' => 'Aptoria turns an API into a reviewable QA workspace: define the project, document endpoints, run safe probes, review risk signals, save baselines, compare changes and export evidence.',
+    'intro' => 'Aptoria turns an API project into a structured QA workspace. You build or import the endpoint inventory, configure environments and authentication, run safe evidence collection, compare snapshots, manage findings, score release readiness, export reports and keep the whole process auditable.',
     'safety_title' => 'Safety first',
-    'safety_intro' => 'The MVP is intentionally conservative and non-destructive.',
+    'safety_intro' => 'Aptoria is intentionally conservative. It is an audit and evidence workflow tool, not a destructive load tester or exploit tool.',
     'workflow_title' => 'Workflow at a glance',
     'demo_title' => 'Try the demo project',
-    'demo_body' => 'The seeded demo project uses public JSONPlaceholder GET endpoints so you can test the full workflow safely.',
-    'open_demo' => 'Open projects',
-    'safety_rules' => 
-    array (
-      0 => 'Only GET and HEAD are executed automatically.',
-      1 => 'POST, PUT, PATCH and DELETE are skipped by design.',
-      2 => 'Private network scans are blocked unless explicitly allowed.',
-      3 => 'Secrets are masked before display/storage where supported.',
-      4 => 'Reports and snapshot compares never send HTTP requests.',
+    'demo_body' => 'Use the built-in Northstar Commerce demo generator to create realistic synthetic QA data and learn every module without calling an external API.',
+    'open_demo' => 'Open demo project',
+    'safety_rules' => array (
+      0 => 'Only GET and HEAD are executed automatically by safe scans and runners.',
+      1 => 'POST, PUT, PATCH and DELETE are kept as inventory/manual planning records unless imported as external evidence.',
+      2 => 'Private network scans are blocked unless explicitly allowed in settings.',
+      3 => 'Secrets are encrypted or masked where supported in UI, audit payloads and exports.',
+      4 => 'Reports, snapshot compares and schema drift checks use stored data only.',
+      5 => 'Demo project data is synthetic and does not call external services.',
+      6 => 'Use Aptoria only on APIs you own, operate or have permission to test.',
     ),
-    'workflow' => 
-    array (
-      0 => 
-      array (
+    'workflow' => array (
+      0 => array (
         'stage' => '1',
         'label' => 'info',
-        'title' => 'Inventory',
-        'body' => 'Create projects, environments, auth profiles and endpoint records.',
+        'title' => 'Install and verify health',
+        'body' => 'Run migrations, complete setup and open System Health to verify PHP, database, storage, cache, reports, evidence, queue and scheduler readiness.',
       ),
-      1 => 
-      array (
+      1 => array (
         'stage' => '2',
-        'label' => 'success',
-        'title' => 'Safe probe',
-        'body' => 'Run GET/HEAD-only checks to collect status, response time and metadata.',
+        'label' => 'primary',
+        'title' => 'Start with demo or onboarding',
+        'body' => 'Import the Northstar Commerce demo project for a full sample workflow, or use the onboarding wizard for a real API.',
       ),
-      2 => 
-      array (
+      2 => array (
         'stage' => '3',
-        'label' => 'warning',
-        'title' => 'Review',
-        'body' => 'Use risk signals, QA drafts and developer checklists to decide next actions.',
+        'label' => 'success',
+        'title' => 'Import or document endpoints',
+        'body' => 'Create the endpoint inventory from OpenAPI/Swagger, Postman, Newman/JUnit evidence or manual records.',
       ),
-      3 => 
-      array (
+      3 => array (
         'stage' => '4',
-        'label' => 'primary',
-        'title' => 'Regression',
-        'body' => 'Save snapshots, compare baselines and export reports for release review.',
+        'label' => 'info',
+        'title' => 'Configure environments and auth',
+        'body' => 'Separate local/dev/staging/production URLs and attach no-auth, bearer, basic or custom-header profiles.',
       ),
-      4 => 
-      array (
-        'stage' => '0.8.9',
-        'title' => 'Scheduled regression watch',
-        'body' => 'Create monitors that run safe scans on a schedule, save snapshots and compare them to a baseline or the previous monitor run.',
+      4 => array (
+        'stage' => '5',
         'label' => 'warning',
+        'title' => 'Collect safe scan evidence',
+        'body' => 'Run GET/HEAD checks, collect status/response metadata, sensitive-data signals, broken-auth comparison and assertion results.',
       ),
-      5 => 
-      array (
-        'stage' => '0.9',
-        'title' => 'Release readiness',
-        'body' => 'Use the readiness dashboard and Markdown report to decide whether the API is release-ready.',
-        'label' => 'success',
-      ),
-      6 => 
-      array (
-        'stage' => 'QA',
-        'title' => 'Test suites and cases',
-        'body' => 'Plan coverage, link cases to endpoints and record execution evidence for release review.',
-        'label' => 'success',
-      ),
-      7 => 
-      array (
-        'stage' => '0.9.5',
-        'title' => 'Contract validation',
-        'body' => 'Validate endpoint coverage, status codes, content types and basic JSON schemas against an OpenAPI/Swagger contract before release review.',
-        'label' => 'danger',
-      ),
-      8 => 
-      array (
-        'stage' => '0.9.6',
-        'title' => 'Findings & evidence',
-        'body' => 'Turn failed checks into triageable findings, attach evidence and use open critical/high findings in release readiness review.',
-        'label' => 'danger',
-      ),
-      9 => 
-      array (
-        'stage' => '0.9.7',
-        'title' => 'Test execution dashboard',
-        'body' => 'Review suite progress, execution coverage, failed/blocked cases and record quick QA results before reporting.',
-        'label' => 'danger',
-      ),
-      10 => 
-      array (
-        'stage' => 'COVERAGE',
-        'label' => 'warning',
-        'title' => 'Review endpoint QA coverage',
-        'body' => 'Use the QA Coverage Matrix to find endpoints without tests, assertions, scan evidence, contract validation or finding resolution before the final report.',
-      ),
-      11 => 
-      array (
-        'stage' => 'REPORT',
+      5 => array (
+        'stage' => '6',
         'label' => 'primary',
-        'title' => 'Build a complete QA report',
-        'body' => 'Use the Full QA Report Builder to assemble the release evidence package from coverage, execution, findings, contract validation and endpoint inventory sections.',
+        'title' => 'Snapshot and compare',
+        'body' => 'Save a baseline, compare it to a current state and inspect schema drift before release.',
       ),
-      12 => 
-      array (
-        'stage' => 'Gate',
-        'title' => 'Freeze the release decision',
-        'body' => 'Save PASS, WARNING or BLOCKED as an auditable release gate snapshot with blockers, warnings, evidence and recommendations.',
+      6 => array (
+        'stage' => '7',
+        'label' => 'success',
+        'title' => 'Build regression evidence',
+        'body' => 'Create regression suites, add test cases, import external results and close coverage gaps.',
+      ),
+      7 => array (
+        'stage' => '8',
         'label' => 'danger',
+        'title' => 'Manage findings',
+        'body' => 'Track lifecycle state, attach evidence, record remediation notes and reopen issues when fixes regress.',
+      ),
+      8 => array (
+        'stage' => '9',
+        'label' => 'success',
+        'title' => 'Decide release readiness',
+        'body' => 'Review the 100-point readiness score, release gate, lifecycle-aware finding impact and regression status.',
+      ),
+      9 => array (
+        'stage' => '10',
+        'label' => 'info',
+        'title' => 'Export the right report',
+        'body' => 'Use Executive reports for decisions, Technical reports for QA/developer evidence and Full Project reports for broad audit packages.',
+      ),
+      10 => array (
+        'stage' => '11',
+        'label' => 'warning',
+        'title' => 'Schedule monitoring and notifications',
+        'body' => 'Run monitors from cron/Task Scheduler, save JSON output and notify by dashboard, email or webhook.',
+      ),
+      11 => array (
+        'stage' => '12',
+        'label' => 'default',
+        'title' => 'Audit and maintain',
+        'body' => 'Use Audit Log, System Health and JSON exports to keep activity and operational evidence traceable.',
       ),
     ),
-    'steps' => 
-    array (
-      0 => 
-      array (
-        'title' => 'Create an API project',
-        'body' => 'Start with Projects → Create Project. Give the API a clear name and base URL. The base URL is combined with endpoint paths for scans and reports.',
-        'tip' => 'Use separate projects for unrelated APIs. Use environments for local, staging and production variants of the same API.',
+    'steps' => array (
+      0 => array (
+        'title' => 'Prepare the installation',
+        'body' => 'Install dependencies, configure .env, run migrations, complete setup and verify the installation from System Health.',
+        'actions' => array (
+          0 => 'Run composer install on the deployed project.',
+          1 => 'Run php artisan migrate.',
+          2 => 'Run php artisan aptoria:health and review warnings.',
+          3 => 'Confirm report, evidence and monitor output folders are writable.',
+        ),
+        'output' => 'A working local/self-hosted Aptoria instance with an admin account and healthy system diagnostics.',
+        'tip' => 'On Windows/XAMPP, use scripts/update-windows-xampp.ps1 before running tests.',
       ),
-      1 => 
-      array (
-        'title' => 'Add environments and auth profiles',
-        'body' => 'Create local, staging or production environments and optional authentication profiles. Auth profiles can be no-auth, bearer token, basic auth or custom header.',
-        'tip' => 'Keep production marked as production so the UI can show stronger warnings before scans.',
+      1 => array (
+        'title' => 'Create a project or import the demo',
+        'body' => 'Use the project wizard for real work or the Demo Project page for a full sample dataset.',
+        'actions' => array (
+          0 => 'For real work, enter project name, base URL, environment and auth profile.',
+          1 => 'For learning, import the Northstar Commerce demo project.',
+          2 => 'Review the project dashboard after creation.',
+        ),
+        'output' => 'A project workspace with environment, auth context and initial QA structure.',
+        'tip' => 'The demo is safe because it uses synthetic stored data only.',
       ),
-      2 => 
-      array (
+      2 => array (
         'title' => 'Build the endpoint inventory',
-        'body' => 'Add endpoints manually or import CSV/JSON. Define method, path, expected status, expected content type, auth requirement, risk and QA notes.',
-        'tip' => 'Inventory can include POST/PUT/PATCH/DELETE endpoints, but they remain documentation-only for automatic scans.',
+        'body' => 'Endpoint Inventory defines the API surface that the rest of Aptoria reviews.',
+        'actions' => array (
+          0 => 'Import OpenAPI/Swagger or Postman collections.',
+          1 => 'Add missing endpoints manually.',
+          2 => 'Set expected status/content type and path parameter values.',
+          3 => 'Review auth requirement and environment mapping.',
+        ),
+        'output' => 'A searchable endpoint catalogue with methods, paths, environments, auth context and latest QA status.',
       ),
-      3 => 
-      array (
-        'title' => 'Resolve path parameters',
-        'body' => 'When OpenAPI import creates paths such as /users/{id}, set project-level or endpoint-level test values so the resolved scan URL becomes /users/1 before probing.',
-        'tip' => 'Use Project Settings → Path Parameters for global defaults and the endpoint detail page for one-off overrides.',
+      3 => array (
+        'title' => 'Configure environments and authentication',
+        'body' => 'Separate test environments and authentication profiles before collecting evidence.',
+        'actions' => array (
+          0 => 'Create local/dev/staging/production environments.',
+          1 => 'Create no-auth and authenticated profiles.',
+          2 => 'Run Test Authentication for each real auth profile.',
+          3 => 'Keep tokens and secrets masked.',
+        ),
+        'output' => 'A clear auth/environment matrix for scans, monitors and reports.',
+        'tip' => 'No-auth plus bearer/basic profiles are needed for broken-auth comparison.',
       ),
-      4 => 
-      array (
-        'title' => 'Run a safe scan',
-        'body' => 'From the project scan screen, run a safe GET/HEAD probe. Aptoria applies timeouts, body preview limits, private network protection and secret masking.',
-        'tip' => 'A scan progress modal appears while the safe probe is running so the workflow feels like a proper admin tool.',
+      4 => array (
+        'title' => 'Run safe scans',
+        'body' => 'Safe scans collect live evidence without executing destructive methods.',
+        'actions' => array (
+          0 => 'Run a safe project scan or endpoint scan.',
+          1 => 'Review status code, response time, content type and errors.',
+          2 => 'Check sensitive data detector and broken-auth signals.',
+          3 => 'Save useful findings instead of only reading scan rows.',
+        ),
+        'output' => 'Stored scan evidence feeding endpoint status, findings, readiness and reports.',
       ),
-      5 => 
-      array (
-        'title' => 'Review risk and QA detail',
-        'body' => 'Open endpoint details or scan details to review manual risk, calculated risk, final risk, risk score, detected signals and recommended QA/developer actions.',
-        'tip' => 'Use the generated QA bug draft as a starting point for issue trackers or pull request comments.',
+      5 => array (
+        'title' => 'Save snapshots and compare changes',
+        'body' => 'Snapshots preserve a known state. Compare runs show what changed later.',
+        'actions' => array (
+          0 => 'Save a baseline snapshot after a stable scan.',
+          1 => 'Run another scan after changes.',
+          2 => 'Compare baseline vs current.',
+          3 => 'Review endpoint changes, response changes and schema drift.',
+        ),
+        'output' => 'Regression evidence showing whether the API changed safely or unexpectedly.',
       ),
-      6 => 
-      array (
-        'title' => 'Save a snapshot',
-        'body' => 'After a scan, save a snapshot to capture the API state as a baseline. The snapshot stores endpoint inventory and latest scan metadata.',
-        'tip' => 'Save one baseline before a release and another after changes to compare regressions.',
+      6 => array (
+        'title' => 'Create regression suites and assertions',
+        'body' => 'Regression suites make repeat checks and external test results visible inside Aptoria.',
+        'actions' => array (
+          0 => 'Build suites from endpoints or imported folders.',
+          1 => 'Add assertion rules for expected status/body fields.',
+          2 => 'Import Newman JSON or JUnit XML when available.',
+          3 => 'Review pass/fail and coverage matrix.',
+        ),
+        'output' => 'Repeatable QA evidence that can be linked to release readiness and monitors.',
       ),
-      7 => 
-      array (
-        'title' => 'Compare snapshots',
-        'body' => 'Open the project Snapshots page and compare two baselines. Aptoria detects new, removed and changed endpoints.',
-        'tip' => 'Compare results highlight risk, status, content-type, auth requirement and response-time changes.',
+      7 => array (
+        'title' => 'Triage findings with lifecycle and evidence',
+        'body' => 'Findings should move through a visible remediation lifecycle instead of staying as a flat list.',
+        'actions' => array (
+          0 => 'Set severity and lifecycle status.',
+          1 => 'Add notes for status changes.',
+          2 => 'Attach screenshot, JSON, cURL or request/response evidence.',
+          3 => 'Mark false positive or accepted risk explicitly when appropriate.',
+          4 => 'Reopen findings when a fix regresses.',
+        ),
+        'output' => 'Auditable bug history with evidence and clear release impact.',
+        'tip' => 'Accepted risk is a visible decision, not a deletion.',
       ),
-      8 => 
-      array (
-        'title' => 'Export reports',
-        'body' => 'Use Reports to download endpoint CSV, scan Markdown, snapshot JSON, compare Markdown and a Full Project QA Markdown report.',
-        'tip' => 'The Full Project QA Report gives one shareable summary with latest scan, assertion, regression, failures and recommendations.',
+      8 => array (
+        'title' => 'Review release readiness and gates',
+        'body' => 'Release Readiness summarizes whether the project can ship.',
+        'actions' => array (
+          0 => 'Review the 100-point score.',
+          1 => 'Check critical/high active findings.',
+          2 => 'Check regression and coverage status.',
+          3 => 'Create a release gate for sign-off evidence.',
+        ),
+        'output' => 'A pass/warning/blocked decision supported by stored evidence.',
       ),
-      9 => 
-      array (
-        'title' => 'Tune settings',
-        'body' => 'Use Global Settings and Project Settings to control scan limits, storage behavior, risk keywords and project-specific overrides.',
-        'tip' => 'Disable response body preview storage for APIs that may return sensitive data.',
+      9 => array (
+        'title' => 'Export the correct report',
+        'body' => 'Choose the report by audience.',
+        'actions' => array (
+          0 => 'Executive Report for management or client decision makers.',
+          1 => 'Technical Report for QA/developers.',
+          2 => 'Full Project Report for complete handoff.',
+          3 => 'Release Readiness and Release Gate exports for sign-off.',
+        ),
+        'output' => 'Markdown, HTML or PDF evidence with profile/project branding applied.',
+        'tip' => 'Project branding overrides Default Report Identity only for that project.',
       ),
-      10 => 
-      array (
-        'title' => 'Define assertion and regression expectations',
-        'body' => 'Create project default assertion rules in Project Settings and endpoint-specific overrides on endpoint details. Aptoria evaluates stored scan or snapshot evidence as PASS, WARNING or FAIL, including stored response body and JSON-path rules.',
-        'tip' => 'For JSON response checks, keep response body preview storage enabled and use paths such as data.status or $.items[0].id.',
+      10 => array (
+        'title' => 'Schedule monitors and notifications',
+        'body' => 'Use monitors after the first QA cycle to keep regressions visible.',
+        'actions' => array (
+          0 => 'Create a monitor with environment and optional suite.',
+          1 => 'Test with --dry-run and --json.',
+          2 => 'Enable dashboard/email/webhook notifications.',
+          3 => 'Review Monitor Alerts when state changes.',
+        ),
+        'output' => 'Ongoing regression/security monitoring with stored JSON summaries and alerts.',
       ),
-      11 => 
-      array (
-        'title' => 'Use the Guided Project Wizard',
-        'body' => 'The wizard creates project basics, an environment, an auth profile, endpoint inventory, default assertion rules, the first safe scan, the first snapshot and report export readiness in one flow. Endpoint payloads can be CSV, JSON or OpenAPI/Swagger JSON/YAML, including remote OpenAPI URLs.',
-        'tip' => 'For first-time setup, use the wizard. For advanced maintenance, use the separate project, endpoint and settings screens.',
-      ),
-      12 => 
-      array (
-        'title' => 'Set up scheduled regression monitoring',
-        'body' => 'Create a monitor for a project and environment. It can run safe scans, save snapshots and compare them against a baseline or the previous monitor snapshot.',
-        'tip' => 'Use Windows Task Scheduler to run php artisan aptoria:run-monitors --limit=50 every 5-15 minutes. Test with --dry-run first.',
-      ),
-      13 => 
-      array (
-        'title' => 'Review Release Readiness',
-        'body' => 'Open the Release Readiness dashboard to see the score, grade, blockers, warnings, endpoint coverage, slow endpoints and security header issues.',
-        'tip' => 'Treat Blocked as a release stop, Needs review as a QA triage state and Release-ready as sign-off evidence.',
-      ),
-      14 => 
-      array (
-        'title' => 'Export the final QA report',
-        'body' => 'Download Full Project QA and Release Readiness Markdown reports for release notes, issue triage, audit evidence or pull request attachments.',
-        'tip' => 'Reports are generated from stored Aptoria evidence and do not trigger HTTP requests.',
-      ),
-      15 => 
-      array (
-        'title' => 'Plan QA coverage with test suites',
-        'body' => 'Create suites that group smoke, regression, authentication or release validation test cases.',
-        'tip' => 'Keep suites small enough to review and large enough to describe a meaningful release area.',
-      ),
-      16 => 
-      array (
-        'title' => 'Create test cases linked to endpoints',
-        'body' => 'Write preconditions, steps and expected results, then link the case to an endpoint when the test validates API behavior.',
-        'tip' => 'Endpoint links make the case visible on the endpoint detail page next to risk, scan and assertion evidence.',
-      ),
-      17 => 
-      array (
-        'title' => 'Record manual or automated test results',
-        'body' => 'Mark the latest execution as passed, failed, blocked or skipped and store the actual result and notes.',
-        'tip' => 'Attach a stored scan result when it is useful evidence for the test case execution.',
-      ),
-      18 => 
-      array (
-        'title' => 'Use test results in project health review',
-        'body' => 'Review total, passed, failed, blocked, skipped and not-run counts before export or release readiness review.',
-        'tip' => 'Release gate logic can later consume these same test result counts.',
-      ),
-      19 => 
-      array (
-        'title' => 'Validate the OpenAPI contract',
-        'body' => 'Open Contract Validation from the project page, paste the OpenAPI/Swagger document and optionally choose a scan run as evidence.',
-        'tip' => 'Validation uses stored scan evidence; it does not run new HTTP requests.',
-      ),
-      20 => 
-      array (
-        'title' => 'Review contract failures',
-        'body' => 'Check missing endpoints, undocumented endpoints, status mismatches, content-type mismatches and basic JSON schema problems.',
-        'tip' => 'Failed or breaking contract rows should be treated as release review blockers until triaged.',
-      ),
-      21 => 
-      array (
-        'title' => 'Run the test execution dashboard',
-        'body' => 'Open Test Execution from the selected project to review suite status, not-run cases, failed or blocked cases and recent results.',
-        'tip' => 'Use quick result buttons for fast triage, then open the test case detail page when you need detailed actual result notes or scan evidence links.',
-      ),
-      22 => 
-      array (
-        'title' => 'Close QA coverage gaps',
-        'body' => 'Open the QA Coverage Matrix before reporting. Prioritize blocked rows and then close missing test, assertion, scan, contract and finding gaps.',
-        'tip' => 'A clean matrix gives the release gate stronger evidence than separate spreadsheets or screenshots.',
-      ),
-      23 => 
-      array (
-        'title' => 'Make the release gate decision',
-        'body' => 'Create a QA Release Gate snapshot after coverage, execution, findings and contract validation are reviewed.',
-        'tip' => 'A blocked gate should stop release. A warning gate can be conditionally approved only with documented reviewer notes.',
+      11 => array (
+        'title' => 'Audit and maintain the system',
+        'body' => 'Operational evidence matters as much as QA evidence.',
+        'actions' => array (
+          0 => 'Review Audit Log for user and project actions.',
+          1 => 'Export audit or health JSON when needed.',
+          2 => 'Run System Health after deployment changes.',
+          3 => 'Keep release ZIP hygiene clean.',
+        ),
+        'output' => 'Traceable activity history and a maintainable Aptoria installation.',
       ),
     ),
-  ),
-  'header' => 
-  array (
-    'search_placeholder' => 'Search help, workflow or settings...',
-    'quick_navigation' => 'Quick navigation',
-    'toggle_menu' => 'Toggle menu',
-    'signed_in' => 'Signed in to Aptoria',
-    'account_menu' => 'Account menu',
   ),
   'wizard' => 
   array (
