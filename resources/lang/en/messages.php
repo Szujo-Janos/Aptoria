@@ -45,6 +45,7 @@ return array (
     'create_project' => 'Create Project',
     'environments_auth_profiles' => 'Environments & Auth Profiles',
     'endpoints' => 'Endpoints',
+    'api_behavior' => 'API Behavior Map',
     'endpoint_inventory' => 'Endpoint Inventory',
     'scans' => 'Scans',
     'snapshots' => 'Snapshots',
@@ -84,6 +85,11 @@ return array (
     'audit_admin' => 'Audit & admin',
     'learning_support' => 'Help & workflow',
     'scans_snapshots' => 'Scans & Snapshots',
+    'blind_spots' => 'QA Blind Spots',
+    'blind_spots_short' => 'Blind Spots',
+    'risk_acceptances' => 'Risk Ledger',
+    'evidence_graph' => 'Evidence Graph',
+    'contract_reality' => 'Contract Reality',
   ),
   'common' => 
   array (
@@ -106,6 +112,7 @@ return array (
     'type' => 'Type',
     'summary' => 'Summary',
     'notes' => 'Notes',
+    'total' => 'Total',
     'total_rows' => 'Total rows',
     'created' => 'Created',
     'none' => 'None',
@@ -125,6 +132,7 @@ return array (
     'error' => 'Error',
     'reset' => 'Reset',
     'all' => 'All',
+    'title' => 'Title',
   ),
   'profile' => 
   array (
@@ -551,6 +559,163 @@ return array (
     'openapi_path_params_auto_defaults_note' => 'Common project-level test values are created automatically during import when placeholders are found.',
     'single' => 'Endpoint',
     'risk' => 'Risk',
+  ),
+  'api_behavior' => 
+  array (
+    'title' => 'API Behavior Map',
+    'short_title' => 'Behavior Map',
+    'heading' => 'API Behavior Map',
+    'intro' => 'Map how endpoints create, consume, update and destroy resources so release QA can plan safer regression sequences and spot behavior-level risk.',
+    'refresh' => 'Refresh behavior map',
+    'refreshed' => 'API behavior map refreshed.',
+    'endpoint_panel_title' => 'Endpoint behavior',
+    'endpoint_roles_title' => 'Endpoint behavior roles',
+    'dependencies_title' => 'Detected dependencies',
+    'sequences_title' => 'Suggested test sequences',
+    'no_dependencies' => 'No endpoint dependencies were detected yet. Add producer/consumer endpoints such as POST /orders and GET /orders/{id}.',
+    'no_sequences' => 'No suggested sequences are available yet.',
+    'no_behavior_detected' => 'No behavior signal detected yet.',
+    'no_produced_links' => 'This endpoint is not currently detected as a producer for another endpoint.',
+    'no_consumed_links' => 'This endpoint does not currently consume a resource produced by another endpoint.',
+    'produces_for' => 'Produces for',
+    'consumes_from' => 'Consumes from',
+    'producer' => 'Producer',
+    'consumer' => 'Consumer',
+    'resource' => 'Resource',
+    'role' => 'Role',
+    'summary' => 'Summary',
+    'dependency_type' => 'Dependency type',
+    'confidence_label' => 'Confidence',
+    'sequence' => 'Sequence',
+    'metrics' => 
+    array (
+      'endpoints' => 'Endpoints',
+      'producers' => 'Producers',
+      'consumers' => 'Consumers',
+      'dependencies' => 'Dependencies',
+      'destructive' => 'Destructive',
+      'sequence_candidates' => 'Sequence candidates',
+      'auth_boundaries' => 'Auth boundaries',
+      'resources' => 'Resources',
+    ),
+    'roles' => 
+    array (
+      'producer' => 'Producer',
+      'consumer' => 'Consumer',
+      'producer_consumer' => 'Producer & consumer',
+      'destructive' => 'Destructive action',
+      'reference' => 'Reference endpoint',
+      'unknown' => 'Unknown',
+    ),
+    'dependency_types' => 
+    array (
+      'path_parameter' => 'Path parameter dependency',
+      'resource_flow' => 'Resource flow',
+      'auth_boundary' => 'Auth boundary',
+      'destructive_followup' => 'Destructive follow-up',
+    ),
+    'confidence' => 
+    array (
+      'high' => 'High',
+      'medium' => 'Medium',
+      'low' => 'Low',
+    ),
+    'flags' => 
+    array (
+      'title' => 'Behavior flags',
+      'destructive' => 'Destructive',
+      'auth_boundary' => 'Auth boundary',
+      'sequence_candidate' => 'Sequence candidate',
+    ),
+    'notes' => 
+    array (
+      'resource' => 'Detected resource: :resource.',
+      'path_parameters' => 'Consumes path parameter(s): :parameters.',
+      'destructive' => 'Treat as destructive; use controlled fixtures before running regression sequences.',
+      'auth_boundary' => 'Public and authenticated endpoints exist around this resource; verify authorization boundaries.',
+    ),
+    'link_notes' => 
+    array (
+      'path_parameter' => 'Consumer path uses :parameter, likely produced by the producer endpoint.',
+      'resource_flow' => 'Endpoints appear to operate on the same resource family.',
+    ),
+    'report_title' => 'API Behavior Map Summary',
+  ),
+
+  'evidence_graph' => 
+  array (
+    'title' => 'Evidence Graph',
+    'short_title' => 'Evidence Graph',
+    'heading' => 'Evidence Graph',
+    'intro' => 'Connect endpoints, scans, findings, evidence attachments, release gates, accepted risks, blind spots and release decision packages into an auditable evidence chain.',
+    'release_graph' => 'Release Evidence Graph',
+    'release_graph_intro' => 'Shows the release-level chain of scan, snapshot, release gate, decision package, accepted risk and blind spot evidence.',
+    'endpoint_maps' => 'Endpoint Evidence Maps',
+    'endpoint_map_title' => 'Endpoint Evidence Map',
+    'endpoint_map_intro' => 'Shows which scan, assertion, finding, contract and test evidence exists for this endpoint.',
+    'finding_chains' => 'Finding Evidence Chains',
+    'finding_chain_title' => 'Finding Evidence Chain',
+    'finding_chain_intro' => 'Shows what the finding is linked to, what evidence exists, and whether the QA verification chain is complete.',
+    'linked_evidence' => 'Linked evidence',
+    'missing_links' => 'Missing links',
+    'no_missing_links' => 'No missing evidence links were detected.',
+    'complete' => 'Complete',
+    'open_map' => 'Open map',
+    'open_chain' => 'Open chain',
+    'scope' => 'Scope',
+    'related' => 'Related item',
+    'missing_label' => 'Missing',
+    'missing' => 'Missing',
+    'endpoint' => 'Endpoint',
+    'retest' => 'Retest',
+    'release_scope_label' => 'Release evidence scope',
+    'report_title' => 'Evidence Graph Summary',
+    'scopes' => 
+    array (
+      'endpoint' => 'Endpoint',
+      'finding' => 'Finding',
+      'release' => 'Release',
+    ),
+    'metrics' => 
+    array (
+      'endpoints' => 'Endpoints',
+      'endpoint_maps' => 'Endpoint maps',
+      'scan_results' => 'Scan results',
+      'findings' => 'Findings',
+      'evidence' => 'Evidence items',
+      'release_decisions' => 'Release decisions',
+      'blind_spots' => 'Blind spots',
+      'missing_links' => 'Missing links',
+    ),
+    'nodes' => 
+    array (
+      'scan_results' => 'Scan results',
+      'assertions' => 'Assertions',
+      'findings' => 'Findings',
+      'evidence' => 'Evidence',
+      'accepted_risk_active' => 'Active accepted risk',
+      'accepted_risk_none' => 'No accepted risk',
+      'latest_scan' => 'Latest scan',
+      'latest_snapshot' => 'Latest snapshot',
+      'blind_spots' => 'Shows missing or stale QA evidence that can affect release decisions.',
+      'blind_spots' => 'Missing and stale evidence items that can affect release sign-off.',
+      'release_gate' => 'Release gate',
+      'release_decision' => 'Release decision',
+      'accepted_risks' => 'Accepted risks',
+      'blind_spots' => 'Blind spots',
+    ),
+    'missing' => 
+    array (
+      'endpoint_scan' => 'No scan evidence is linked to the endpoint.',
+      'endpoint_assertion' => 'No assertion rule is linked to the endpoint.',
+      'finding_evidence' => 'No finding evidence attachment or note exists.',
+      'retest_evidence' => 'Fixed finding has no retest evidence.',
+      'accepted_risk_ledger' => 'Accepted risk finding has no active risk ledger record.',
+      'release_scan' => 'No scan evidence is available for release decision.',
+      'release_snapshot' => 'No snapshot evidence is available for release decision.',
+      'release_gate' => 'No saved release gate snapshot exists.',
+      'release_decision' => 'No saved release decision package exists.',
+    ),
   ),
   'endpoint_inventory' => 
   array (
@@ -1971,7 +2136,7 @@ return array (
   'help' => 
   array (
     'title' => 'Help Center',
-    'subtitle' => 'Complete Aptoria user guide for the v1.1.18 QA, API audit, monitoring and release readiness workflow.',
+    'subtitle' => 'Complete Aptoria user guide for the v1.1.25 QA, API audit, monitoring and release readiness workflow.',
     'search_title' => 'Search documentation',
     'search_label' => 'Keyword',
     'search_placeholder' => 'Try: demo, import, snapshot, assertion, finding, evidence, monitor, release, audit...',
@@ -1984,36 +2149,45 @@ return array (
     'no_results_body' => 'Try another keyword such as endpoint, scan, finding, evidence, monitor, release or audit.',
     'no_live_results' => 'No visible help section matches this keyword.',
     'search_results_for' => 'Search results for “:query”: :count section(s).',
-    'sections' => array (
-      0 => array (
+    'sections' => 
+    array (
+      0 => 
+      array (
         'id' => 'overview-navigation',
         'title' => 'Overview and navigation',
         'summary' => 'Aptoria is a self-hosted QA workspace that turns API projects into auditable inventories, evidence, findings, reports and release decisions.',
         'keywords' => 'overview navigation dashboard sidebar project modules workflow menu current project release reports operations audit admin help',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'What Aptoria is for',
             'body' => 'Use Aptoria when you need a repeatable QA workflow around an API: endpoint inventory, safe scans, auth checks, regression evidence, findings, reports, monitoring and release readiness in one place.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Track what exists in the API.',
               1 => 'Record what was tested and when.',
               2 => 'Keep evidence attached to findings and reports.',
               3 => 'Make release decisions traceable instead of opinion-based.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Main menu logic',
             'body' => 'The sidebar is grouped by the way the product is used: Projects for workspaces, Release & reports for sign-off, Operations for monitoring, Audit & admin for system-level control, and Help & workflow for learning.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Project-specific work belongs inside the project modules.',
               1 => 'Global monitoring and alert review stays under Operations.',
               2 => 'System Health, Settings, Audit Log and Demo Project stay under Audit & admin.',
             ),
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Current project modules',
             'body' => 'When a project is open, the project module navigation keeps related QA work together.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'API inventory: endpoints, environments, auth profiles and imports.',
               1 => 'Quality workflow: scans, snapshots, compares, schema drift and regression suites.',
               2 => 'Risk & evidence: findings, lifecycle history and evidence attachments.',
@@ -2021,31 +2195,38 @@ return array (
               4 => 'Automation & audit: project monitors and project audit timeline.',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Recommended path',
             'body' => 'Start with Demo Project to understand the system, then create a real project with the wizard, import endpoints, run safe checks, triage findings and generate the correct report.',
           ),
         ),
       ),
-      1 => array (
+      1 => 
+      array (
         'id' => 'setup-profile-identity',
         'title' => 'Setup, profile and report identity',
         'summary' => 'Setup protects first run access, while Default Report Identity gives every report a consistent prepared-by and confidentiality context.',
         'keywords' => 'setup install first run profile default report identity branding prepared by title role organization confidentiality disclaimer logo project override',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'First-run setup',
             'body' => 'Fresh installations start in setup mode. Create the admin user, verify the setup lock, then use System Health to confirm database, cache, storage, report and evidence folders are writable.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Run migrations before use.',
               1 => 'Run aptoria:health after deployment.',
               2 => 'Keep .env, database/database.sqlite and setup-token files out of release ZIPs.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Default Report Identity',
             'body' => 'Profile → Default Report Identity is the global fallback identity used by reports when the project has no branding override.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Prepared by',
               1 => 'Role / title',
               2 => 'Organization',
@@ -2053,10 +2234,12 @@ return array (
               4 => 'Default disclaimer',
             ),
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Project branding override',
             'body' => 'Project Report Branding overrides the profile defaults only for that project/client. Use it when a report must be branded for a specific client, engagement or organization.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Client / organization',
               1 => 'Prepared for / prepared by context',
               2 => 'Project-specific confidentiality label',
@@ -2064,61 +2247,75 @@ return array (
               4 => 'Optional report logo',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'How branding is selected',
             'body' => 'Report exports use project branding first. If a field is empty at project level, Aptoria falls back to the Default Report Identity where applicable.',
           ),
         ),
       ),
-      2 => array (
+      2 => 
+      array (
         'id' => 'projects-environments-auth',
         'title' => 'Projects, environments and auth profiles',
         'summary' => 'Projects hold API workspaces; environments separate base URLs; auth profiles define how requests are authenticated and compared.',
         'keywords' => 'project onboarding wizard environment local dev staging production auth profile bearer token basic custom header no-auth variables test authentication',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Project onboarding',
             'body' => 'The guided project wizard creates a project, environment, auth profile, first endpoint, optional first safe probe, baseline snapshot and report context so the workspace does not start empty.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Use it for a new API review.',
               1 => 'Skip automatic scan on production unless you intentionally run it later.',
               2 => 'Review generated endpoint and report context after creation.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Environment manager',
             'body' => 'Use environments to model local, dev, staging and production URLs without creating separate projects for the same API.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Each environment can have a base URL and auth context.',
               1 => 'Scans, monitors, reports and imports can reference an environment.',
               2 => 'Default environment controls common actions.',
             ),
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Auth profiles',
             'body' => 'Auth profiles support no-auth, bearer token, basic auth and custom header patterns. They allow Aptoria to test authenticated and unauthenticated behavior consistently.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Use a no-auth profile for broken-auth comparison.',
               1 => 'Use bearer/basic/custom profiles for authenticated checks.',
               2 => 'Use the auth tester before running broader scans.',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Variables and imports',
             'body' => 'Postman environments, Postman globals and collection variables help resolve parameterized URLs and headers into reusable Aptoria records.',
           ),
         ),
       ),
-      3 => array (
+      3 => 
+      array (
         'id' => 'api-import-inventory',
         'title' => 'API import and Endpoint inventory',
         'summary' => 'Endpoint Inventory is the source of truth for methods, paths, auth requirements, expected results, latest scan data and finding counts.',
         'keywords' => 'endpoint inventory import openapi swagger postman collection environment globals examples auth assertions newman junit folder suite mapping method path status response time risk finding count',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Manual endpoint entry',
             'body' => 'Add endpoints manually when you have only a small API surface or when an imported specification needs correction.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Method and path',
               1 => 'Environment and auth profile',
               2 => 'Expected status and content type',
@@ -2126,124 +2323,154 @@ return array (
               4 => 'Path parameter test values',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'OpenAPI / Swagger import',
             'body' => 'Import OpenAPI or Swagger JSON/YAML to create endpoint records with methods, paths, request metadata and contract context.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Postman import',
             'body' => 'Import Postman collections, environments and globals. Folder-to-test-suite mapping can turn collection structure into regression planning records.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Requests become endpoints.',
               1 => 'Examples can become request/response evidence.',
               2 => 'Basic assertions can seed Aptoria assertion rules.',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Newman / JUnit import',
             'body' => 'Import Newman JSON or JUnit XML output as execution evidence. Failed assertions can be used to create findings with attached evidence.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Inventory review',
             'body' => 'Use the Endpoint Inventory page to see method, path, environment, auth requirement, last status, last response time, risk level, last scan and finding count in one place.',
           ),
         ),
       ),
-      4 => array (
+      4 => 
+      array (
         'id' => 'safe-scans-security',
         'title' => 'Safe scans and security signals',
         'summary' => 'Safe scans collect non-destructive request/response evidence and feed security-oriented signals such as sensitive data and broken auth.',
         'keywords' => 'safe scan GET HEAD sensitive data detector broken auth no-auth comparison status response time token jwt api key 5xx debug trace private network timeout preview ssl',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Safe execution model',
             'body' => 'Automatic scanner and runner actions are intentionally limited to GET and HEAD. State-changing methods are kept as inventory and manual-test planning records.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'POST, PUT, PATCH and DELETE are not auto-executed.',
               1 => 'Private-network scanning can be blocked unless explicitly allowed.',
               2 => 'Timeouts and response preview limits reduce risk.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Sensitive data detector',
             'body' => 'Aptoria flags response content that looks like email, phone, JWT, API key, bearer token, access token, refresh token, password field, debug stack trace or personal-data-like fields.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Broken auth comparison',
             'body' => 'Authenticated and unauthenticated responses can be compared. If no-auth access exposes protected data, Aptoria turns that into review evidence and finding context.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Scan result review',
             'body' => 'Open a scan run to inspect status code, response time, content type, response size, body preview, error, sensitive-data flag, broken-auth flag and schema-drift flag.',
           ),
         ),
       ),
-      5 => array (
+      5 => 
+      array (
         'id' => 'snapshots-diff-schema',
         'title' => 'Snapshots and compare',
         'summary' => 'Snapshots preserve API state; compare runs and schema drift review show what changed between a baseline and a current state.',
         'keywords' => 'snapshot snapshots compare baseline current diff schema drift report export response body header status type nullability breaking change regression release evidence',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Create a baseline snapshot',
             'body' => 'After a scan or milestone review, save a snapshot to freeze endpoint inventory, latest statuses, response times, selected headers and schema evidence.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Compare baseline and current',
             'body' => 'Use Baseline vs Current compare to detect new endpoints, removed endpoints, changed status codes, changed headers, changed bodies and response-time differences.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Schema drift detector',
             'body' => 'Schema drift flags removed fields, new fields, type changes, nullability changes and object/array shape changes. These are useful for frontend/backend integration review.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'When to use compare',
             'body' => 'Use compare before a release, after a backend deployment, after an OpenAPI import update or when a monitor indicates a regression.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Read-only analysis',
             'body' => 'Snapshot compare and schema drift use stored Aptoria evidence only. They do not send HTTP requests while generating the comparison.',
           ),
         ),
       ),
-      6 => array (
+      6 => 
+      array (
         'id' => 'regression-assertions',
         'title' => 'Regression test suites and execution',
         'summary' => 'Regression suites connect endpoints, expected results, assertions and imported execution evidence into repeatable QA coverage.',
         'keywords' => 'regression test suite execution test case assertion assertions expected status response field contains json path newman junit pass fail coverage matrix',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Build a suite',
             'body' => 'Create a suite, add endpoint-based test cases, set execution order and define expected status codes or response expectations.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Assertions',
             'body' => 'Assertions can check expected status, body contains, JSON path / field existence and response-body conditions. They support PASS, WARNING and FAIL review outcomes.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Run and record evidence',
             'body' => 'Suite execution stores test case results and can be included in Release Readiness, reports, monitors and audit evidence.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Import external runs',
             'body' => 'Newman JSON and JUnit XML imports let Aptoria store external automation outcomes next to manual and safe-scan evidence.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Coverage matrix',
             'body' => 'Use QA coverage views to see which endpoints have tests, assertions, scans, findings and release evidence before sign-off.',
           ),
         ),
       ),
-      7 => array (
+      7 => 
+      array (
         'id' => 'findings-lifecycle-evidence',
         'title' => 'Findings, lifecycle and evidence',
         'summary' => 'Findings are auditable QA records with lifecycle status, history, risk context and attached proof.',
         'keywords' => 'finding lifecycle evidence open confirmed in progress fixed false positive accepted risk reopened timeline screenshot json curl request response attachment hash severity audit',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Lifecycle statuses',
             'body' => 'Use Open, Confirmed, In progress, Fixed, False positive, Accepted risk and Reopened to reflect the real remediation state.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Open: detected and not yet reviewed.',
               1 => 'Confirmed: validated issue.',
               2 => 'In progress: fix is underway.',
@@ -2253,153 +2480,190 @@ return array (
               6 => 'Reopened: returned after a failed or regressed fix.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Status history',
             'body' => 'Each status change records who changed it, when, optional note and reopened count. This makes the remediation process audit-friendly.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Evidence attachments',
             'body' => 'Attach screenshots, JSON response samples, cURL commands, request/response excerpts, files, links and notes. File attachments store original filename, MIME type, size and SHA-256 hash.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Release impact',
             'body' => 'Open, confirmed, in-progress and reopened critical/high findings count as active release risk. Fixed, false positive and accepted risk remain visible without behaving like unresolved blockers.',
           ),
         ),
       ),
-      8 => array (
+      8 => 
+      array (
         'id' => 'release-readiness-gates',
         'title' => 'Release readiness and release gates',
         'summary' => 'Release Readiness turns QA evidence into a 100-point release decision with lifecycle-aware risk handling.',
         'keywords' => 'release readiness score release gate pass warning blocked score 100 finding lifecycle coverage regression sign-off report snapshot evidence',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => '100-point score',
             'body' => 'The score considers critical/high findings, lifecycle state, tested endpoint ratio, auth review, regression status, latest report and scan freshness.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Lifecycle-aware scoring',
             'body' => 'Reopened findings count as active risk. Fixed, false positive and accepted risk findings are summarized, but they do not block the same way as unresolved findings.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Release gate',
             'body' => 'Create a release gate after a QA cycle to freeze readiness, coverage, test execution, findings and contract validation into pass/warning/blocked evidence.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Decision use',
             'body' => 'Use readiness and release gates to decide whether a project is ready to ship, requires fixes or can proceed with accepted risk.',
           ),
         ),
       ),
-      9 => array (
+      9 => 
+      array (
         'id' => 'reports-branding-exports',
         'title' => 'Reports, branding and exports',
         'summary' => 'Aptoria separates executive and technical reports, applies branding, and exports stored QA evidence without running new scans.',
         'keywords' => 'report reports export executive technical full project release readiness branding logo markdown html pdf csv json evidence snapshot compare qa release gate',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Executive report',
             'body' => 'Use Executive reports for stakeholders who need status, readiness, main risks, blockers, warnings and recommended decision without deep request/response detail.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Technical report',
             'body' => 'Use Technical reports for QA and developers. They include endpoint inventory, findings, evidence, contract validation, scan/regression context and request/response evidence.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Full Project report',
             'body' => 'Use Full Project reports when you need a broader evidence package with project context, endpoint data, scans, snapshots, findings and readiness sections.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Branding source',
             'body' => 'Reports use Project Report Branding when configured. Otherwise they fall back to Default Report Identity from the profile.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Export safety',
             'body' => 'Markdown, HTML, PDF, CSV, JSON and evidence exports use stored Aptoria data. They do not perform HTTP requests during export.',
           ),
         ),
       ),
-      10 => array (
+      10 => 
+      array (
         'id' => 'monitoring-alerts-notifications',
         'title' => 'Scheduled monitoring, alerts and notifications',
         'summary' => 'Monitors run safe scheduled checks and create alerts when important QA or security state changes.',
         'keywords' => 'scheduled monitor cron windows task scheduler run-monitors email webhook dashboard alert critical high 5xx recovery json output suite environment notification',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Cron-ready runner',
             'body' => 'Use php artisan aptoria:run-monitors from cron or Windows Task Scheduler with project, environment, suite and monitor filters.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => '--dry-run to preview selection.',
               1 => '--json for machine-readable output.',
               2 => '--save-json to store run evidence.',
               3 => '--fail-on-warning or --fail-on-regression for automation gates.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Suite binding',
             'body' => 'A monitor can be linked to a regression suite so scheduled checks include suite result summaries.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Notification triggers',
             'body' => 'Dashboard, email and webhook notifications can trigger on critical/high findings, HTTP 5xx, sensitive data exposure, broken auth, schema drift and recovery to healthy.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Alert Center',
             'body' => 'Use Monitor Alerts to filter alert events by channel, severity and open/closed status.',
           ),
         ),
       ),
-      11 => array (
+      11 => 
+      array (
         'id' => 'system-health-audit-demo',
         'title' => 'System health, audit log and demo data',
         'summary' => 'Admin tools verify installation health, trace user/system activity and seed realistic sample data for demonstrations.',
         'keywords' => 'system health diagnostics audit log activity timeline demo project sample data generator json export queue cache database storage import export setup lock cli',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'System Health',
             'body' => 'System Health checks runtime, application state, storage permissions, cache, database, security posture, import/export folders, reporting/evidence storage, automation and queue readiness.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Audit Log',
             'body' => 'Audit Log records login/logout, project and model changes, report generation, database import/export, hard reset requests, settings changes and finding status changes.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Project audit timeline',
             'body' => 'Open project-level Audit Log to see only the activity that belongs to the current project.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Demo Project',
             'body' => 'The Northstar Commerce demo generator creates synthetic environments, endpoints, auth profiles, scans, snapshots, compare runs, findings, evidence, regression suites, release gate and monitor data without external API calls.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'JSON evidence',
             'body' => 'Health, audit and demo CLI workflows expose JSON output so operational state can be stored as evidence.',
           ),
         ),
       ),
-      12 => array (
+      12 => 
+      array (
         'id' => 'safety-privacy',
         'title' => 'Safety and privacy model',
         'summary' => 'Aptoria is conservative by design and should only be used on systems you own, operate or have explicit permission to test.',
         'keywords' => 'safety privacy authorized use destructive methods private network secret masking sensitive response storage gd xampp windows local',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Authorized use only',
             'body' => 'Only scan APIs you own, operate or have written authorization to test.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Destructive methods skipped',
             'body' => 'State-changing methods are not automatically executed. They are kept for inventory, planning, manual testing and imported evidence.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Secret masking',
             'body' => 'Authorization, token, password, cookie and secret-like values are masked in UI, audit payloads and exports where supported.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Sensitive response storage',
             'body' => 'For regulated or customer-data-heavy APIs, disable response preview storage or keep evidence attachments minimal and intentional.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Local deployment',
             'body' => 'Aptoria is intended for self-hosted/local deployment. Windows/XAMPP workflows are supported by the included update script and System Health diagnostics.',
           ),
@@ -2419,7 +2683,8 @@ return array (
     'demo_title' => 'Try the demo project',
     'demo_body' => 'Use the built-in Northstar Commerce demo generator to create realistic synthetic QA data and learn every module without calling an external API.',
     'open_demo' => 'Open demo project',
-    'safety_rules' => array (
+    'safety_rules' => 
+    array (
       0 => 'Only GET and HEAD are executed automatically by safe scans and runners.',
       1 => 'POST, PUT, PATCH and DELETE are kept as inventory/manual planning records unless imported as external evidence.',
       2 => 'Private network scans are blocked unless explicitly allowed in settings.',
@@ -2428,85 +2693,101 @@ return array (
       5 => 'Demo project data is synthetic and does not call external services.',
       6 => 'Use Aptoria only on APIs you own, operate or have permission to test.',
     ),
-    'workflow' => array (
-      0 => array (
+    'workflow' => 
+    array (
+      0 => 
+      array (
         'stage' => '1',
         'label' => 'info',
         'title' => 'Install and verify health',
         'body' => 'Run migrations, complete setup and open System Health to verify PHP, database, storage, cache, reports, evidence, queue and scheduler readiness.',
       ),
-      1 => array (
+      1 => 
+      array (
         'stage' => '2',
         'label' => 'primary',
         'title' => 'Start with demo or onboarding',
         'body' => 'Import the Northstar Commerce demo project for a full sample workflow, or use the onboarding wizard for a real API.',
       ),
-      2 => array (
+      2 => 
+      array (
         'stage' => '3',
         'label' => 'success',
         'title' => 'Import or document endpoints',
         'body' => 'Create the endpoint inventory from OpenAPI/Swagger, Postman, Newman/JUnit evidence or manual records.',
       ),
-      3 => array (
+      3 => 
+      array (
         'stage' => '4',
         'label' => 'info',
         'title' => 'Configure environments and auth',
         'body' => 'Separate local/dev/staging/production URLs and attach no-auth, bearer, basic or custom-header profiles.',
       ),
-      4 => array (
+      4 => 
+      array (
         'stage' => '5',
         'label' => 'warning',
         'title' => 'Collect safe scan evidence',
         'body' => 'Run GET/HEAD checks, collect status/response metadata, sensitive-data signals, broken-auth comparison and assertion results.',
       ),
-      5 => array (
+      5 => 
+      array (
         'stage' => '6',
         'label' => 'primary',
         'title' => 'Snapshot and compare',
         'body' => 'Save a baseline, compare it to a current state and inspect schema drift before release.',
       ),
-      6 => array (
+      6 => 
+      array (
         'stage' => '7',
         'label' => 'success',
         'title' => 'Build regression evidence',
         'body' => 'Create regression suites, add test cases, import external results and close coverage gaps.',
       ),
-      7 => array (
+      7 => 
+      array (
         'stage' => '8',
         'label' => 'danger',
         'title' => 'Manage findings',
         'body' => 'Track lifecycle state, attach evidence, record remediation notes and reopen issues when fixes regress.',
       ),
-      8 => array (
+      8 => 
+      array (
         'stage' => '9',
         'label' => 'success',
         'title' => 'Decide release readiness',
         'body' => 'Review the 100-point readiness score, release gate, lifecycle-aware finding impact and regression status.',
       ),
-      9 => array (
+      9 => 
+      array (
         'stage' => '10',
         'label' => 'info',
         'title' => 'Export the right report',
         'body' => 'Use Executive reports for decisions, Technical reports for QA/developer evidence and Full Project reports for broad audit packages.',
       ),
-      10 => array (
+      10 => 
+      array (
         'stage' => '11',
         'label' => 'warning',
         'title' => 'Schedule monitoring and notifications',
         'body' => 'Run monitors from cron/Task Scheduler, save JSON output and notify by dashboard, email or webhook.',
       ),
-      11 => array (
+      11 => 
+      array (
         'stage' => '12',
         'label' => 'default',
         'title' => 'Audit and maintain',
         'body' => 'Use Audit Log, System Health and JSON exports to keep activity and operational evidence traceable.',
       ),
     ),
-    'steps' => array (
-      0 => array (
+    'steps' => 
+    array (
+      0 => 
+      array (
         'title' => 'Prepare the installation',
         'body' => 'Install dependencies, configure .env, run migrations, complete setup and verify the installation from System Health.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Run composer install on the deployed project.',
           1 => 'Run php artisan migrate.',
           2 => 'Run php artisan aptoria:health and review warnings.',
@@ -2515,10 +2796,12 @@ return array (
         'output' => 'A working local/self-hosted Aptoria instance with an admin account and healthy system diagnostics.',
         'tip' => 'On Windows/XAMPP, use scripts/update-windows-xampp.ps1 before running tests.',
       ),
-      1 => array (
+      1 => 
+      array (
         'title' => 'Create a project or import the demo',
         'body' => 'Use the project wizard for real work or the Demo Project page for a full sample dataset.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'For real work, enter project name, base URL, environment and auth profile.',
           1 => 'For learning, import the Northstar Commerce demo project.',
           2 => 'Review the project dashboard after creation.',
@@ -2526,10 +2809,12 @@ return array (
         'output' => 'A project workspace with environment, auth context and initial QA structure.',
         'tip' => 'The demo is safe because it uses synthetic stored data only.',
       ),
-      2 => array (
+      2 => 
+      array (
         'title' => 'Build the endpoint inventory',
         'body' => 'Endpoint Inventory defines the API surface that the rest of Aptoria reviews.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Import OpenAPI/Swagger or Postman collections.',
           1 => 'Add missing endpoints manually.',
           2 => 'Set expected status/content type and path parameter values.',
@@ -2537,10 +2822,12 @@ return array (
         ),
         'output' => 'A searchable endpoint catalogue with methods, paths, environments, auth context and latest QA status.',
       ),
-      3 => array (
+      3 => 
+      array (
         'title' => 'Configure environments and authentication',
         'body' => 'Separate test environments and authentication profiles before collecting evidence.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Create local/dev/staging/production environments.',
           1 => 'Create no-auth and authenticated profiles.',
           2 => 'Run Test Authentication for each real auth profile.',
@@ -2549,10 +2836,12 @@ return array (
         'output' => 'A clear auth/environment matrix for scans, monitors and reports.',
         'tip' => 'No-auth plus bearer/basic profiles are needed for broken-auth comparison.',
       ),
-      4 => array (
+      4 => 
+      array (
         'title' => 'Run safe scans',
         'body' => 'Safe scans collect live evidence without executing destructive methods.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Run a safe project scan or endpoint scan.',
           1 => 'Review status code, response time, content type and errors.',
           2 => 'Check sensitive data detector and broken-auth signals.',
@@ -2560,10 +2849,12 @@ return array (
         ),
         'output' => 'Stored scan evidence feeding endpoint status, findings, readiness and reports.',
       ),
-      5 => array (
+      5 => 
+      array (
         'title' => 'Save snapshots and compare changes',
         'body' => 'Snapshots preserve a known state. Compare runs show what changed later.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Save a baseline snapshot after a stable scan.',
           1 => 'Run another scan after changes.',
           2 => 'Compare baseline vs current.',
@@ -2571,10 +2862,12 @@ return array (
         ),
         'output' => 'Regression evidence showing whether the API changed safely or unexpectedly.',
       ),
-      6 => array (
+      6 => 
+      array (
         'title' => 'Create regression suites and assertions',
         'body' => 'Regression suites make repeat checks and external test results visible inside Aptoria.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Build suites from endpoints or imported folders.',
           1 => 'Add assertion rules for expected status/body fields.',
           2 => 'Import Newman JSON or JUnit XML when available.',
@@ -2582,10 +2875,12 @@ return array (
         ),
         'output' => 'Repeatable QA evidence that can be linked to release readiness and monitors.',
       ),
-      7 => array (
+      7 => 
+      array (
         'title' => 'Triage findings with lifecycle and evidence',
         'body' => 'Findings should move through a visible remediation lifecycle instead of staying as a flat list.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Set severity and lifecycle status.',
           1 => 'Add notes for status changes.',
           2 => 'Attach screenshot, JSON, cURL or request/response evidence.',
@@ -2595,10 +2890,12 @@ return array (
         'output' => 'Auditable bug history with evidence and clear release impact.',
         'tip' => 'Accepted risk is a visible decision, not a deletion.',
       ),
-      8 => array (
+      8 => 
+      array (
         'title' => 'Review release readiness and gates',
         'body' => 'Release Readiness summarizes whether the project can ship.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Review the 100-point score.',
           1 => 'Check critical/high active findings.',
           2 => 'Check regression and coverage status.',
@@ -2606,10 +2903,12 @@ return array (
         ),
         'output' => 'A pass/warning/blocked decision supported by stored evidence.',
       ),
-      9 => array (
+      9 => 
+      array (
         'title' => 'Export the correct report',
         'body' => 'Choose the report by audience.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Executive Report for management or client decision makers.',
           1 => 'Technical Report for QA/developers.',
           2 => 'Full Project Report for complete handoff.',
@@ -2618,10 +2917,12 @@ return array (
         'output' => 'Markdown, HTML or PDF evidence with profile/project branding applied.',
         'tip' => 'Project branding overrides Default Report Identity only for that project.',
       ),
-      10 => array (
+      10 => 
+      array (
         'title' => 'Schedule monitors and notifications',
         'body' => 'Use monitors after the first QA cycle to keep regressions visible.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Create a monitor with environment and optional suite.',
           1 => 'Test with --dry-run and --json.',
           2 => 'Enable dashboard/email/webhook notifications.',
@@ -2629,10 +2930,12 @@ return array (
         ),
         'output' => 'Ongoing regression/security monitoring with stored JSON summaries and alerts.',
       ),
-      11 => array (
+      11 => 
+      array (
         'title' => 'Audit and maintain the system',
         'body' => 'Operational evidence matters as much as QA evidence.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Review Audit Log for user and project actions.',
           1 => 'Export audit or health JSON when needed.',
           2 => 'Run System Health after deployment changes.',
@@ -2727,6 +3030,7 @@ return array (
     'preview_button' => 'Preview import',
     'confirm_button' => 'Confirm import',
     'back_to_import' => 'Back to import form',
+    'total' => 'Total',
     'total_rows' => 'Total rows',
     'to_create' => 'To create',
     'to_update' => 'To update',
@@ -2976,6 +3280,11 @@ return array (
       'auth_ready' => 'Auth-ready endpoints',
       'release_gates' => 'Release gates',
       'enabled_monitors' => 'Enabled monitors',
+      'blind_spots' => 'QA blind spots',
+      'retest_failed_findings' => 'Retest failed findings',
+      'fixed_unverified_findings' => 'Fixed but unverified findings',
+      'ready_for_retest_findings' => 'Ready for retest findings',
+      'overdue_findings' => 'Overdue findings',
     ),
     'coverage' => 'Coverage',
     'endpoint_coverage' => 'Endpoint coverage',
@@ -3017,6 +3326,10 @@ return array (
       'contract_failed' => ':count OpenAPI contract validation check(s) failed.',
       'critical_findings' => ':count critical open finding(s) block the release.',
       'failed_tests' => ':count failed test case(s) block the release.',
+      'release_blocking_blind_spots' => ':count release-blocking QA blind spot(s) are open.',
+      'retest_failed_findings' => ':count finding(s) have failed retest and block the release.',
+      'expired_risk_acceptances' => ':count accepted risk(s) are expired and must be reviewed before release.',
+      'contract_reality_breaking' => ':count Contract Reality mismatch(es) are release-blocking.',
     ),
     'warnings' => 
     array (
@@ -3033,6 +3346,13 @@ return array (
       'medium_findings' => ':count medium severity open finding(s) require review.',
       'blocked_tests' => ':count blocked test case(s) require QA review.',
       'low_test_execution' => 'Test execution coverage is only :percent%.',
+      'blind_spots' => ':count non-blocking QA blind spot(s) need review.',
+      'fixed_unverified_findings' => ':count fixed finding(s) still need QA verification.',
+      'ready_for_retest_findings' => ':count finding(s) are ready for retest.',
+      'overdue_findings' => ':count finding(s) are overdue.',
+      'risk_acceptance_without_expiry' => ':count accepted risk(s) have no expiry date.',
+      'risk_acceptance_expiring_soon' => ':count accepted risk(s) expire soon.',
+      'contract_reality_warnings' => ':count Contract Reality item(s) require review.',
     ),
     'actions' => 
     array (
@@ -3043,11 +3363,15 @@ return array (
       'review_warnings' => 'Review warnings and decide whether they are acceptable for this release.',
       'save_clean_baseline' => 'Save a clean baseline snapshot after the release is accepted.',
       'review_findings' => 'Review open findings and either fix them or document accepted risk before sign-off.',
+      'close_blind_spots' => 'Close or document QA blind spots before the release decision.',
+      'verify_findings' => 'Verify fixed findings with retest evidence before release sign-off.',
+      'review_risk_acceptances' => 'Review the Risk Acceptance Ledger and renew, close or revoke stale accepted risks.',
     ),
     'overview_title' => 'Release Readiness overview',
     'overview_intro' => 'Compare readiness scores across projects and open the detailed release decision dashboard for each API.',
     'project_scores' => 'Project readiness scores',
     'no_projects_help' => 'Create a project, import endpoints and run a safe scan before reviewing release readiness.',
+    'verification_summary' => 'Finding Verification Summary',
   ),
   'test_suites' => 
   array (
@@ -3266,10 +3590,20 @@ $.data.items',
       'body_preview' => 'Stored JSON response body preview',
       'valid_json_body' => 'Valid JSON response body',
       'operation_in_contract' => 'Endpoint operation should be documented in the OpenAPI contract',
+      'auth_required' => 'OpenAPI operation requires authentication',
+      'auth_not_required' => 'OpenAPI operation does not require authentication',
+      'auth_protected_when_required' => 'Protected endpoint should reject unauthenticated access when auth is required',
+      'documented_response_fields' => 'Every response field should be documented in the OpenAPI schema',
+      'no_undocumented_fields' => 'No undocumented top-level response fields',
+
     ),
     'actual' => 
     array (
       'schema_valid' => 'Schema checks passed',
+      'endpoint_requires_auth' => 'Aptoria endpoint inventory marks this endpoint as auth-required',
+      'endpoint_no_auth_required' => 'Aptoria endpoint inventory marks this endpoint as public/no-auth',
+      'no_undocumented_fields' => 'No undocumented top-level response fields were observed',
+
     ),
     'evidence' => 'Evidence',
     'no_operations_detected' => 'No OpenAPI operations were detected in the contract document.',
@@ -3308,6 +3642,9 @@ $.data.items',
       'content_type' => 'Content-Type',
       'response_schema' => 'Response schema',
       'scan_evidence' => 'Scan evidence',
+      'auth_requirement' => 'Auth requirement',
+      'undocumented_response_field' => 'Undocumented response field',
+
     ),
     'messages' => 
     array (
@@ -3326,11 +3663,58 @@ $.data.items',
       'body_not_json' => 'The stored response body preview is not valid JSON.',
       'schema_matches' => 'The stored response body matches the basic contract schema checks.',
       'schema_mismatch' => 'The stored response body does not match the contract schema.',
+      'auth_requirement_matches' => 'The endpoint auth requirement matches the OpenAPI security contract.',
+      'auth_contract_mismatch' => 'The endpoint auth requirement does not match the OpenAPI security contract.',
+      'auth_behavior_mismatch' => 'No-auth comparison evidence indicates an authentication boundary mismatch.',
+      'no_undocumented_response_fields' => 'No undocumented top-level response fields were observed.',
+      'undocumented_response_fields' => 'The actual response contains fields that are not documented in the OpenAPI schema.',
+      'undocumented_sensitive_response_fields' => 'The actual response contains undocumented sensitive-looking fields.',
+
     ),
     'schema_problem_type' => 'Type mismatch at :path. Expected :type.',
     'schema_problem_required' => 'Missing required field :field at :path.',
     'expected_label' => 'Expected',
     'actual_label' => 'Actual',
+  ),
+  'contract_reality' => 
+  array (
+    'title' => 'Contract Reality Check',
+    'short_title' => 'Contract Reality',
+    'intro' => 'Compare the OpenAPI contract with stored scan evidence and Aptoria endpoint metadata to see where documented behavior diverges from reality.',
+    'latest_run' => 'Latest contract run',
+    'open_validation' => 'Open validation result',
+    'run_validation' => 'Run contract validation',
+    'no_run' => 'No contract validation run is available yet. Run OpenAPI contract validation first.',
+    'summary_title' => 'Contract Reality Summary',
+    'results_title' => 'Reality checks',
+    'type' => 'Reality type',
+    'blocking' => 'Blocking mismatches',
+    'matches_contract' => 'Matches contract',
+    'contract_drift' => 'Contract drift',
+    'missing_documented_endpoint' => 'Missing documented endpoint',
+    'undocumented_endpoint' => 'Undocumented endpoint',
+    'undocumented_response' => 'Undocumented response',
+    'auth_contract_mismatch' => 'Auth contract mismatch',
+    'breaking_contract_mismatch' => 'Breaking contract mismatch',
+    'skipped' => 'Skipped',
+    'statuses' => 
+    array (
+      'missing' => 'Missing contract evidence',
+      'aligned' => 'Contract and reality aligned',
+      'review' => 'Review required',
+      'blocking' => 'Release-blocking mismatch',
+    ),
+    'types' => 
+    array (
+      'matches_contract' => 'Matches contract',
+      'contract_drift' => 'Contract drift',
+      'missing_documented_endpoint' => 'Missing documented endpoint',
+      'undocumented_endpoint' => 'Undocumented endpoint',
+      'undocumented_response' => 'Undocumented response',
+      'auth_contract_mismatch' => 'Auth contract mismatch',
+    ),
+    'report_summary_title' => 'Contract Reality Summary',
+    'report_empty' => 'No Contract Reality Check has been generated yet.',
   ),
   'findings' => 
   array (
@@ -3426,6 +3810,9 @@ $.data.items',
       'accepted_risk' => 'Accepted risk',
       'closed' => 'Closed',
       'reopened' => 'Reopened',
+      'ready_for_retest' => 'Ready for retest',
+      'retest_failed' => 'Retest failed',
+      'verified' => 'Verified',
     ),
     'lifecycle' => 
     array (
@@ -3455,6 +3842,9 @@ $.data.items',
         'accept_risk' => 'Accept risk',
         'close' => 'Close finding',
         'reopen' => 'Reopen finding',
+        'ready_for_retest' => 'Move to ready for retest',
+        'retest_failed' => 'Mark retest failed',
+        'verify' => 'Verify fix',
       ),
     ),
     'evidence_types' => 
@@ -3469,6 +3859,78 @@ $.data.items',
       'http' => 'HTTP evidence',
       'log' => 'Log excerpt',
       'contract' => 'Contract evidence',
+      'retest' => 'Retest evidence',
+    ),
+    'accepted_risk_expires_at' => 'Accepted risk expiry',
+    'accepted_risk_expires_at_help' => 'For accepted-risk findings, define how long the risk can remain accepted.',
+    'accepted_risk_note' => 'Accepted risk justification',
+    'accepted_risk_note_placeholder' => 'Why is this risk temporarily acceptable, and with which mitigation?',
+    'ready_for_retest' => 'Ready for retest',
+    'retest_failed' => 'Retest failed',
+    'verified' => 'Verified',
+    'priority' => 'Priority',
+    'priorities' => 
+    array (
+      'low' => 'Low',
+      'medium' => 'Medium',
+      'high' => 'High',
+      'critical' => 'Critical',
+    ),
+    'owner' => 'Owner',
+    'unassigned' => 'Unassigned',
+    'all_owners' => 'All owners',
+    'due_date' => 'Due date',
+    'all_due_dates' => 'All due dates',
+    'only_overdue' => 'Only overdue',
+    'overdue' => 'Overdue',
+    'linked_release_gate' => 'Linked release gate',
+    'ownership' => 
+    array (
+      'title' => 'Ownership',
+    ),
+    'verification' => 
+    array (
+      'title' => 'QA verification',
+    ),
+    'verification_status' => 'Verification status',
+    'all_verification_statuses' => 'All verification statuses',
+    'verification_statuses' => 
+    array (
+      'pending' => 'Pending verification',
+      'ready_for_retest' => 'Ready for retest',
+      'retest_failed' => 'Retest failed',
+      'verified' => 'Verified',
+      'not_required' => 'Not required',
+    ),
+    'retest_required' => 'Retest required',
+    'retest_result' => 'Retest result',
+    'retest_results' => 
+    array (
+      'pending' => 'Pending',
+      'pass' => 'Pass',
+      'fail' => 'Fail',
+      'blocked' => 'Blocked',
+    ),
+    'fix_evidence_required' => 'Fix evidence required',
+    'verified_by' => 'Verified by',
+    'verified_at' => 'Verified at',
+    'last_retest_at' => 'Last retest at',
+    'retest_evidence' => 'Retest evidence',
+    'retest_evidence_present' => 'Retest evidence present',
+    'retest_evidence_missing' => 'Retest evidence missing',
+    'comments' => 'Finding comments',
+    'add_comment' => 'Add comment',
+    'comment_created' => 'Finding comment added.',
+    'comment_body' => 'Comment',
+    'comment_body_placeholder' => 'Add QA, developer, verification, retest or risk acceptance context.',
+    'no_comments' => 'No finding comments yet.',
+    'comment_types' => 
+    array (
+      'qa_note' => 'QA note',
+      'developer_note' => 'Developer note',
+      'verification_note' => 'Verification note',
+      'risk_acceptance_note' => 'Risk acceptance note',
+      'retest_note' => 'Retest note',
     ),
   ),
   'test_execution' => 
@@ -3626,11 +4088,15 @@ $.data.items',
       'test_suites_cases' => 'Test Suites & Test Cases',
       'findings_evidence' => 'Findings & Evidence',
       'contract_validation' => 'OpenAPI Contract Validation',
+      'contract_reality' => 'Contract Reality Check',
       'scans_snapshots' => 'Scan, Snapshot & Regression Evidence',
       'endpoint_inventory' => 'Endpoint Inventory',
+      'api_behavior' => 'API Behavior Map',
+      'evidence_graph' => 'Evidence Graph',
       'recommendations' => 'Recommendations',
       'appendix' => 'Appendix / Safety Notes',
       'release_gate' => 'QA Release Gate',
+      'blind_spots' => 'Blind Spot Summary',
     ),
     'section_help' => 
     array (
@@ -3641,8 +4107,11 @@ $.data.items',
       'test_suites_cases' => 'Suite and test case inventory.',
       'findings_evidence' => 'Open findings and optional evidence details.',
       'contract_validation' => 'Latest OpenAPI validation summary and mismatches.',
+      'contract_reality' => 'OpenAPI vs real API behavior, auth and undocumented response field mismatch summary.',
       'scans_snapshots' => 'Latest scan, snapshot and regression evidence.',
       'endpoint_inventory' => 'Endpoint table with risk, assertion and coverage state.',
+      'api_behavior' => 'Producer/consumer dependencies, destructive endpoints and suggested test sequences.',
+      'evidence_graph' => 'Audit-ready endpoint, finding and release evidence chains.',
       'recommendations' => 'Next actions generated from the current risk profile.',
       'appendix' => 'Safe-export and evidence interpretation notes.',
       'release_gate' => 'Saved release gate decision snapshot with status, blockers and warnings.',
@@ -4460,6 +4929,7 @@ $.data.items',
     'duration' => 'Duration',
     'endpoint_match' => 'Endpoint match',
     'notes' => 'Notes',
+    'total' => 'Total',
     'total_rows' => 'Total rows',
     'no_rows' => 'No Newman execution rows were found.',
     'confirm_import' => 'Import Newman results',
@@ -4540,7 +5010,6 @@ $.data.items',
       'critical' => 'Critical',
     ),
   ),
-
   'demo_project' => 
   array (
     'title' => 'Demo Project',
@@ -4579,4 +5048,453 @@ $.data.items',
       'monitor' => 'Scheduled monitor with alert-ready context',
     ),
   ),
+  'blind_spots' => 
+  array (
+    'title' => 'QA Blind Spots',
+    'short_title' => 'Blind Spots',
+    'heading' => 'QA Blind Spot Detector',
+    'intro' => 'This page shows which evidence is missing or stale before a responsible release decision can be made.',
+    'open' => 'Open blind spots',
+    'report_summary_title' => 'Blind Spot Summary',
+    'report_details_title' => 'Blind Spot Details',
+    'release_blocker' => 'Release blocker',
+    'no_items' => 'No QA blind spots were detected from the current evidence.',
+    'type' => 'Type',
+    'category' => 'Category',
+    'severity' => 'Severity',
+    'module' => 'Module',
+    'affected' => 'Affected item',
+    'reason' => 'Reason',
+    'suggested_action' => 'Suggested action',
+    'detected_at' => 'Detected at',
+    'summary' => 
+    array (
+      'title' => 'Summary',
+      'total' => 'Total blind spots',
+      'critical_blind_spots' => 'Critical blind spots',
+      'high_blind_spots' => 'High blind spots',
+      'stale_evidence' => 'Stale evidence',
+      'untested_endpoints' => 'Untested endpoints',
+      'unverified_fixes' => 'Unverified fixes',
+      'expiring_accepted_risks' => 'Accepted risk expiry issues',
+      'release_blockers' => 'Release-blocking blind spots',
+    ),
+    'filters' => 
+    array (
+      'title' => 'Filters',
+      'all_severities' => 'All severities',
+      'all_categories' => 'All categories',
+      'all_modules' => 'All modules',
+      'only_release_blockers' => 'Only release blockers',
+    ),
+    'table' => 
+    array (
+      'title' => 'Detected blind spots',
+    ),
+    'severities' => 
+    array (
+      'critical' => 'Critical',
+      'high' => 'High',
+      'medium' => 'Medium',
+      'low' => 'Low',
+    ),
+    'categories' => 
+    array (
+      'untested_endpoint' => 'Untested endpoint',
+      'missing_assertion' => 'Missing assertion',
+      'missing_auth_comparison' => 'Missing auth comparison',
+      'unverified_fix' => 'Unverified fix',
+      'risk_without_expiry' => 'Accepted risk without expiry',
+      'expired_accepted_risk' => 'Expired accepted risk',
+      'stale_evidence' => 'Stale evidence',
+      'missing_report_context' => 'Missing report context',
+    ),
+    'modules' => 
+    array (
+      'endpoints' => 'Endpoints',
+      'assertions' => 'Assertions',
+      'auth' => 'Auth',
+      'findings' => 'Findings',
+      'release' => 'Release',
+    ),
+    'types' => 
+    array (
+      'endpoint_without_scan' => 'Endpoint without scan',
+      'endpoint_without_assertion' => 'Endpoint without assertion',
+      'auth_endpoint_without_no_auth_comparison' => 'Auth endpoint without no-auth comparison',
+      'fixed_finding_without_retest' => 'Fixed finding without retest evidence',
+      'accepted_risk_without_expiry' => 'Accepted risk without expiry',
+      'accepted_risk_expired' => 'Expired accepted risk',
+      'accepted_risk_expiring' => 'Accepted risk expiring soon',
+      'stale_scan_evidence' => 'Stale scan evidence',
+      'release_without_recent_report' => 'Release without recent report',
+    ),
+    'reasons' => 
+    array (
+      'endpoint_without_scan' => 'The endpoint is in the inventory, but it has no scan result evidence.',
+      'endpoint_without_assertion' => 'The endpoint has no active effective assertion rule.',
+      'auth_endpoint_without_no_auth_comparison' => 'The auth-required endpoint has no stored no-auth comparison evidence.',
+      'fixed_finding_without_retest' => 'The finding is Fixed, but no retest or verification evidence is attached.',
+      'accepted_risk_without_expiry' => 'The accepted risk is not time-boxed with an expiry date.',
+      'accepted_risk_expired' => 'The accepted risk expired on :date.',
+      'accepted_risk_expiring' => 'The accepted risk expires soon: :date.',
+      'stale_scan_evidence' => 'The latest scan evidence is older than :days days.',
+      'release_without_recent_report_missing' => 'No release gate / release report snapshot has been saved for the project yet.',
+      'release_without_recent_report_stale' => 'The latest release report is older than :days days.',
+    ),
+    'actions' => 
+    array (
+      'endpoint_without_scan' => 'Run a scan/probe and store fresh evidence.',
+      'endpoint_without_assertion' => 'Add at least one baseline assertion rule.',
+      'auth_endpoint_without_no_auth_comparison' => 'Run a no-auth comparison scan to prove the auth boundary.',
+      'fixed_finding_without_retest' => 'Attach retest evidence or verify the fix.',
+      'accepted_risk_without_expiry' => 'Add an accepted risk expiry date and justification.',
+      'accepted_risk_expired' => 'Renew, close, or reopen the risk.',
+      'accepted_risk_expiring' => 'Review whether the risk is still acceptable for the release scope.',
+      'stale_scan_evidence' => 'Run a fresh scan before the release decision.',
+      'release_without_recent_report' => 'Generate a fresh release readiness / release gate report.',
+    ),
+  ),
+  'risk_acceptances' => 
+  array (
+    'title' => 'Risk Acceptance Ledger',
+    'short_title' => 'Risk Ledger',
+    'heading' => 'Risk Acceptance Ledger',
+    'intro' => 'Track every accepted risk as a decision record with owner, justification, scope, expiry and release impact. Accepted risk is no longer only a finding status; it is audit evidence.',
+    'panel_title' => 'Risk acceptance',
+    'open_ledger' => 'Open ledger',
+    'accept_risk' => 'Accept risk',
+    'created' => 'Risk acceptance recorded.',
+    'updated' => 'Risk acceptance updated.',
+    'lifecycle_note' => 'Risk acceptance #:id recorded in the ledger.',
+    'no_items' => 'No risk acceptances match the current filters.',
+    'no_finding_items' => 'No risk acceptance has been recorded for this finding yet.',
+    'table_title' => 'Accepted risks',
+    'accepted_by' => 'Accepted by',
+    'accepted_at' => 'Accepted at',
+    'accepted_until' => 'Accepted until',
+    'accepted_until_help' => 'Use an expiry date whenever possible. Accepted risks without expiry remain warnings.',
+    'reason' => 'Reason',
+    'reason_placeholder' => 'Explain why this risk is accepted for the current release.',
+    'business_justification' => 'Business justification',
+    'mitigation_note' => 'Mitigation note',
+    'evidence_requirement' => 'Evidence requirement',
+    'release_scope' => 'Release scope',
+    'expiry_action' => 'Expiry action',
+    'expiry_filter' => 'Expiry filter',
+    'active' => 'Active accepted risks',
+    'expired' => 'Expired accepted risks',
+    'without_expiry' => 'Without expiry',
+    'expiring_soon' => 'Expiring soon',
+    'report_summary_title' => 'Risk Acceptance Ledger Summary',
+    'filters' => 
+    array (
+      'title' => 'Ledger filters',
+      'all_severities' => 'All severities',
+    ),
+    'metrics' => 
+    array (
+      'active' => 'Active',
+      'high_or_critical' => 'High / critical',
+      'without_expiry' => 'Without expiry',
+      'expiring_soon' => 'Expiring soon',
+      'expired' => 'Expired',
+      'total' => 'Total',
+    ),
+    'statuses' => 
+    array (
+      'active' => 'Active',
+      'expired' => 'Expired',
+      'renewed' => 'Renewed',
+      'revoked' => 'Revoked',
+    ),
+    'expiry_actions' => 
+    array (
+      'review' => 'Review on expiry',
+      'reopen_finding' => 'Reopen finding on expiry',
+      'block_release' => 'Block release on expiry',
+      'renew_or_close' => 'Renew or close before expiry',
+    ),
+  ),
+
+  'release_decisions' => 
+  array (
+    'title' => 'Release Decision Room',
+    'short_title' => 'Decision Room',
+    'heading' => 'Release Decision Room',
+    'intro' => 'Finalize a Go / No-Go / Conditional Go decision from the current release readiness, blockers, warnings, blind spots, accepted risks and evidence chain.',
+    'created' => 'Release decision package saved.',
+    'package_title' => 'Release Decision Package',
+    'recommended_decision' => 'Recommended decision',
+    'finalize_title' => 'Finalize release decision',
+    'finalize_button' => 'Finalize decision package',
+    'latest_decision' => 'Latest decision',
+    'no_decisions' => 'No release decision package has been saved yet.',
+    'history' => 'Decision history',
+    'decision_inputs' => 'Decision inputs',
+    'evidence_chain' => 'Evidence chain',
+    'finding_state_snapshot' => 'Finding state snapshot',
+    'back_to_room' => 'Back to Decision Room',
+    'release_name' => 'Release name',
+    'target_environment' => 'Target environment',
+    'decision_status' => 'Decision status',
+    'decision_owner' => 'Decision owner',
+    'decision_timestamp' => 'Decision timestamp',
+    'decision_notes' => 'Decision notes',
+    'decision_notes_placeholder' => 'Explain why this release is approved, blocked, conditional, or still waiting for evidence.',
+    'release_score' => 'Release score',
+    'blockers' => 'Blockers',
+    'warnings' => 'Warnings',
+    'blind_spots' => 'Blind spots',
+    'accepted_risks' => 'Accepted risks',
+    'latest_scan' => 'Latest scan',
+    'latest_snapshot' => 'Latest snapshot',
+    'latest_compare' => 'Latest compare',
+    'latest_contract' => 'Latest contract validation',
+    'latest_gate' => 'Latest release gate',
+    'package_checksum' => 'Package checksum',
+    'pending' => 'Pending',
+    'no_blockers' => 'No release blockers are currently reported.',
+    'no_warnings' => 'No warnings are currently reported.',
+    'statuses' => 
+    array (
+      'go' => 'Go',
+      'no_go' => 'No-Go',
+      'conditional_go' => 'Conditional Go',
+      'pending_evidence' => 'Pending evidence',
+      'blocked' => 'Blocked',
+    ),
+  ),
+  'report_versions' => 
+  array (
+    'title' => 'Report Versioning & Approval',
+    'short_title' => 'Report approvals',
+    'detail_title' => 'Report version',
+    'intro' => 'Create reviewable report versions with checksum, source evidence snapshot and approval status.',
+    'detail_intro' => 'This report version is a saved decision object, not only a downloaded file.',
+    'report_center_help' => 'Save a report version before customer handoff or release decision approval.',
+    'open_history' => 'Open report history',
+    'history' => 'Report history',
+    'empty' => 'No report versions have been saved yet.',
+    'create_draft' => 'Create report draft',
+    'create_technical_draft' => 'Create technical report draft',
+    'manage_versions' => 'Manage versions',
+    'title_placeholder' => 'Optional report title',
+    'report_type' => 'Report type',
+    'checksum' => 'Checksum',
+    'generated_by' => 'Generated by',
+    'generated_at' => 'Generated at',
+    'reviewed_at' => 'Reviewed at',
+    'approved_by' => 'Approved by',
+    'latest_approved' => 'Latest approved report',
+    'approved_at' => 'Approved at',
+    'archived_at' => 'Archived at',
+    'approval' => 'Approval',
+    'sources' => 'Source evidence snapshot',
+    'source_scans' => 'Source scans',
+    'source_snapshots' => 'Source snapshots',
+    'source_compares' => 'Source compares',
+    'source_findings' => 'Finding state rows',
+    'source_gates' => 'Release gates',
+    'source_decisions' => 'Release decisions',
+    'source_evidence' => 'Evidence attachments',
+    'markdown_preview' => 'Markdown preview',
+    'export_actions' => 'Export formats',
+    'workflow_actions' => 'Review workflow',
+    'archived_note' => 'This report version is archived.',
+    'mark_reviewed' => 'Mark reviewed',
+    'approve' => 'Approve report',
+    'archive' => 'Archive',
+    'created' => 'Report version created.',
+    'reviewed' => 'Report version marked as reviewed.',
+    'approved' => 'Report version approved.',
+    'archived' => 'Report version archived.',
+    'default_titles' => 
+    array (
+      'executive' => 'Executive release report',
+      'technical' => 'Technical QA evidence report',
+      'release_readiness' => 'Release readiness report',
+      'full_project' => 'Full project QA report',
+    ),
+    'types' => 
+    array (
+      'executive' => 'Executive report',
+      'technical' => 'Technical report',
+      'release_readiness' => 'Release readiness report',
+      'full_project' => 'Full project report',
+    ),
+    'statuses' => 
+    array (
+      'draft' => 'Draft',
+      'reviewed' => 'Reviewed',
+      'approved' => 'Approved',
+      'archived' => 'Archived',
+    ),
+  ),
+  'client_portal' => 
+  array (
+    'title' => 'Client Audit Portal',
+    'short_title' => 'Client Portal',
+    'public_title' => 'Client Audit Portal',
+    'intro' => 'Create read-only, token-based client or reviewer access to approved reports, release decisions, accepted risks, finding summaries and evidence packages.',
+    'public_intro' => 'This limited portal shows approved release evidence and the current client-safe project snapshot. It does not expose settings, debug data, auth profiles or other projects.',
+    'header_subtitle' => 'Project-scoped client review portal',
+    'footer_credit' => 'Evidence-first API QA and release decision platform',
+    'create_access' => 'Create portal access',
+    'create_button' => 'Create portal link',
+    'active_links' => 'Portal links',
+    'empty' => 'No client portal links have been created yet.',
+    'new_link' => 'New portal link',
+    'open_portal' => 'Open portal',
+    'revoke' => 'Revoke',
+    'revoked' => 'Client portal access revoked.',
+    'created' => 'Client portal access created.',
+    'acknowledged' => 'Acknowledgement recorded.',
+    'label' => 'Label',
+    'contact_name' => 'Contact name',
+    'contact_email' => 'Contact e-mail',
+    'role' => 'Portal role',
+    'expires_at' => 'Expires at',
+    'last_viewed' => 'Last viewed',
+    'permissions' => 'Allowed client content',
+    'approved_reports' => 'Approved reports',
+    'current_snapshot' => 'Current client-safe release snapshot',
+    'latest_approved_report' => 'Latest approved report',
+    'latest_release_decision' => 'Latest release decision',
+    'handoff_ready' => 'Client handoff is ready',
+    'handoff_ready_help' => 'Approved evidence and current readiness data are available for client review.',
+    'handoff_gaps' => 'Client handoff gaps',
+    'approved_reports_hint' => 'Approve a report under Project → Report approvals to make it downloadable in this portal.',
+    'current_readiness_fallback' => 'No saved decision package yet; showing the current release readiness snapshot instead.',
+    'release_decisions' => 'Release decisions',
+    'accepted_risks' => 'Accepted risks',
+    'open_findings' => 'Open findings',
+    'finding_summary' => 'Finding summary',
+    'evidence_package' => 'Evidence package',
+    'evidence_package_intro' => 'Download a client-safe JSON summary or ZIP evidence package assembled from the selected project evidence.',
+    'download_summary' => 'Download JSON summary',
+    'download_package' => 'Download evidence ZIP',
+    'no_approved_reports' => 'No approved reports are available for client handoff yet.',
+    'no_accepted_risks' => 'No accepted risks are currently visible in this portal.',
+    'acknowledge' => 'Acknowledge',
+    'acknowledgements' => 'Acknowledgements',
+    'no_acknowledgements' => 'No client acknowledgements have been recorded yet.',
+    'roles' => 
+    array (
+      'client_viewer' => 'Client viewer',
+      'client_approver' => 'Client approver',
+      'reviewer' => 'External reviewer',
+    ),
+    'statuses' => 
+    array (
+      'active' => 'Active',
+      'revoked' => 'Revoked',
+    ),
+    'permission_labels' => 
+    array (
+      'reports' => 'Approved reports',
+      'release_decisions' => 'Release decisions',
+      'accepted_risks' => 'Accepted risk ledger',
+      'findings' => 'Finding summary',
+      'evidence_package' => 'Evidence package download',
+      'approve_reports' => 'Report acknowledgement',
+      'acknowledge_release' => 'Release decision acknowledgement',
+      'approve_risks' => 'Accepted risk acknowledgement',
+    ),
+    'gaps' => 
+    array (
+      'no_approved_reports' => 'No approved report is available for client handoff.',
+      'no_release_decision' => 'No saved release decision package is available.',
+      'no_scan_evidence' => 'No scan evidence is available yet.',
+      'release_blocking_blind_spots' => ':count release-blocking blind spot(s) still need a decision.',
+    ),
+    'acknowledgement_types' => 
+    array (
+      'report_approval' => 'Report acknowledgement',
+      'release_acknowledgement' => 'Release decision acknowledgement',
+      'risk_acceptance_acknowledgement' => 'Accepted risk acknowledgement',
+    ),
+  ),
+
+  'qa_cockpit' => 
+  array (
+    'title' => 'QA Cockpit',
+    'short_title' => 'QA Cockpit',
+    'subtitle' => 'Daily QA priority board for release blockers, evidence gaps, retest work and decision readiness.',
+    'priority_queue' => 'Today\'s QA priority queue',
+    'empty_priority_queue' => 'No urgent QA cockpit items are currently waiting for action.',
+    'empty_queue' => 'No items in this queue.',
+    'item' => 'Item',
+    'due_or_age' => 'Due / age',
+    'release_snapshot' => 'Release snapshot',
+    'top_blind_spots' => 'Top blind spots',
+    'no_blind_spots' => 'No blind spots detected for this project.',
+    'recent_risk_endpoints' => 'Recently changed high-risk endpoints',
+    'expires_on' => 'Expires on :date',
+    'no_expiry' => 'No expiry date set',
+    'days_old' => ':days day(s) old',
+    'metrics' => 
+    array (
+      'open_blockers' => 'Open blockers',
+      'fixes_waiting_for_retest' => 'Fixes waiting for retest',
+      'accepted_risks_expiring' => 'Expiring accepted risks',
+      'stale_scans' => 'Stale scans',
+      'stale_reports' => 'Stale reports',
+      'endpoints_without_evidence' => 'Endpoints without evidence',
+      'release_candidates_needing_decision' => 'Release candidates needing decision',
+      'monitor_alerts' => 'Monitor alerts',
+      'top_blind_spots' => 'Top blind spots',
+      'recent_risk_endpoints' => 'High-risk endpoints',
+    ),
+    'queues' => 
+    array (
+      'blockers' => 'Open blockers',
+      'fixes_waiting_for_retest' => 'Fixes waiting for retest',
+      'accepted_risks_expiring' => 'Accepted risks expiring soon',
+      'stale_scan_evidence' => 'Stale scan evidence',
+      'stale_reports' => 'Stale or missing approved reports',
+      'endpoints_without_evidence' => 'Endpoints without evidence',
+      'release_candidates_needing_decision' => 'Release candidates needing decision',
+      'monitor_alerts' => 'Monitor alerts needing triage',
+    ),
+    'kinds' => 
+    array (
+      'finding' => 'Finding',
+      'retest' => 'Retest',
+      'risk' => 'Risk',
+      'scan' => 'Scan evidence',
+      'report' => 'Report',
+      'endpoint' => 'Endpoint',
+      'release' => 'Release decision',
+      'monitor_alert' => 'Monitor alert',
+      'endpoint_risk' => 'Endpoint risk',
+    ),
+    'items' => 
+    array (
+      'no_scan_evidence' => 'No scan evidence exists yet',
+      'stale_scan_evidence' => 'Latest scan evidence is stale',
+      'no_approved_report' => 'No approved report is available',
+      'stale_approved_report' => 'Latest approved report is stale',
+      'endpoint_without_scan' => 'Endpoint has no scan evidence',
+      'endpoint_without_assertion' => 'Endpoint has no assertion rule',
+      'release_needs_decision' => 'Release evidence changed without a saved decision',
+      'monitor_alert' => 'Monitor alert needs triage',
+    ),
+    'actions' => 
+    array (
+      'run_safe_scan' => 'Run a safe scan and save fresh evidence.',
+      'approve_report' => 'Create or approve a client/release-ready report version.',
+    ),
+    'quick_actions' => 
+    array (
+      'title' => 'Quick actions',
+      'blind_spots' => 'Review blind spots',
+      'release_readiness' => 'Open release readiness',
+      'release_decision' => 'Open decision room',
+      'report_approvals' => 'Open report approvals',
+      'run_scan' => 'Run safe scan',
+      'findings' => 'Review findings',
+    ),
+  ),
+
 );

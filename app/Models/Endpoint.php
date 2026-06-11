@@ -46,6 +46,20 @@ class Endpoint extends Model
         self::RISK_LOW,
     ];
 
+    public const BEHAVIOR_ROLE_PRODUCER = 'producer';
+    public const BEHAVIOR_ROLE_CONSUMER = 'consumer';
+    public const BEHAVIOR_ROLE_PRODUCER_CONSUMER = 'producer_consumer';
+    public const BEHAVIOR_ROLE_DESTRUCTIVE = 'destructive';
+    public const BEHAVIOR_ROLE_REFERENCE = 'reference';
+
+    public const BEHAVIOR_ROLES = [
+        self::BEHAVIOR_ROLE_PRODUCER,
+        self::BEHAVIOR_ROLE_CONSUMER,
+        self::BEHAVIOR_ROLE_PRODUCER_CONSUMER,
+        self::BEHAVIOR_ROLE_DESTRUCTIVE,
+        self::BEHAVIOR_ROLE_REFERENCE,
+    ];
+
     protected $fillable = [
         'project_id',
         'environment_id',
@@ -61,6 +75,12 @@ class Endpoint extends Model
         'request_headers',
         'request_body_type',
         'request_body_preview',
+        'behavior_role',
+        'behavior_resource',
+        'destructive_action',
+        'auth_boundary',
+        'sequence_candidate',
+        'behavior_notes',
         'risk_level',
         'risk_reason',
         'qa_notes',
@@ -76,6 +96,9 @@ class Endpoint extends Model
             'excluded_from_scan' => 'boolean',
             'expected_status' => 'integer',
             'request_headers' => 'array',
+            'destructive_action' => 'boolean',
+            'auth_boundary' => 'boolean',
+            'sequence_candidate' => 'boolean',
         ];
     }
 
@@ -148,6 +171,16 @@ class Endpoint extends Model
         return $this->hasMany(EndpointPathParameter::class);
     }
 
+    public function producedBehaviorLinks(): HasMany
+    {
+        return $this->hasMany(EndpointBehaviorLink::class, 'producer_endpoint_id');
+    }
+
+    public function consumedBehaviorLinks(): HasMany
+    {
+        return $this->hasMany(EndpointBehaviorLink::class, 'consumer_endpoint_id');
+    }
+
     public function testCases(): HasMany
     {
         return $this->hasMany(TestCase::class);
@@ -183,6 +216,36 @@ class Endpoint extends Model
     public function getRiskLabelAttribute(): string
     {
         return __('messages.endpoints.risks.'.$this->risk_level);
+    }
+
+    public function getBehaviorRoleLabelAttribute(): string
+    {
+        return $this->behavior_role
+            ? __('messages.api_behavior.roles.'.$this->behavior_role)
+            : __('messages.api_behavior.roles.unknown');
+    }
+
+    public function getBehaviorSummaryAttribute(): string
+    {
+        $parts = [];
+
+        if ($this->behavior_role) {
+            $parts[] = $this->behavior_role_label;
+        }
+
+        if ($this->behavior_resource) {
+            $parts[] = $this->behavior_resource;
+        }
+
+        if ($this->destructive_action) {
+            $parts[] = __('messages.api_behavior.flags.destructive');
+        }
+
+        if ($this->auth_boundary) {
+            $parts[] = __('messages.api_behavior.flags.auth_boundary');
+        }
+
+        return $parts === [] ? __('messages.api_behavior.no_behavior_detected') : implode(' · ', $parts);
     }
 
     public function getRiskCssAttribute(): string

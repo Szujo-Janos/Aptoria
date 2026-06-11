@@ -6,9 +6,13 @@ use App\Models\ContractValidationResult;
 use App\Models\Endpoint;
 use App\Models\Finding;
 use App\Models\Project;
+use App\Models\ReleaseDecision;
 use App\Models\ScanResult;
 use App\Models\TestCase;
 use App\Services\AssertionEvaluationService;
+use App\Services\Behavior\ApiBehaviorMapService;
+use App\Services\Contracts\ContractRealityService;
+use App\Services\Evidence\EvidenceGraphService;
 use App\Services\Exports\ExportCreditService;
 use App\Services\Auth\AuthProfileRuntimeService;
 use App\Services\QaCoverageMatrixService;
@@ -28,28 +32,36 @@ class FullQaReportBuilderService
 
     public const SECTION_EXECUTIVE_SUMMARY = 'executive_summary';
     public const SECTION_RELEASE_READINESS = 'release_readiness';
+    public const SECTION_BLIND_SPOTS = 'blind_spots';
     public const SECTION_RELEASE_GATE = 'release_gate';
     public const SECTION_QA_COVERAGE = 'qa_coverage';
     public const SECTION_TEST_EXECUTION = 'test_execution';
     public const SECTION_TEST_SUITES_CASES = 'test_suites_cases';
     public const SECTION_FINDINGS_EVIDENCE = 'findings_evidence';
     public const SECTION_CONTRACT_VALIDATION = 'contract_validation';
+    public const SECTION_CONTRACT_REALITY = 'contract_reality';
     public const SECTION_SCANS_SNAPSHOTS = 'scans_snapshots';
     public const SECTION_ENDPOINT_INVENTORY = 'endpoint_inventory';
+    public const SECTION_API_BEHAVIOR = 'api_behavior';
+    public const SECTION_EVIDENCE_GRAPH = 'evidence_graph';
     public const SECTION_RECOMMENDATIONS = 'recommendations';
     public const SECTION_APPENDIX = 'appendix';
 
     public const SECTIONS = [
         self::SECTION_EXECUTIVE_SUMMARY,
         self::SECTION_RELEASE_READINESS,
+        self::SECTION_BLIND_SPOTS,
         self::SECTION_RELEASE_GATE,
         self::SECTION_QA_COVERAGE,
         self::SECTION_TEST_EXECUTION,
         self::SECTION_TEST_SUITES_CASES,
         self::SECTION_FINDINGS_EVIDENCE,
         self::SECTION_CONTRACT_VALIDATION,
+        self::SECTION_CONTRACT_REALITY,
         self::SECTION_SCANS_SNAPSHOTS,
         self::SECTION_ENDPOINT_INVENTORY,
+        self::SECTION_API_BEHAVIOR,
+        self::SECTION_EVIDENCE_GRAPH,
         self::SECTION_RECOMMENDATIONS,
         self::SECTION_APPENDIX,
     ];
@@ -113,7 +125,10 @@ class FullQaReportBuilderService
                 'sections' => [
                     self::SECTION_EXECUTIVE_SUMMARY,
                     self::SECTION_RELEASE_READINESS,
+                    self::SECTION_BLIND_SPOTS,
                     self::SECTION_RELEASE_GATE,
+                    self::SECTION_CONTRACT_REALITY,
+                    self::SECTION_EVIDENCE_GRAPH,
                     self::SECTION_RECOMMENDATIONS,
                     self::SECTION_APPENDIX,
                 ],
@@ -132,13 +147,17 @@ class FullQaReportBuilderService
                 'scope_notes' => __('messages.report_builder.profile_scope_notes.technical'),
                 'sections' => [
                     self::SECTION_RELEASE_READINESS,
+                    self::SECTION_BLIND_SPOTS,
                     self::SECTION_QA_COVERAGE,
                     self::SECTION_TEST_EXECUTION,
                     self::SECTION_TEST_SUITES_CASES,
                     self::SECTION_FINDINGS_EVIDENCE,
                     self::SECTION_CONTRACT_VALIDATION,
+                    self::SECTION_CONTRACT_REALITY,
                     self::SECTION_SCANS_SNAPSHOTS,
                     self::SECTION_ENDPOINT_INVENTORY,
+                    self::SECTION_API_BEHAVIOR,
+                    self::SECTION_EVIDENCE_GRAPH,
                     self::SECTION_RECOMMENDATIONS,
                     self::SECTION_APPENDIX,
                 ],
@@ -166,6 +185,8 @@ class FullQaReportBuilderService
             'endpoints.assertionRules',
             'endpoints.testCases.latestResult',
             'endpoints.findings.evidence.capturedBy',
+            'endpoints.producedBehaviorLinks.consumerEndpoint',
+            'endpoints.consumedBehaviorLinks.producerEndpoint',
             'testSuites.testCases.endpoint',
             'testCases.testSuite',
             'testCases.endpoint',
@@ -180,9 +201,15 @@ class FullQaReportBuilderService
             'findings.testCase',
             'findings.evidence.capturedBy',
             'findings.lifecycleChangedBy',
+            'findings.owner',
+            'findings.verifiedBy',
+            'findings.linkedReleaseGate',
+            'findings.comments.user',
             'qaReleaseGates',
+            'latestReleaseDecision.owner',
+            'latestApprovedReportVersion.approvedBy',
         ]);
-        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates']);
+        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates', 'releaseDecisions']);
 
         $sections = $this->selectedSections($options['sections'] ?? self::defaultSections());
         $summary = $this->releaseReadiness->summarize($project);
@@ -192,6 +219,11 @@ class FullQaReportBuilderService
         $latestSnapshot = $project->snapshots()->with('environment')->latest()->first();
         $latestCompare = $project->compareRuns()->with(['snapshotA', 'snapshotB'])->latest()->first();
         $latestReleaseGate = $project->qaReleaseGates()->latest()->first();
+        $latestReleaseDecision = $project->latestReleaseDecision;
+        $latestApprovedReport = $project->latestApprovedReportVersion;
+        $behaviorMap = app(ApiBehaviorMapService::class)->summarize($project);
+        $contractReality = app(ContractRealityService::class)->summarize($project, $latestContract);
+        $evidenceGraph = app(EvidenceGraphService::class)->summarize($project);
 
         $lines = [];
         $lines[] = '# '.$this->md((string) ($options['title'] ?? __('messages.report_builder.default_title')));
@@ -208,6 +240,9 @@ class FullQaReportBuilderService
         $lines[] = '**Release decision:** '.$this->md($this->decisionLabel((string) ($options['decision'] ?? 'draft')));
         $lines[] = '**Generated:** '.now()->format('Y-m-d H:i:s');
         $lines[] = '**Aptoria version:** '.config('aptoria.version');
+        if ($latestApprovedReport) {
+            $lines[] = '**Latest approved report:** #'.$latestApprovedReport->id.' '.$this->md($latestApprovedReport->title).' · checksum `'.$latestApprovedReport->short_checksum.'`';
+        }
         $lines[] = '';
 
         $scopeNotes = trim((string) ($options['scope_notes'] ?? ''));
@@ -219,11 +254,16 @@ class FullQaReportBuilderService
         }
 
         if (in_array(self::SECTION_EXECUTIVE_SUMMARY, $sections, true)) {
-            $this->appendExecutiveSummary($lines, $project, $summary, $coverage['summary']);
+            $this->appendExecutiveSummary($lines, $project, $summary, $coverage['summary'], $latestReleaseDecision);
         }
 
         if (in_array(self::SECTION_RELEASE_READINESS, $sections, true)) {
             $this->appendReleaseReadiness($lines, $summary);
+            $this->appendReleaseDecision($lines, $latestReleaseDecision);
+        }
+
+        if (in_array(self::SECTION_BLIND_SPOTS, $sections, true)) {
+            $this->appendBlindSpotSummary($lines, $summary['blind_spots'], (bool) ($options['include_technical_details'] ?? false), (int) ($options['finding_limit'] ?? 50));
         }
 
         if (in_array(self::SECTION_RELEASE_GATE, $sections, true)) {
@@ -255,6 +295,10 @@ class FullQaReportBuilderService
             $this->appendContractValidation($lines, $latestContract, (int) ($options['contract_result_limit'] ?? 50));
         }
 
+        if (in_array(self::SECTION_CONTRACT_REALITY, $sections, true)) {
+            $this->appendContractReality($lines, $contractReality, (int) ($options['contract_result_limit'] ?? 50));
+        }
+
         if (in_array(self::SECTION_SCANS_SNAPSHOTS, $sections, true)) {
             $this->appendScansSnapshots($lines, $project, $latestScan, $latestSnapshot, $latestCompare);
         }
@@ -267,6 +311,14 @@ class FullQaReportBuilderService
                 (bool) ($options['problem_endpoints_only'] ?? false),
                 (int) ($options['endpoint_limit'] ?? 50)
             );
+        }
+
+        if (in_array(self::SECTION_API_BEHAVIOR, $sections, true)) {
+            $this->appendApiBehaviorMap($lines, $behaviorMap, (int) ($options['endpoint_limit'] ?? 50));
+        }
+
+        if (in_array(self::SECTION_EVIDENCE_GRAPH, $sections, true)) {
+            $this->appendEvidenceGraphSummary($lines, $evidenceGraph, (int) ($options['endpoint_limit'] ?? 50), (int) ($options['finding_limit'] ?? 50));
         }
 
         if ((bool) ($options['include_technical_details'] ?? false)) {
@@ -298,7 +350,7 @@ class FullQaReportBuilderService
     }
 
     /** @param array<int, string> $lines @param array<string, mixed> $summary @param array<string, mixed> $coverageSummary */
-    private function appendExecutiveSummary(array &$lines, Project $project, array $summary, array $coverageSummary): void
+    private function appendExecutiveSummary(array &$lines, Project $project, array $summary, array $coverageSummary, ?ReleaseDecision $latestReleaseDecision = null): void
     {
         $lines[] = '## Executive Summary';
         $lines[] = '';
@@ -313,10 +365,22 @@ class FullQaReportBuilderService
         $lines[] = '| Open findings | '.$summary['finding_counts']['open'].' |';
         $lines[] = '| Reopened findings | '.($summary['finding_counts']['reopened'] ?? 0).' |';
         $lines[] = '| Fixed findings | '.($summary['finding_counts']['fixed'] ?? 0).' |';
+        $lines[] = '| Fixed but unverified | '.($summary['finding_counts']['fixed_unverified'] ?? 0).' |';
+        $lines[] = '| Ready for retest | '.($summary['finding_counts']['ready_for_retest'] ?? 0).' |';
+        $lines[] = '| Retest failed | '.($summary['finding_counts']['retest_failed'] ?? 0).' |';
+        $lines[] = '| Verified findings | '.($summary['finding_counts']['verified'] ?? 0).' |';
+        $lines[] = '| Overdue findings | '.($summary['finding_counts']['overdue'] ?? 0).' |';
         $lines[] = '| False positives | '.($summary['finding_counts']['false_positive'] ?? 0).' |';
         $lines[] = '| Accepted risks | '.($summary['finding_counts']['accepted_risk'] ?? 0).' |';
+        $lines[] = '| Active risk acceptances | '.($summary['risk_acceptances']['summary']['active'] ?? 0).' |';
+        $lines[] = '| Expired risk acceptances | '.($summary['risk_acceptances']['summary']['expired'] ?? 0).' |';
+        $lines[] = '| Accepted risks without expiry | '.($summary['risk_acceptances']['summary']['without_expiry'] ?? 0).' |';
         $lines[] = '| Release readiness | '.$this->md($summary['label']).' |';
         $lines[] = '| Release score | '.$summary['score'].' / 100 |';
+        $lines[] = '| Latest release decision | '.$this->md($latestReleaseDecision?->status_label ?: 'n/a').' |';
+        $lines[] = '| Release decision packages | '.$project->release_decisions_count.' |';
+        $lines[] = '| Blind spots | '.($summary['blind_spots']['summary']['total'] ?? 0).' |';
+        $lines[] = '| Release-blocking blind spots | '.($summary['blind_spots']['summary']['release_blockers'] ?? 0).' |';
         $lines[] = '| QA coverage | '.$coverageSummary['coverage_percent'].'% |';
         $lines[] = '| Blocked endpoints | '.$coverageSummary['blocked'].' |';
         $lines[] = '| Test execution coverage | '.$summary['test_execution']['execution_percent'].'% |';
@@ -352,14 +416,57 @@ class FullQaReportBuilderService
         $lines[] = '| Grade | '.$this->md($summary['grade']).' |';
         $lines[] = '| Blocking issues | '.count($summary['blocking_issues']).' |';
         $lines[] = '| Warnings | '.count($summary['warnings']).' |';
+        $lines[] = '| Blind spots | '.($summary['blind_spots']['summary']['total'] ?? 0).' |';
+        $lines[] = '| Release-blocking blind spots | '.($summary['blind_spots']['summary']['release_blockers'] ?? 0).' |';
         $lines[] = '';
 
         $this->appendFindingLifecycleStatusSummary($lines, $summary['finding_counts']);
+        $this->appendFindingVerificationSummary($lines, $summary['finding_counts']);
+        $this->appendRiskAcceptanceSummary($lines, $summary['risk_acceptances'] ?? []);
 
         $this->appendIssueList($lines, 'Blocking Issues', $summary['blocking_issues']);
         $this->appendIssueList($lines, 'Warnings', $summary['warnings']);
     }
 
+
+
+    /** @param array<int, string> $lines @param array<string, mixed> $blindSpots */
+    private function appendBlindSpotSummary(array &$lines, array $blindSpots, bool $includeDetails, int $limit): void
+    {
+        $counts = $blindSpots['summary'] ?? [];
+        $lines[] = '## Blind Spot Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Total blind spots | '.($counts['total'] ?? 0).' |';
+        $lines[] = '| Critical | '.($counts['critical'] ?? 0).' |';
+        $lines[] = '| High | '.($counts['high'] ?? 0).' |';
+        $lines[] = '| Medium | '.($counts['medium'] ?? 0).' |';
+        $lines[] = '| Release blockers | '.($counts['release_blockers'] ?? 0).' |';
+        $lines[] = '| Untested endpoints | '.($counts['untested_endpoints'] ?? 0).' |';
+        $lines[] = '| Missing assertions | '.($counts['missing_assertions'] ?? 0).' |';
+        $lines[] = '| Missing auth comparisons | '.($counts['missing_auth_comparisons'] ?? 0).' |';
+        $lines[] = '| Unverified fixes | '.($counts['unverified_fixes'] ?? 0).' |';
+        $lines[] = '| Risk expiry issues | '.(($counts['risk_without_expiry'] ?? 0) + ($counts['expired_accepted_risks'] ?? 0)).' |';
+        $lines[] = '| Stale evidence | '.($counts['stale_evidence'] ?? 0).' |';
+        $lines[] = '| Missing recent reports | '.($counts['missing_recent_reports'] ?? 0).' |';
+        $lines[] = '';
+
+        $items = $blindSpots['items'] ?? collect();
+        if (! $items instanceof Collection || $items->isEmpty()) {
+            $lines[] = 'No QA blind spots were detected.';
+            $lines[] = '';
+            return;
+        }
+
+        $rows = $includeDetails ? $items->take($this->limit($limit)) : $items->take(5);
+        $lines[] = '| Severity | Type | Module | Related | Release blocker | Reason | Suggested action |';
+        $lines[] = '|---|---|---|---|---|---|---|';
+        foreach ($rows as $item) {
+            $lines[] = '| '.$this->md((string) $item['severity_label']).' | '.$this->md((string) $item['type_label']).' | '.$this->md((string) $item['module_label']).' | '.$this->md((string) $item['related_label']).' | '.((bool) $item['release_blocker'] ? 'yes' : 'no').' | '.$this->md((string) $item['reason']).' | '.$this->md((string) $item['suggested_action']).' |';
+        }
+        $lines[] = '';
+    }
 
     /** @param array<int, string> $lines */
     private function appendReleaseGate(array &$lines, $latestReleaseGate): void
@@ -385,6 +492,37 @@ class FullQaReportBuilderService
         $lines[] = '| Test execution | '.$latestReleaseGate->test_execution_percent.'% |';
         $lines[] = '| Created | '.$this->dateValue($latestReleaseGate->created_at).' |';
         $lines[] = '';
+    }
+
+    /** @param array<int, string> $lines */
+    private function appendReleaseDecision(array &$lines, ?ReleaseDecision $latestReleaseDecision): void
+    {
+        $lines[] = '## Release Decision';
+        $lines[] = '';
+        if (! $latestReleaseDecision) {
+            $lines[] = 'No finalized release decision package has been saved yet.';
+            $lines[] = '';
+
+            return;
+        }
+
+        $lines[] = '| Metric | Value |';
+        $lines[] = '|---|---|';
+        $lines[] = '| Decision | '.$this->md($latestReleaseDecision->status_label).' |';
+        $lines[] = '| Release | '.$this->md($latestReleaseDecision->release_name ?: 'n/a').' |';
+        $lines[] = '| Owner | '.$this->md($latestReleaseDecision->owner?->name ?: 'n/a').' |';
+        $lines[] = '| Timestamp | '.$this->md($latestReleaseDecision->decided_at?->format('Y-m-d H:i:s') ?: 'pending').' |';
+        $lines[] = '| Score | '.$latestReleaseDecision->release_score.' / 100 |';
+        $lines[] = '| Blockers | '.$latestReleaseDecision->blocker_count.' |';
+        $lines[] = '| Warnings | '.$latestReleaseDecision->warning_count.' |';
+        $lines[] = '| Accepted risks | '.$latestReleaseDecision->accepted_risk_count.' |';
+        $lines[] = '| Blind spots | '.$latestReleaseDecision->blind_spot_count.' |';
+        $lines[] = '| Package checksum | '.$this->md($latestReleaseDecision->package_checksum ?: 'n/a').' |';
+        $lines[] = '';
+        if ($latestReleaseDecision->decision_notes) {
+            $lines[] = '**Decision notes:** '.$this->md($latestReleaseDecision->decision_notes);
+            $lines[] = '';
+        }
     }
 
     /** @param array<int, string> $lines @param array<string, mixed> $coverage */
@@ -524,13 +662,14 @@ class FullQaReportBuilderService
             return;
         }
 
-        $lines[] = '| Severity | Status | Source | Finding | Endpoint | Test Case | Last lifecycle change | Evidence |';
-        $lines[] = '|---|---|---|---|---|---|---|---:|';
+        $lines[] = '| Severity | Status | Verification | Owner | Due | Source | Finding | Endpoint | Test Case | Evidence |';
+        $lines[] = '|---|---|---|---|---|---|---|---|---|---:|';
         foreach ($openFindings as $finding) {
             $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
             $testCase = $finding->testCase?->title ?: 'n/a';
-            $lastLifecycleChange = $finding->lifecycle_changed_at ? $finding->lifecycle_changed_at->format('Y-m-d H:i') : 'n/a';
-            $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->source_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$this->md($testCase).' | '.$this->md($lastLifecycleChange).' | '.$finding->evidence->count().' |';
+            $owner = $finding->owner?->name ?: __('messages.findings.unassigned');
+            $due = $finding->due_date ? $finding->due_date->format('Y-m-d') : 'n/a';
+            $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->verification_status_label).' | '.$this->md($owner).' | '.$this->md($due).($finding->is_overdue ? ' overdue' : '').' | '.$this->md($finding->source_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$this->md($testCase).' | '.$finding->evidence->count().' |';
         }
         $lines[] = '';
 
@@ -543,6 +682,10 @@ class FullQaReportBuilderService
         foreach ($openFindings as $finding) {
             $lines[] = '#### '.$this->md($finding->title);
             $lines[] = '';
+            $lines[] = '- **Owner:** '.$this->md($finding->owner?->name ?: __('messages.findings.unassigned'));
+            $lines[] = '- **Due date:** '.$this->md($finding->due_date ? $finding->due_date->format('Y-m-d H:i') : 'n/a');
+            $lines[] = '- **Verification:** '.$this->md($finding->verification_status_label.' / '.$finding->retest_result_label);
+            $lines[] = '- **Verified by:** '.$this->md($finding->verifiedBy?->name ?: 'n/a');
             $lines[] = '- **Expected:** '.$this->md($finding->expected_result ?: 'n/a');
             $lines[] = '- **Actual:** '.$this->md($finding->actual_result ?: 'n/a');
             $lines[] = '- **Recommendation:** '.$this->md($finding->recommendation ?: 'n/a');
@@ -609,6 +752,51 @@ class FullQaReportBuilderService
         $lines[] = '';
     }
 
+    /** @param array<int, string> $lines @param array<string, mixed> $contractReality */
+    private function appendContractReality(array &$lines, array $contractReality, int $limit): void
+    {
+        $lines[] = '## Contract Reality Check';
+        $lines[] = '';
+
+        if (! $contractReality['run']) {
+            $lines[] = __('messages.contract_reality.report_empty');
+            $lines[] = '';
+            return;
+        }
+
+        $counts = $contractReality['summary'] ?? [];
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Matches contract | '.($counts['matches_contract'] ?? 0).' |';
+        $lines[] = '| Contract drift | '.($counts['contract_drift'] ?? 0).' |';
+        $lines[] = '| Auth contract mismatch | '.($counts['auth_contract_mismatch'] ?? 0).' |';
+        $lines[] = '| Undocumented response fields | '.($counts['undocumented_response'] ?? 0).' |';
+        $lines[] = '| Missing documented endpoints | '.($counts['missing_documented_endpoint'] ?? 0).' |';
+        $lines[] = '| Undocumented endpoints | '.($counts['undocumented_endpoint'] ?? 0).' |';
+        $lines[] = '| Breaking contract mismatches | '.($counts['breaking_contract_mismatch'] ?? 0).' |';
+        $lines[] = '';
+
+        $rows = $contractReality['rows'] ?? collect();
+        if (! $rows instanceof Collection || $rows->isEmpty()) {
+            return;
+        }
+
+        $problems = $rows->filter(fn (array $row): bool => in_array($row['status'], [ContractValidationResult::STATUS_FAIL, ContractValidationResult::STATUS_WARNING], true))->take($this->limit($limit));
+        if ($problems->isEmpty()) {
+            $lines[] = 'No Contract Reality mismatches were found.';
+            $lines[] = '';
+            return;
+        }
+
+        $lines[] = '| Reality type | Status | Severity | Endpoint | Message | Expected | Actual |';
+        $lines[] = '|---|---|---|---|---|---|---|';
+        foreach ($problems as $row) {
+            $endpoint = trim((string) (($row['method'] ?: '').' '.($row['path'] ?: '')));
+            $lines[] = '| '.$this->md((string) $row['reality_label']).' | '.$this->md((string) $row['status_label']).' | '.$this->md((string) $row['severity_label']).' | '.$this->md($endpoint ?: 'n/a').' | '.$this->md((string) $row['message']).' | '.$this->md((string) ($row['expected'] ?: 'n/a')).' | '.$this->md((string) ($row['actual'] ?: 'n/a')).' |';
+        }
+        $lines[] = '';
+    }
+
     /** @param array<int, string> $lines */
     private function appendScansSnapshots(array &$lines, Project $project, mixed $latestScan, mixed $latestSnapshot, mixed $latestCompare): void
     {
@@ -653,6 +841,48 @@ class FullQaReportBuilderService
             $lines[] = '| '.$this->md($endpoint->method).' | '.$this->md($endpoint->path).' | '.$this->md($auth).' | '.$this->md($analysis['final_label']).' | '.$this->md($latest?->status_code ?: 'n/a').' | '.$this->md($assertion['label']).' | '.$this->md($row['status_label']).' | '.$row['score'].' | '.$row['open_findings_count'].' |';
         }
         $lines[] = '';
+    }
+
+
+    /** @param array<int, string> $lines @param array<string, mixed> $behaviorMap */
+    private function appendApiBehaviorMap(array &$lines, array $behaviorMap, int $limit): void
+    {
+        $summary = $behaviorMap['summary'] ?? [];
+        $links = $behaviorMap['links'] ?? collect();
+        $sequences = $behaviorMap['sequences'] ?? collect();
+
+        $lines[] = '## API Behavior Map Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Endpoints | '.($summary['endpoints'] ?? 0).' |';
+        $lines[] = '| Producers | '.($summary['producers'] ?? 0).' |';
+        $lines[] = '| Consumers | '.($summary['consumers'] ?? 0).' |';
+        $lines[] = '| Dependencies | '.($summary['dependencies'] ?? 0).' |';
+        $lines[] = '| Destructive endpoints | '.($summary['destructive'] ?? 0).' |';
+        $lines[] = '| Auth boundaries | '.($summary['auth_boundaries'] ?? 0).' |';
+        $lines[] = '| Sequence candidates | '.($summary['sequence_candidates'] ?? 0).' |';
+        $lines[] = '';
+
+        if ($links instanceof Collection && $links->isNotEmpty()) {
+            $lines[] = '| Producer | Consumer | Resource | Dependency | Confidence | Suggested sequence |';
+            $lines[] = '|---|---|---|---|---:|---|';
+            foreach ($links->take($this->limit($limit)) as $link) {
+                $producer = $link->producerEndpoint ? $link->producerEndpoint->method.' '.$link->producerEndpoint->path : 'n/a';
+                $consumer = $link->consumerEndpoint ? $link->consumerEndpoint->method.' '.$link->consumerEndpoint->path : 'n/a';
+                $lines[] = '| '.$this->md($producer).' | '.$this->md($consumer).' | '.$this->md($link->resource_key).' | '.$this->md($link->dependency_type_label).' | '.$link->confidence.' | '.$this->md($link->suggested_sequence ?: 'n/a').' |';
+            }
+            $lines[] = '';
+        }
+
+        if ($sequences instanceof Collection && $sequences->isNotEmpty()) {
+            $lines[] = '### Suggested API call sequences';
+            $lines[] = '';
+            foreach ($sequences->take(10) as $sequence) {
+                $lines[] = '- **'.$this->md((string) $sequence['resource']).':** '.$this->md((string) $sequence['summary']);
+            }
+            $lines[] = '';
+        }
     }
 
     /** @param array<int, string> $lines */
@@ -717,6 +947,75 @@ class FullQaReportBuilderService
         $lines[] = '';
     }
 
+    /** @param array<int, string> $lines @param array<string, mixed> $graph */
+    private function appendEvidenceGraphSummary(array &$lines, array $graph, int $endpointLimit, int $findingLimit): void
+    {
+        $counts = $graph['summary'] ?? [];
+        $lines[] = '## Evidence Graph Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Endpoint evidence maps | '.($counts['endpoint_maps'] ?? 0).' |';
+        $lines[] = '| Scan results | '.($counts['scan_results'] ?? 0).' |';
+        $lines[] = '| Finding evidence items | '.($counts['finding_evidence'] ?? 0).' |';
+        $lines[] = '| Release gates | '.($counts['release_gates'] ?? 0).' |';
+        $lines[] = '| Release decisions | '.($counts['release_decisions'] ?? 0).' |';
+        $lines[] = '| Accepted risks | '.($counts['accepted_risks'] ?? 0).' |';
+        $lines[] = '| Blind spots | '.($counts['blind_spots'] ?? 0).' |';
+        $lines[] = '| Missing evidence links | '.($counts['missing_links'] ?? 0).' |';
+        $lines[] = '';
+
+        $release = $graph['release_graph'] ?? [];
+        $lines[] = '### Release Evidence Graph';
+        $lines[] = '';
+        $lines[] = '| Evidence node | Value |';
+        $lines[] = '|---|---|';
+        $lines[] = '| Latest scan | '.$this->md((string) (($release['latest_scan']->id ?? null) ?: 'n/a')).' |';
+        $lines[] = '| Latest snapshot | '.$this->md((string) (($release['latest_snapshot']->name ?? null) ?: 'n/a')).' |';
+        $lines[] = '| Latest compare | '.$this->md((string) (($release['latest_compare']->id ?? null) ?: 'n/a')).' |';
+        $lines[] = '| Latest release gate | '.$this->md((string) (($release['latest_gate']->release_name ?? null) ?: 'n/a')).' |';
+        $lines[] = '| Latest release decision | '.$this->md((string) (($release['latest_decision']->status_label ?? null) ?: 'n/a')).' |';
+        $lines[] = '';
+
+        $endpointMaps = $graph['endpoint_maps'] ?? collect();
+        if ($endpointMaps instanceof Collection && $endpointMaps->isNotEmpty()) {
+            $lines[] = '### Endpoint Evidence Map';
+            $lines[] = '';
+            $lines[] = '| Endpoint | Scan results | Assertions | Findings | Evidence | Missing links |';
+            $lines[] = '|---|---:|---:|---:|---:|---:|';
+            foreach ($endpointMaps->take($this->limit($endpointLimit)) as $map) {
+                $endpoint = $map['endpoint'];
+                $lines[] = '| '.$this->md($endpoint->method.' '.$endpoint->path).' | '.$map['scan_results_count'].' | '.$map['assertion_rules_count'].' | '.$map['findings_count'].' | '.$map['evidence_count'].' | '.$map['missing_links']->count().' |';
+            }
+            $lines[] = '';
+        }
+
+        $findingChains = $graph['finding_chains'] ?? collect();
+        if ($findingChains instanceof Collection && $findingChains->isNotEmpty()) {
+            $lines[] = '### Finding Evidence Chain';
+            $lines[] = '';
+            $lines[] = '| Finding | Status | Severity | Evidence | Retest evidence | Missing links |';
+            $lines[] = '|---|---|---|---:|---|---:|';
+            foreach ($findingChains->take($this->limit($findingLimit)) as $chain) {
+                $finding = $chain['finding'];
+                $lines[] = '| '.$this->md($finding->title).' | '.$this->md($finding->status_label).' | '.$this->md($finding->severity_label).' | '.$chain['evidence_count'].' | '.($chain['has_retest_evidence'] ? 'yes' : 'no').' | '.$chain['missing_links']->count().' |';
+            }
+            $lines[] = '';
+        }
+
+        $missing = $graph['missing_links'] ?? collect();
+        if ($missing instanceof Collection && $missing->isNotEmpty()) {
+            $lines[] = '### Missing Evidence Links';
+            $lines[] = '';
+            $lines[] = '| Scope | Related item | Missing link |';
+            $lines[] = '|---|---|---|';
+            foreach ($missing->take(25) as $item) {
+                $lines[] = '| '.$this->md($item['scope']).' | '.$this->md($item['related']).' | '.$this->md($item['missing']).' |';
+            }
+            $lines[] = '';
+        }
+    }
+
     /** @param array<int, string> $lines */
     private function appendAppendix(array &$lines): void
     {
@@ -743,6 +1042,51 @@ class FullQaReportBuilderService
             $lines[] = '| '.$this->md(__('messages.findings.statuses.'.$status)).' | '.($findingCounts['status_counts'][$status] ?? 0).' | '.$this->md($impact).' |';
         }
         $lines[] = '';
+    }
+
+
+    /** @param array<int, string> $lines @param array<string, mixed> $findingCounts */
+    private function appendFindingVerificationSummary(array &$lines, array $findingCounts): void
+    {
+        $lines[] = '### Finding Verification Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Ready for retest | '.($findingCounts['ready_for_retest'] ?? 0).' |';
+        $lines[] = '| Retest failed | '.($findingCounts['retest_failed'] ?? 0).' |';
+        $lines[] = '| Fixed but not verified | '.($findingCounts['fixed_unverified'] ?? 0).' |';
+        $lines[] = '| Verified | '.($findingCounts['verified'] ?? 0).' |';
+        $lines[] = '| Overdue | '.($findingCounts['overdue'] ?? 0).' |';
+        $lines[] = '| Missing required fix evidence | '.($findingCounts['fix_evidence_missing'] ?? 0).' |';
+        $lines[] = '';
+    }
+
+
+    /** @param array<int, string> $lines @param array<string, mixed> $riskAcceptances */
+    private function appendRiskAcceptanceSummary(array &$lines, array $riskAcceptances): void
+    {
+        $counts = $riskAcceptances['summary'] ?? [];
+        $lines[] = '### Risk Acceptance Ledger Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Total | '.($counts['total'] ?? 0).' |';
+        $lines[] = '| Active | '.($counts['active'] ?? 0).' |';
+        $lines[] = '| High or critical active | '.($counts['active_high_or_critical'] ?? 0).' |';
+        $lines[] = '| Without expiry | '.($counts['without_expiry'] ?? 0).' |';
+        $lines[] = '| Expiring soon | '.($counts['expiring_soon'] ?? 0).' |';
+        $lines[] = '| Expired | '.($counts['expired'] ?? 0).' |';
+        $lines[] = '';
+
+        $items = $riskAcceptances['active_items'] ?? collect();
+        if ($items instanceof Collection && $items->isNotEmpty()) {
+            $lines[] = '| Finding | Accepted until | Scope | Reason |';
+            $lines[] = '|---|---|---|---|';
+            foreach ($items->take(10) as $acceptance) {
+                $lines[] = '| '.$this->md((string) $acceptance->finding?->title).' | '.$this->md((string) ($acceptance->accepted_until?->format('Y-m-d') ?: 'n/a')).' | '.$this->md((string) ($acceptance->release_scope ?: 'n/a')).' | '.$this->md((string) $acceptance->reason).' |';
+            }
+            $lines[] = '';
+        }
     }
 
     /** @param array<int, string> $lines @param array<int, string> $items */

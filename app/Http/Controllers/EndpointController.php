@@ -66,7 +66,7 @@ class EndpointController extends Controller
     ): View
     {
         $this->ensureEndpointBelongsToProject($project, $endpoint);
-        $endpoint->load(['environment.authProfile', 'authProfile', 'project', 'latestScanResult.scanRun', 'testCases.testSuite', 'testCases.latestResult', 'contractValidationResults.run', 'findings.evidence']);
+        $endpoint->load(['environment.authProfile', 'authProfile', 'project', 'latestScanResult.scanRun', 'testCases.testSuite', 'testCases.latestResult', 'contractValidationResults.run', 'findings.evidence', 'producedBehaviorLinks.consumerEndpoint', 'consumedBehaviorLinks.producerEndpoint']);
         $riskAnalysis = $riskAnalyzer->analyze($endpoint, $endpoint->latestScanResult);
         $qaBugReport = $riskAnalyzer->buildQaBugReport($endpoint, $endpoint->latestScanResult, $riskAnalysis);
         $developerReviewSnippet = $riskAnalyzer->buildDeveloperReviewSnippet($endpoint, $endpoint->latestScanResult, $riskAnalysis);

@@ -6,6 +6,8 @@ use App\Http\Requests\FindingRequest;
 use App\Models\ContractValidationResult;
 use App\Models\Endpoint;
 use App\Models\Finding;
+use App\Models\QaReleaseGate;
+use App\Models\User;
 use App\Models\Project;
 use App\Models\ScanResult;
 use App\Models\ScanRun;
@@ -22,13 +24,19 @@ class FindingController extends Controller
         $status = (string) $request->query('status', 'open');
         $severity = (string) $request->query('severity', '');
         $source = (string) $request->query('source', '');
+        $verification = (string) $request->query('verification', '');
+        $owner = (string) $request->query('owner', '');
+        $due = (string) $request->query('due', '');
 
         $findings = $project->findings()
-            ->with(['endpoint', 'testCase', 'scanRun', 'scanResult', 'contractValidationResult', 'evidence.capturedBy', 'lifecycleChangedBy'])
+            ->with(['endpoint', 'testCase', 'scanRun', 'scanResult', 'contractValidationResult', 'evidence.capturedBy', 'lifecycleChangedBy', 'owner', 'verifiedBy', 'linkedReleaseGate'])
             ->when($status === 'open', fn ($query) => $query->whereIn('status', Finding::OPEN_STATUSES))
             ->when($status !== '' && $status !== 'all' && $status !== 'open', fn ($query) => $query->where('status', $status))
             ->when($severity !== '', fn ($query) => $query->where('severity', $severity))
             ->when($source !== '', fn ($query) => $query->where('source', $source))
+            ->when($verification !== '', fn ($query) => $query->where('verification_status', $verification))
+            ->when($owner !== '', fn ($query) => $owner === 'unassigned' ? $query->whereNull('owner_user_id') : $query->where('owner_user_id', (int) $owner))
+            ->when($due === 'overdue', fn ($query) => $query->whereNotNull('due_date')->where('due_date', '<', now())->whereNotIn('verification_status', [Finding::VERIFICATION_VERIFIED, Finding::VERIFICATION_NOT_REQUIRED]))
             ->latest('detected_at')
             ->paginate($settings->integer('app.items_per_page', 25))
             ->withQueryString();
@@ -47,18 +55,23 @@ class FindingController extends Controller
             'accepted_risk' => (int) ($statusCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0),
             'false_positive' => (int) ($statusCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0),
             'reopened' => (int) ($statusCounts[Finding::STATUS_REOPENED] ?? 0),
+            'ready_for_retest' => (int) ($statusCounts[Finding::STATUS_READY_FOR_RETEST] ?? 0),
+            'retest_failed' => (int) ($statusCounts[Finding::STATUS_RETEST_FAILED] ?? 0),
+            'verified' => (int) ($statusCounts[Finding::STATUS_VERIFIED] ?? 0),
+            'overdue' => $project->findings()->whereNotNull('due_date')->where('due_date', '<', now())->whereNotIn('verification_status', [Finding::VERIFICATION_VERIFIED, Finding::VERIFICATION_NOT_REQUIRED])->count(),
             'status_counts' => collect(Finding::LIFECYCLE_STATUSES)->mapWithKeys(fn (string $rowStatus): array => [$rowStatus => (int) ($statusCounts[$rowStatus] ?? 0)])->all(),
         ];
+        $owners = User::query()->orderBy('name')->get();
 
-        return view('findings.index', compact('project', 'findings', 'summary', 'status', 'severity', 'source'));
+        return view('findings.index', compact('project', 'findings', 'summary', 'status', 'severity', 'source', 'verification', 'owner', 'due', 'owners'));
     }
 
     public function create(Project $project, Request $request): View
     {
         $finding = new Finding($this->prefill($project, $request));
-        $this->loadFormData($project);
+        $formOptions = $this->loadFormData($project);
 
-        return view('findings.create', compact('project', 'finding'));
+        return view('findings.create', array_merge(compact('project', 'finding'), $formOptions));
     }
 
     public function store(FindingRequest $request, Project $project): RedirectResponse
@@ -78,7 +91,7 @@ class FindingController extends Controller
     public function show(Project $project, Finding $finding): View
     {
         $this->ensureFindingBelongsToProject($project, $finding);
-        $finding->load(['endpoint', 'testCase.testSuite', 'scanRun', 'scanResult.scanRun', 'contractValidationResult.run', 'evidence.capturedBy', 'lifecycleEvents.user', 'lifecycleChangedBy']);
+        $finding->load(['endpoint', 'testCase.testSuite', 'scanRun', 'scanResult.scanRun', 'contractValidationResult.run', 'evidence.capturedBy', 'lifecycleEvents.user', 'lifecycleChangedBy', 'owner', 'verifiedBy', 'linkedReleaseGate', 'comments.user', 'riskAcceptances.acceptedBy', 'riskAcceptances.renewedFrom']);
 
         return view('findings.show', compact('project', 'finding'));
     }
@@ -86,9 +99,9 @@ class FindingController extends Controller
     public function edit(Project $project, Finding $finding): View
     {
         $this->ensureFindingBelongsToProject($project, $finding);
-        $this->loadFormData($project);
+        $formOptions = $this->loadFormData($project);
 
-        return view('findings.edit', compact('project', 'finding'));
+        return view('findings.edit', array_merge(compact('project', 'finding'), $formOptions));
     }
 
     public function update(FindingRequest $request, Project $project, Finding $finding): RedirectResponse
@@ -127,7 +140,7 @@ class FindingController extends Controller
             return back()->withErrors(['status' => __('messages.findings.lifecycle.invalid_transition')]);
         }
 
-        $finding->forceFill([
+        $transitionPayload = [
             'status' => $toStatus,
             'lifecycle_note' => $data['note'] ?? null,
             'lifecycle_changed_at' => now(),
@@ -135,7 +148,17 @@ class FindingController extends Controller
             'reopened_count' => $toStatus === Finding::STATUS_REOPENED && $fromStatus !== Finding::STATUS_REOPENED
                 ? ((int) $finding->reopened_count) + 1
                 : (int) $finding->reopened_count,
-        ])->save();
+        ];
+
+        if ($toStatus === Finding::STATUS_VERIFIED) {
+            $transitionPayload['verified_by_user_id'] = $request->user()?->id;
+            $transitionPayload['verified_at'] = now();
+            $transitionPayload['last_retest_at'] = now();
+        } elseif ($toStatus === Finding::STATUS_RETEST_FAILED) {
+            $transitionPayload['last_retest_at'] = now();
+        }
+
+        $finding->forceFill($transitionPayload)->save();
 
         $this->recordLifecycleEvent($request, $project, $finding, $fromStatus, $toStatus, $data['note'] ?? null);
 
@@ -159,15 +182,20 @@ class FindingController extends Controller
     {
         $data = $request->validated();
 
-        foreach (['endpoint_id', 'test_case_id', 'scan_run_id', 'scan_result_id', 'contract_validation_result_id'] as $key) {
-            $data[$key] = $data[$key] ? (int) $data[$key] : null;
+        foreach (['owner_user_id', 'endpoint_id', 'test_case_id', 'linked_release_gate_id', 'scan_run_id', 'scan_result_id', 'contract_validation_result_id', 'verified_by_user_id'] as $key) {
+            $data[$key] = ($data[$key] ?? null) ? (int) $data[$key] : null;
         }
 
+        $data['owner_user_id'] = $this->belongsToUser($data['owner_user_id']) ? $data['owner_user_id'] : null;
+        $data['verified_by_user_id'] = $this->belongsToUser($data['verified_by_user_id']) ? $data['verified_by_user_id'] : null;
         $data['endpoint_id'] = $this->belongsToProject(Endpoint::class, $project, $data['endpoint_id']) ? $data['endpoint_id'] : null;
         $data['test_case_id'] = $this->belongsToProject(TestCase::class, $project, $data['test_case_id']) ? $data['test_case_id'] : null;
+        $data['linked_release_gate_id'] = $this->belongsToProject(QaReleaseGate::class, $project, $data['linked_release_gate_id']) ? $data['linked_release_gate_id'] : null;
         $data['scan_run_id'] = $this->belongsToProject(ScanRun::class, $project, $data['scan_run_id']) ? $data['scan_run_id'] : null;
         $data['scan_result_id'] = $this->belongsToProject(ScanResult::class, $project, $data['scan_result_id']) ? $data['scan_result_id'] : null;
         $data['contract_validation_result_id'] = $this->belongsToProject(ContractValidationResult::class, $project, $data['contract_validation_result_id']) ? $data['contract_validation_result_id'] : null;
+        $data['retest_required'] = $request->boolean('retest_required');
+        $data['fix_evidence_required'] = $request->boolean('fix_evidence_required');
         $data['detected_at'] = $request->route('finding')?->detected_at ?? now();
 
         return $data;
@@ -180,6 +208,8 @@ class FindingController extends Controller
             'source' => $request->query('source', Finding::SOURCE_MANUAL),
             'severity' => $request->query('severity', Finding::SEVERITY_MEDIUM),
             'status' => Finding::STATUS_OPEN,
+            'priority' => Finding::PRIORITY_MEDIUM,
+            'verification_status' => Finding::VERIFICATION_PENDING,
             'endpoint_id' => $request->query('endpoint_id'),
             'test_case_id' => $request->query('test_case_id'),
             'scan_result_id' => $request->query('scan_result_id'),
@@ -212,7 +242,8 @@ class FindingController extends Controller
         return $data;
     }
 
-    private function loadFormData(Project $project): void
+    /** @return array<string, mixed> */
+    private function loadFormData(Project $project): array
     {
         $project->load([
             'endpoints' => fn ($query) => $query->orderBy('method')->orderBy('path'),
@@ -221,6 +252,11 @@ class FindingController extends Controller
             'scanRuns.results',
             'contractValidationResults' => fn ($query) => $query->latest()->limit(50),
         ]);
+
+        return [
+            'users' => User::query()->orderBy('name')->get(),
+            'releaseGates' => $project->qaReleaseGates()->latest()->limit(50)->get(),
+        ];
     }
 
     private function belongsToProject(string $modelClass, Project $project, ?int $id): bool
@@ -237,6 +273,11 @@ class FindingController extends Controller
         }
 
         return $modelClass::query()->whereKey($id)->where('project_id', $project->id)->exists();
+    }
+
+    private function belongsToUser(?int $id): bool
+    {
+        return ! $id || User::query()->whereKey($id)->exists();
     }
 
     private function recordLifecycleEvent(Request $request, Project $project, Finding $finding, ?string $fromStatus, string $toStatus, ?string $note = null): void

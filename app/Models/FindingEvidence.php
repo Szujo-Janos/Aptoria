@@ -20,6 +20,7 @@ class FindingEvidence extends Model
     public const TYPE_REQUEST_RESPONSE = 'request_response';
     public const TYPE_FILE = 'file';
     public const TYPE_LINK = 'link';
+    public const TYPE_RETEST = 'retest';
 
     /** Legacy evidence types are kept readable for older records. */
     public const TYPE_HTTP = 'http';
@@ -34,6 +35,7 @@ class FindingEvidence extends Model
         self::TYPE_REQUEST_RESPONSE,
         self::TYPE_FILE,
         self::TYPE_LINK,
+        self::TYPE_RETEST,
     ];
 
     public const TYPES = [
@@ -44,6 +46,7 @@ class FindingEvidence extends Model
         self::TYPE_REQUEST_RESPONSE,
         self::TYPE_FILE,
         self::TYPE_LINK,
+        self::TYPE_RETEST,
         self::TYPE_HTTP,
         self::TYPE_LOG,
         self::TYPE_CONTRACT,

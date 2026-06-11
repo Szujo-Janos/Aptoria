@@ -20,7 +20,7 @@ class ReportController extends Controller
     public function index(SettingService $settings): View
     {
         $projects = Project::query()
-            ->withCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'qaReleaseGates'])
+            ->withCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'qaReleaseGates', 'reportVersions'])
             ->latest()
             ->paginate($settings->integer('app.items_per_page', 25));
 
@@ -29,7 +29,7 @@ class ReportController extends Controller
 
     public function project(Project $project): View
     {
-        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'qaReleaseGates']);
+        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'qaReleaseGates', 'reportVersions']);
 
         $latestScanRuns = $project->scanRuns()
             ->with('environment')
@@ -60,7 +60,13 @@ class ReportController extends Controller
             ->limit(10)
             ->get();
 
-        return view('reports.project', compact('project', 'latestScanRuns', 'latestSnapshots', 'latestCompareRuns', 'latestContractValidationRuns', 'latestReleaseGates'));
+        $latestReportVersions = $project->reportVersions()
+            ->with(['generatedBy', 'approvedBy'])
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return view('reports.project', compact('project', 'latestScanRuns', 'latestSnapshots', 'latestCompareRuns', 'latestContractValidationRuns', 'latestReleaseGates', 'latestReportVersions'));
     }
 
     public function fullProjectMarkdown(Project $project, ReportExportService $exports): Response

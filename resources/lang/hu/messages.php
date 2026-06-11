@@ -45,6 +45,7 @@ return array (
     'create_project' => 'Új projekt',
     'environments_auth_profiles' => 'Környezetek és auth profilok',
     'endpoints' => 'Endpointok',
+    'api_behavior' => 'API Behavior Map',
     'endpoint_inventory' => 'Endpoint inventory',
     'scans' => 'Scanek',
     'snapshots' => 'Snapshotok',
@@ -84,6 +85,9 @@ return array (
     'audit_admin' => 'Audit és admin',
     'learning_support' => 'Súgó és workflow',
     'scans_snapshots' => 'Scanek és snapshotok',
+    'blind_spots' => 'QA vakfoltok',
+    'blind_spots_short' => 'Vakfoltok',
+    'risk_acceptances' => 'Kockázati ledger',
   ),
   'common' => 
   array (
@@ -106,6 +110,7 @@ return array (
     'type' => 'Típus',
     'summary' => 'Összegzés',
     'notes' => 'Megjegyzések',
+    'total' => 'Összesen',
     'total_rows' => 'Összes sor',
     'created' => 'Létrehozva',
     'none' => 'Nincs',
@@ -125,6 +130,7 @@ return array (
     'error' => 'Hiba',
     'reset' => 'Visszaállítás',
     'all' => 'Összes',
+    'title' => 'Cím',
   ),
   'profile' => 
   array (
@@ -568,6 +574,163 @@ return array (
     'openapi_path_params_auto_defaults_note' => 'Placeholder észlelésekor az import automatikusan létrehoz gyakori projekt szintű tesztértékeket.',
     'single' => 'Endpoint',
     'risk' => 'Kockázat',
+  ),
+  'api_behavior' => 
+  array (
+    'title' => 'API viselkedési térkép',
+    'short_title' => 'Behavior map',
+    'heading' => 'API viselkedési térkép',
+    'intro' => 'Megmutatja, hogy az endpointok milyen erőforrást hoznak létre, fogyasztanak, módosítanak vagy törölnek, így a release QA biztonságosabb regressziós sorrendet tud tervezni.',
+    'refresh' => 'Behavior map frissítése',
+    'refreshed' => 'API behavior map frissítve.',
+    'endpoint_panel_title' => 'Endpoint viselkedés',
+    'endpoint_roles_title' => 'Endpoint viselkedési szerepek',
+    'dependencies_title' => 'Felismert függőségek',
+    'sequences_title' => 'Javasolt teszt sorrendek',
+    'no_dependencies' => 'Még nincs felismert endpoint függőség. Példa: POST /orders és GET /orders/{id}.',
+    'no_sequences' => 'Még nincs javasolt sorrend.',
+    'no_behavior_detected' => 'Még nincs viselkedési jel.',
+    'no_produced_links' => 'Ez az endpoint jelenleg nem producer más endpoint számára.',
+    'no_consumed_links' => 'Ez az endpoint jelenleg nem fogyaszt más endpoint által létrehozott erőforrást.',
+    'produces_for' => 'Ezeknek termel',
+    'consumes_from' => 'Ezekből fogyaszt',
+    'producer' => 'Producer',
+    'consumer' => 'Consumer',
+    'resource' => 'Erőforrás',
+    'role' => 'Szerep',
+    'summary' => 'Összegzés',
+    'dependency_type' => 'Függőség típusa',
+    'confidence_label' => 'Bizonyosság',
+    'sequence' => 'Sorrend',
+    'metrics' => 
+    array (
+      'endpoints' => 'Endpointok',
+      'producers' => 'Producerek',
+      'consumers' => 'Consumerek',
+      'dependencies' => 'Függőségek',
+      'destructive' => 'Destruktív',
+      'sequence_candidates' => 'Sorrend-jelöltek',
+      'auth_boundaries' => 'Auth határok',
+      'resources' => 'Erőforrások',
+    ),
+    'roles' => 
+    array (
+      'producer' => 'Producer',
+      'consumer' => 'Consumer',
+      'producer_consumer' => 'Producer és consumer',
+      'destructive' => 'Destruktív művelet',
+      'reference' => 'Referencia endpoint',
+      'unknown' => 'Ismeretlen',
+    ),
+    'dependency_types' => 
+    array (
+      'path_parameter' => 'Path parameter függőség',
+      'resource_flow' => 'Erőforrás-flow',
+      'auth_boundary' => 'Auth határ',
+      'destructive_followup' => 'Destruktív folytatás',
+    ),
+    'confidence' => 
+    array (
+      'high' => 'Magas',
+      'medium' => 'Közepes',
+      'low' => 'Alacsony',
+    ),
+    'flags' => 
+    array (
+      'title' => 'Viselkedési jelölők',
+      'destructive' => 'Destruktív',
+      'auth_boundary' => 'Auth határ',
+      'sequence_candidate' => 'Sorrend-jelölt',
+    ),
+    'notes' => 
+    array (
+      'resource' => 'Felismert erőforrás: :resource.',
+      'path_parameters' => 'Fogyasztott path paraméter(ek): :parameters.',
+      'destructive' => 'Destruktív műveletként kezelendő; regressziós sorrend előtt kontrollált tesztadat kell.',
+      'auth_boundary' => 'Publikus és authentikált endpoint is van az erőforrás körül; authorization boundary ellenőrzés javasolt.',
+    ),
+    'link_notes' => 
+    array (
+      'path_parameter' => 'A consumer path :parameter paramétert használ, amit valószínűleg a producer endpoint hoz létre.',
+      'resource_flow' => 'Az endpointok azonos erőforrás-családon működnek.',
+    ),
+    'report_title' => 'API Behavior Map összegzés',
+  ),
+
+  'evidence_graph' => 
+  array (
+    'title' => 'Bizonyítékháló',
+    'short_title' => 'Bizonyítékháló',
+    'heading' => 'Evidence Graph',
+    'intro' => 'Kapcsold össze az endpointokat, scaneket, findingokat, evidence attachmenteket, release gate-eket, accepted riskeket, blind spotokat és release decision package-eket egy auditálható bizonyítéklánccá.',
+    'release_graph' => 'Release Evidence Graph',
+    'release_graph_intro' => 'A release döntéshez tartozó legfontosabb bizonyítékok: scan, snapshot, release gate, decision package, accepted risk és blind spot állapot.',
+    'endpoint_maps' => 'Endpoint Evidence Map',
+    'endpoint_map_title' => 'Endpoint Evidence Map',
+    'endpoint_map_intro' => 'Mutatja, hogy egy endpoint mögött milyen scan, assertion, finding, contract és test evidence áll rendelkezésre.',
+    'finding_chains' => 'Finding Evidence Chain',
+    'finding_chain_title' => 'Finding Evidence Chain',
+    'finding_chain_intro' => 'Mutatja, hogy a finding mihez kapcsolódik, milyen bizonyítéka van, és release szinten mennyire verifikált.',
+    'linked_evidence' => 'Kapcsolt evidence',
+    'missing_links' => 'Hiányzó kapcsolatok',
+    'no_missing_links' => 'Nincs hiányzó evidence kapcsolat.',
+    'complete' => 'Teljes',
+    'open_map' => 'Térkép',
+    'open_chain' => 'Lánc',
+    'scope' => 'Scope',
+    'related' => 'Kapcsolódó elem',
+    'missing_label' => 'Hiányzik',
+    'missing' => 'Hiányzik',
+    'endpoint' => 'Endpoint',
+    'retest' => 'Retest',
+    'release_scope_label' => 'Release evidence scope',
+    'report_title' => 'Evidence Graph Summary',
+    'scopes' => 
+    array (
+      'endpoint' => 'Endpoint',
+      'finding' => 'Finding',
+      'release' => 'Release',
+    ),
+    'metrics' => 
+    array (
+      'endpoints' => 'Endpointok',
+      'endpoint_maps' => 'Endpoint mapek',
+      'scan_results' => 'Scan eredmények',
+      'findings' => 'Findingok',
+      'evidence' => 'Evidence elemek',
+      'release_decisions' => 'Release döntések',
+      'blind_spots' => 'Blind spotok',
+      'missing_links' => 'Hiányzó kapcsolatok',
+    ),
+    'nodes' => 
+    array (
+      'scan_results' => 'Scan results',
+      'assertions' => 'Assertions',
+      'findings' => 'Findings',
+      'evidence' => 'Evidence',
+      'accepted_risk_active' => 'Active accepted risk',
+      'accepted_risk_none' => 'No accepted risk',
+      'latest_scan' => 'Latest scan',
+      'latest_snapshot' => 'Latest snapshot',
+      'blind_spots' => 'Megmutatja a hiányzó vagy elavult QA bizonyítékokat, amelyek release döntést érintenek.',
+      'blind_spots' => 'Hiányzó és elavult evidence elemek, amelyek release jóváhagyást érinthetnek.',
+      'release_gate' => 'Release gate',
+      'release_decision' => 'Release decision',
+      'accepted_risks' => 'Accepted risks',
+      'blind_spots' => 'Blind spots',
+    ),
+    'missing' => 
+    array (
+      'endpoint_scan' => 'Nincs scan evidence az endpointon.',
+      'endpoint_assertion' => 'Nincs assertion rule az endpointon.',
+      'finding_evidence' => 'Nincs finding evidence attachment vagy note.',
+      'retest_evidence' => 'Fixed findinghoz nincs retest evidence.',
+      'accepted_risk_ledger' => 'Accepted risk findinghoz nincs aktív risk ledger rekord.',
+      'release_scan' => 'Nincs release-hez használható scan evidence.',
+      'release_snapshot' => 'Nincs release snapshot evidence.',
+      'release_gate' => 'Nincs mentett release gate snapshot.',
+      'release_decision' => 'Nincs mentett release decision package.',
+    ),
   ),
   'endpoint_inventory' => 
   array (
@@ -1988,7 +2151,7 @@ return array (
   'help' => 
   array (
     'title' => 'Súgóközpont',
-    'subtitle' => 'Teljes Aptoria használati útmutató a v1.1.18 QA, API audit, monitorozási és release readiness workflow-hoz.',
+    'subtitle' => 'Teljes Aptoria használati útmutató a v1.1.25 QA, API audit, monitorozási és release readiness workflow-hoz.',
     'search_title' => 'Dokumentáció keresése',
     'search_label' => 'Kulcsszó',
     'search_placeholder' => 'Próbáld: demo, import, snapshot, assertion, finding, evidence, monitor, release, audit...',
@@ -2001,36 +2164,45 @@ return array (
     'no_results_body' => 'Próbálj más kulcsszót: endpoint, scan, finding, evidence, monitor, release vagy audit.',
     'no_live_results' => 'Nincs látható súgó szekció ehhez a kulcsszóhoz.',
     'search_results_for' => 'Találatok erre: „:query”: :count szekció.',
-    'sections' => array (
-      0 => array (
+    'sections' => 
+    array (
+      0 => 
+      array (
         'id' => 'overview-navigation',
         'title' => 'Áttekintés és navigáció',
         'summary' => 'Az Aptoria self-hosted QA munkafelület, amely az API projekteket auditálható inventoryvá, evidence-szé, findingokká, riportokká és release döntéssé alakítja.',
         'keywords' => 'áttekintés navigáció dashboard sidebar projekt modulok workflow menü aktuális projekt release riport operations audit admin súgó',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Mire való az Aptoria',
             'body' => 'Aptoriát akkor érdemes használni, ha egy API köré ismételhető QA folyamat kell: endpoint inventory, safe scan, auth ellenőrzés, regression evidence, finding kezelés, riport, monitorozás és release readiness egy helyen.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Látható, milyen endpointok vannak a projektben.',
               1 => 'Rögzíthető, mit teszteltél és mikor.',
               2 => 'A bizonyíték findinghoz és riporthoz köthető.',
               3 => 'A release döntés visszakövethető, nem csak benyomás alapján történik.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Főmenü logika',
             'body' => 'A bal menü használati logika szerint csoportosított: Projects a workspace-ekhez, Release & reports a kiadási döntéshez, Operations a monitorozáshoz, Audit & admin a rendszerüzemeltetéshez, Help & workflow a tanuláshoz.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Projekt-specifikus munka a projekt modulokon belül van.',
               1 => 'Globális monitor és alert áttekintés az Operations alatt van.',
               2 => 'System Health, Settings, Audit Log és Demo Project az Audit & admin alatt található.',
             ),
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Aktuális projekt moduljai',
             'body' => 'Projekt megnyitása után a projektmenü az összetartozó QA feladatokat együtt tartja.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'API inventory: endpointok, környezetek, auth profilok és importok.',
               1 => 'Quality workflow: scanek, snapshotok, compare, schema drift és regression suite-ok.',
               2 => 'Risk & evidence: findingok, lifecycle történet és evidence mellékletek.',
@@ -2038,31 +2210,38 @@ return array (
               4 => 'Automation & audit: projekt monitorok és projekt audit timeline.',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Ajánlott kezdés',
             'body' => 'Először importáld a Demo Projectet, hogy átlásd a rendszert, utána hozz létre valódi projektet a varázslóval, importálj endpointokat, futtass safe checket, triage-old a findingokat és exportáld a megfelelő riportot.',
           ),
         ),
       ),
-      1 => array (
+      1 => 
+      array (
         'id' => 'setup-profile-identity',
         'title' => 'Telepítés, profil és riportidentitás',
         'summary' => 'A setup védi az első indítást, a Default Report Identity pedig egységes prepared-by és confidentiality kontextust ad a riportoknak.',
         'keywords' => 'setup telepítés first run profil default report identity branding prepared by title role organization confidentiality disclaimer logo projekt override',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Első indítási setup',
             'body' => 'Friss telepítés setup módban indul. Hozd létre az admin felhasználót, ellenőrizd a setup lockot, majd System Health alatt nézd meg, hogy az adatbázis, cache, storage, riport és evidence mappák írhatók-e.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Futtasd a migrationöket használat előtt.',
               1 => 'Deployment után futtasd: aptoria:health.',
               2 => '.env, database/database.sqlite és setup-token fájl ne kerüljön release ZIP-be.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Default Report Identity',
             'body' => 'Profile → Default Report Identity a globális alapértelmezett riportidentitás. Akkor jelenik meg a riportokban, ha az adott projektnél nincs külön branding override.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Prepared by',
               1 => 'Role / title',
               2 => 'Organization',
@@ -2070,10 +2249,12 @@ return array (
               4 => 'Alapértelmezett disclaimer',
             ),
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Project branding override',
             'body' => 'A Project Report Branding csak az adott projektre/ügyfélre írja felül a profil alapadatait. Akkor használd, ha ügyfélhez vagy konkrét megbízáshoz kell igazítani a riportot.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Client / organization',
               1 => 'Prepared for / prepared by kontextus',
               2 => 'Projektszintű confidentiality label',
@@ -2081,61 +2262,75 @@ return array (
               4 => 'Opcionális riport logó',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Branding kiválasztása',
             'body' => 'A riport export először a projektszintű brandinget használja. Ha egy projektmező üres, ahol lehet, visszaesik a profil Default Report Identity mezőire.',
           ),
         ),
       ),
-      2 => array (
+      2 => 
+      array (
         'id' => 'projects-environments-auth',
         'title' => 'Projektek, környezetek és auth profilok',
         'summary' => 'A projekt az API workspace; a környezetek külön base URL-eket; az auth profilok hitelesítési módokat és összehasonlításokat kezelnek.',
         'keywords' => 'projekt onboarding varázsló környezet local dev staging production auth profil bearer token basic custom header no-auth változók teszt authentication',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Projekt onboarding',
             'body' => 'A vezetett projektvarázsló létrehozza a projektet, környezetet, auth profilt, első endpointot, opcionális safe probe-ot, baseline snapshotot és riport kontextust, így a workspace nem üresen indul.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Új API review esetén ezt használd.',
               1 => 'Production környezetben az automatikus scan kimaradjon, hacsak nem indítod később tudatosan.',
               2 => 'Létrehozás után nézd át az endpointot és riport kontextust.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Environment manager',
             'body' => 'A környezetekkel local, dev, staging és production URL-ek kezelhetők ugyanazon projekten belül, külön projekt létrehozása nélkül.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Minden környezethez tartozhat base URL és auth kontextus.',
               1 => 'Scan, monitor, riport és import hivatkozhat környezetre.',
               2 => 'A default environment vezérli az alapműveleteket.',
             ),
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Auth profilok',
             'body' => 'Az auth profilok no-auth, bearer token, basic auth és custom header mintákat támogatnak. Így az Aptoria következetesen tud authenticated és unauthenticated viselkedést vizsgálni.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'No-auth profil kell broken-auth összehasonlításhoz.',
               1 => 'Bearer/basic/custom profil kell authenticated checkhez.',
               2 => 'Auth testerrel ellenőrizd a profilt scan előtt.',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Változók és importok',
             'body' => 'Postman environment, Postman globals és collection variables segítenek a paraméterezett URL-ek és headerek újrahasználható Aptoria rekorddá alakításában.',
           ),
         ),
       ),
-      3 => array (
+      3 => 
+      array (
         'id' => 'api-import-inventory',
         'title' => 'API import és Endpoint inventory',
         'summary' => 'Az Endpoint Inventory a metódusok, path-ok, auth igény, elvárt eredmény, legutóbbi scan adat és finding szám központi listája.',
         'keywords' => 'endpoint inventory import openapi swagger postman collection environment globals examples auth assertions newman junit folder suite mapping method path status response time risk finding count',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Kézi endpoint rögzítés',
             'body' => 'Kisebb API-nál vagy import után javításként kézzel is felvehetsz endpointot.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Method és path',
               1 => 'Environment és auth profil',
               2 => 'Expected status és content type',
@@ -2143,124 +2338,154 @@ return array (
               4 => 'Path parameter test value',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'OpenAPI / Swagger import',
             'body' => 'OpenAPI vagy Swagger JSON/YAML import endpoint rekordokat hoz létre metódussal, path-tal, request metaadatokkal és contract review kontextussal.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Postman import',
             'body' => 'Postman collection, environment és globals importálható. A folder → test suite mapping a collection struktúrát regression planning rekorddá alakíthatja.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Requestekből endpoint lesz.',
               1 => 'Example-ből request/response evidence lehet.',
               2 => 'Basic assertionökből Aptoria assertion rule indulhat.',
             ),
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Newman / JUnit import',
             'body' => 'Newman JSON vagy JUnit XML kimenet execution evidence-ként importálható. Sikertelen assertion findingot és evidence-t is létrehozhat.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Inventory áttekintés',
             'body' => 'Az Endpoint Inventory oldalon egyben látszik a method, path, environment, auth requirement, last status, last response time, risk level, last scan és finding count.',
           ),
         ),
       ),
-      4 => array (
+      4 => 
+      array (
         'id' => 'safe-scans-security',
         'title' => 'Safe scanek és security jelzések',
         'summary' => 'A safe scan nem destruktív request/response evidence-t gyűjt, és sensitive data, broken auth és egyéb security jelzéseket ad.',
         'keywords' => 'safe scan GET HEAD sensitive data detector broken auth no-auth comparison status response time token jwt api key 5xx debug trace private network timeout preview ssl',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Safe execution modell',
             'body' => 'Az automatikus scanner és runner szándékosan csak GET és HEAD kéréseket futtat. Állapotmódosító metódusok inventory és manuális teszttervezési rekordok maradnak.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'POST, PUT, PATCH és DELETE automatikusan nem fut.',
               1 => 'Private network scan tiltható, ha nincs explicit engedélyezve.',
               2 => 'Timeout és response preview limit csökkenti a kockázatot.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Sensitive data detector',
             'body' => 'Az Aptoria jelzi az email, telefon, JWT, API key, bearer token, access token, refresh token, password mező, debug stack trace és személyes adat jellegű mezők előfordulását.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Broken auth comparison',
             'body' => 'Authenticated és unauthenticated válasz összehasonlítható. Ha no-auth hozzáférés védett adatot mutat, abból review evidence és finding kontextus készülhet.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Scan eredmény áttekintése',
             'body' => 'Scan run megnyitásakor ellenőrizhető a status code, response time, content type, response size, body preview, error, sensitive-data flag, broken-auth flag és schema-drift flag.',
           ),
         ),
       ),
-      5 => array (
+      5 => 
+      array (
         'id' => 'snapshots-diff-schema',
         'title' => 'Snapshotok és összehasonlítás',
         'summary' => 'A snapshot állapotot ment; a compare és schema drift megmutatja, mi változott baseline és aktuális állapot között.',
         'keywords' => 'snapshot snapshots compare baseline current diff schema drift riport export response body header status type nullability breaking change regression release evidence',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Baseline snapshot létrehozása',
             'body' => 'Scan vagy mérföldkő után ments snapshotot, hogy rögzüljön az endpoint inventory, legutóbbi status, response time, kiválasztott header és schema evidence.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Baseline és aktuális összevetése',
             'body' => 'A Baseline vs Current compare új endpointot, eltűnt endpointot, státuszkód változást, header/body változást és response-time eltérést jelez.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Schema drift detector',
             'body' => 'A schema drift eltűnt mezőt, új mezőt, típusváltozást, nullability változást és object/array struktúra változást jelez. Frontend/backend integrációs review-nál hasznos.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Mikor használd',
             'body' => 'Release előtt, backend deployment után, OpenAPI import frissítés után vagy monitor által jelzett regresszió esetén.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Read-only elemzés',
             'body' => 'A snapshot compare és schema drift csak tárolt Aptoria evidence-t használ. Nem küld HTTP kérést az összehasonlítás közben.',
           ),
         ),
       ),
-      6 => array (
+      6 => 
+      array (
         'id' => 'regression-assertions',
         'title' => 'Regression test suite-ok és futtatás',
         'summary' => 'A regression suite az endpointot, elvárt eredményt, assertiont és importált execution evidence-t ismételhető QA coverage-dzsé kapcsolja össze.',
         'keywords' => 'regression test suite execution test case assertion assertions expected status response field contains json path newman junit pass fail coverage matrix',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Suite építése',
             'body' => 'Hozz létre suite-ot, adj hozzá endpoint alapú test case-eket, állíts execution ordert és expected status vagy response elvárást.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Assertions',
             'body' => 'Az assertion ellenőrizhet expected statuszt, body contains feltételt, JSON path / field létezést és response-body feltételeket. PASS, WARNING és FAIL eredményt adhat.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Futtatás és evidence mentés',
             'body' => 'A suite futtatás test case resultokat ment, amelyek Release Readinessben, riportokban, monitorokban és audit evidence-ben használhatók.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Külső futások importja',
             'body' => 'Newman JSON és JUnit XML importtal külső automatizált tesztek eredménye is az Aptoria evidence mellé kerülhet.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Coverage matrix',
             'body' => 'A QA coverage nézet megmutatja, mely endpointokhoz van teszt, assertion, scan, finding és release evidence a sign-off előtt.',
           ),
         ),
       ),
-      7 => array (
+      7 => 
+      array (
         'id' => 'findings-lifecycle-evidence',
         'title' => 'Findingok, lifecycle és evidence',
         'summary' => 'A finding auditálható QA rekord lifecycle státusszal, történettel, kockázati kontextussal és bizonyítékkal.',
         'keywords' => 'finding lifecycle evidence open confirmed in progress fixed false positive accepted risk reopened timeline screenshot json curl request response attachment hash severity audit',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Lifecycle státuszok',
             'body' => 'Open, Confirmed, In progress, Fixed, False positive, Accepted risk és Reopened státuszokkal a valós javítási állapot követhető.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => 'Open: észlelt, még nem validált.',
               1 => 'Confirmed: megerősített hiba.',
               2 => 'In progress: javítás folyamatban.',
@@ -2270,153 +2495,190 @@ return array (
               6 => 'Reopened: a hiba visszatért vagy a javítás nem volt jó.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Státusztörténet',
             'body' => 'Minden státuszváltásnál rögzíthető, ki, mikor, milyen megjegyzéssel módosított, és hányadik reopened állapotnál tart.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Evidence mellékletek',
             'body' => 'Csatolható screenshot, JSON response, cURL command, request/response excerpt, fájl, link és note. A fájloknál eredeti név, MIME type, méret és SHA-256 hash is mentődik.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Release hatás',
             'body' => 'Open, confirmed, in-progress és reopened critical/high finding aktív release risk. Fixed, false positive és accepted risk továbbra is látható, de nem ugyanúgy blokkol, mint a megoldatlan finding.',
           ),
         ),
       ),
-      8 => array (
+      8 => 
+      array (
         'id' => 'release-readiness-gates',
         'title' => 'Release readiness és release gate-ek',
         'summary' => 'A Release Readiness a QA evidence alapján 100 pontos, lifecycle-aware release döntést ad.',
         'keywords' => 'release readiness score release gate pass warning blocked score 100 finding lifecycle coverage regression sign-off riport snapshot evidence',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => '100 pontos score',
             'body' => 'A score figyelembe veszi a critical/high findingokat, lifecycle státuszt, tesztelt endpoint arányt, auth review-t, regression állapotot, legutóbbi riportot és scan frissességet.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Lifecycle-aware számítás',
             'body' => 'A reopened finding aktív risk. A fixed, false positive és accepted risk finding összesítve marad, de nem ugyanúgy blokkol, mint a megoldatlan hiba.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Release gate',
             'body' => 'QA kör végén release gate hozható létre, amely pass/warning/blocked evidence-ként rögzíti readiness, coverage, test execution, finding és contract validation állapotot.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Döntéstámogatás',
             'body' => 'A readiness és gate megmutatja, hogy a projekt kiadható-e, javítás kell-e, vagy elfogadott kockázattal mehet tovább.',
           ),
         ),
       ),
-      9 => array (
+      9 => 
+      array (
         'id' => 'reports-branding-exports',
         'title' => 'Riportok, branding és exportok',
         'summary' => 'Az Aptoria külön választja az executive és technical riportokat, alkalmazza a brandinget, és tárolt QA evidence-ből exportál.',
         'keywords' => 'riport report reports export executive technical full project release readiness branding logo markdown html pdf csv json evidence snapshot compare qa release gate',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Executive report',
             'body' => 'Executive riport kell vezetőnek vagy ügyfél döntéshozónak: státusz, readiness, fő kockázatok, blokkolók, warningok és javasolt döntés mély technikai részletek nélkül.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Technical report',
             'body' => 'Technical riport kell QA-nak és fejlesztőnek: endpoint inventory, findingok, evidence, contract validation, scan/regression kontextus és request/response evidence.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Full Project report',
             'body' => 'Full Project riport kell teljesebb evidence csomaghoz projekt kontextussal, endpoint adatokkal, scanekkel, snapshotokkal, findingokkal és readiness szekcióval.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Branding forrás',
             'body' => 'A riport Project Report Brandinget használ, ha be van állítva. Egyébként a profil Default Report Identity adataira esik vissza.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Export biztonság',
             'body' => 'Markdown, HTML, PDF, CSV, JSON és evidence export tárolt Aptoria adatot használ. Export közben nem futtat HTTP kérést.',
           ),
         ),
       ),
-      10 => array (
+      10 => 
+      array (
         'id' => 'monitoring-alerts-notifications',
         'title' => 'Ütemezett monitorozás, alert és értesítés',
         'summary' => 'A monitorok ütemezett safe checkeket futtatnak, és fontos QA/security változás esetén alertet hoznak létre.',
         'keywords' => 'scheduled monitor cron windows task scheduler run-monitors email webhook dashboard alert critical high 5xx recovery json output suite environment notification',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Cron-ready runner',
             'body' => 'A php artisan aptoria:run-monitors parancs cronból vagy Windows Task Schedulerből futtatható project, environment, suite és monitor filterrel.',
-            'bullets' => array (
+            'bullets' => 
+            array (
               0 => '--dry-run előnézethez.',
               1 => '--json géppel olvasható kimenethez.',
               2 => '--save-json futási evidence mentéséhez.',
               3 => '--fail-on-warning vagy --fail-on-regression automation gate-hez.',
             ),
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Suite binding',
             'body' => 'Monitorhoz regression suite köthető, így az ütemezett ellenőrzés suite result summaryt is tartalmaz.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Notification triggerök',
             'body' => 'Dashboard, email és webhook értesítés indulhat critical/high finding, HTTP 5xx, sensitive data exposure, broken auth, schema drift vagy recovery to healthy eseményre.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Alert Center',
             'body' => 'A Monitor Alerts oldalon channel, severity és open/closed állapot alapján szűrhetők az alert események.',
           ),
         ),
       ),
-      11 => array (
+      11 => 
+      array (
         'id' => 'system-health-audit-demo',
         'title' => 'System health, audit log és demo adat',
         'summary' => 'Admin eszközök ellenőrzik a telepítés állapotát, visszakövetik a műveleteket és életszerű mintaadatot hoznak létre bemutatóhoz.',
         'keywords' => 'system health diagnostics audit log activity timeline demo project sample data generator json export queue cache database storage import export setup lock cli',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'System Health',
             'body' => 'A System Health ellenőrzi a runtime-ot, application state-et, storage jogosultságokat, cache-t, adatbázist, security posture-t, import/export mappákat, reporting/evidence storage-t, automation és queue readiness állapotot.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Audit Log',
             'body' => 'Az Audit Log naplózza a login/logout, project és model módosításokat, report generationt, database import/exportot, hard reset requestet, settings változást és finding status változást.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Projekt audit timeline',
             'body' => 'Projekt szintű Audit Log nézetben csak az adott projekthez tartozó események látszanak.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Demo Project',
             'body' => 'A Northstar Commerce demo generator szintetikus environment, endpoint, auth profile, scan, snapshot, compare, finding, evidence, regression suite, release gate és monitor adatot hoz létre külső API hívás nélkül.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'JSON evidence',
             'body' => 'Health, audit és demo CLI workflow JSON kimenetet ad, így az operációs állapot evidence-ként is menthető.',
           ),
         ),
       ),
-      12 => array (
+      12 => 
+      array (
         'id' => 'safety-privacy',
         'title' => 'Biztonsági és adatvédelmi modell',
         'summary' => 'Az Aptoria szándékosan konzervatív, és csak saját, üzemeltetett vagy írásos engedéllyel tesztelhető rendszereken használható.',
         'keywords' => 'safety privacy authorized use destructive methods private network secret masking sensitive response storage gd xampp windows local',
-        'items' => array (
-          0 => array (
+        'items' => 
+        array (
+          0 => 
+          array (
             'title' => 'Csak engedéllyel használd',
             'body' => 'Csak olyan API-t scannelj, amelyet te birtokolsz, üzemeltetsz vagy amelynek tesztelésére írásos engedélyed van.',
           ),
-          1 => array (
+          1 => 
+          array (
             'title' => 'Destruktív metódusok kihagyása',
             'body' => 'Állapotmódosító metódusok automatikusan nem futnak. Inventory, tervezés, manuális teszt és importált evidence célra maradnak.',
           ),
-          2 => array (
+          2 => 
+          array (
             'title' => 'Secret masking',
             'body' => 'Authorization, token, password, cookie és secret jellegű értékek UI-ban, audit payloadban és exportban maszkolva jelennek meg, ahol támogatott.',
           ),
-          3 => array (
+          3 => 
+          array (
             'title' => 'Sensitive response storage',
             'body' => 'Szabályozott vagy ügyféladatot tartalmazó API esetén kapcsold ki / csökkentsd a response preview storage-t, és csak indokolt evidence mellékletet ments.',
           ),
-          4 => array (
+          4 => 
+          array (
             'title' => 'Helyi telepítés',
             'body' => 'Az Aptoria self-hosted / local deploymentre készült. Windows/XAMPP workflow-t a mellékelt update script és System Health diagnosztika támogatja.',
           ),
@@ -2436,7 +2698,8 @@ return array (
     'demo_title' => 'Demo projekt kipróbálása',
     'demo_body' => 'A beépített Northstar Commerce demo generator életszerű, szintetikus QA adatot hoz létre, így külső API hívás nélkül végigpróbálható minden modul.',
     'open_demo' => 'Demo projekt megnyitása',
-    'safety_rules' => array (
+    'safety_rules' => 
+    array (
       0 => 'A safe scan és runner automatikusan csak GET és HEAD kérést futtat.',
       1 => 'POST, PUT, PATCH és DELETE inventory / manuális tervezési rekord marad, hacsak külső evidence-ként nem importálod.',
       2 => 'Private network scan tiltott, hacsak explicit nincs engedélyezve.',
@@ -2445,85 +2708,101 @@ return array (
       5 => 'A demo adat szintetikus, nem hív külső szolgáltatást.',
       6 => 'Csak saját vagy engedéllyel tesztelhető API-n használd az Aptoriát.',
     ),
-    'workflow' => array (
-      0 => array (
+    'workflow' => 
+    array (
+      0 => 
+      array (
         'stage' => '1',
         'label' => 'info',
         'title' => 'Telepítés és health ellenőrzés',
         'body' => 'Futtasd a migrationöket, fejezd be a setupot, majd System Health alatt ellenőrizd a PHP, database, storage, cache, report, evidence, queue és scheduler állapotot.',
       ),
-      1 => array (
+      1 => 
+      array (
         'stage' => '2',
         'label' => 'primary',
         'title' => 'Demo vagy onboarding',
         'body' => 'Importáld a Northstar Commerce demo projektet teljes mintafolyamathoz, vagy használd a projektvarázslót valódi API-hoz.',
       ),
-      2 => array (
+      2 => 
+      array (
         'stage' => '3',
         'label' => 'success',
         'title' => 'Endpointok importja vagy rögzítése',
         'body' => 'Építs endpoint inventoryt OpenAPI/Swagger, Postman, Newman/JUnit evidence vagy kézi rekord alapján.',
       ),
-      3 => array (
+      3 => 
+      array (
         'stage' => '4',
         'label' => 'info',
         'title' => 'Környezet és auth beállítása',
         'body' => 'Válaszd szét a local/dev/staging/production URL-eket, és köss no-auth, bearer, basic vagy custom-header profilt a munkához.',
       ),
-      4 => array (
+      4 => 
+      array (
         'stage' => '5',
         'label' => 'warning',
         'title' => 'Safe scan evidence gyűjtése',
         'body' => 'Futtass GET/HEAD checket, ments status/response metaadatot, sensitive-data jelzést, broken-auth összehasonlítást és assertion eredményt.',
       ),
-      5 => array (
+      5 => 
+      array (
         'stage' => '6',
         'label' => 'primary',
         'title' => 'Snapshot és compare',
         'body' => 'Ments baseline-t, hasonlítsd össze az aktuális állapottal, és nézd át a schema driftet release előtt.',
       ),
-      6 => array (
+      6 => 
+      array (
         'stage' => '7',
         'label' => 'success',
         'title' => 'Regression evidence építése',
         'body' => 'Hozz létre regression suite-ot, adj hozzá test case-t, importálj külső eredményt és zárd a coverage gapeket.',
       ),
-      7 => array (
+      7 => 
+      array (
         'stage' => '8',
         'label' => 'danger',
         'title' => 'Finding kezelés',
         'body' => 'Kövesd a lifecycle státuszt, csatolj evidence-t, rögzíts javítási megjegyzést és nyisd újra a visszatérő hibát.',
       ),
-      8 => array (
+      8 => 
+      array (
         'stage' => '9',
         'label' => 'success',
         'title' => 'Release readiness döntés',
         'body' => 'Nézd át a 100 pontos readiness score-t, release gate-et, lifecycle-aware finding hatást és regression státuszt.',
       ),
-      9 => array (
+      9 => 
+      array (
         'stage' => '10',
         'label' => 'info',
         'title' => 'Megfelelő riport exportálása',
         'body' => 'Executive riport döntéshozóknak, Technical riport QA/fejlesztőknek, Full Project riport teljes audit csomaghoz.',
       ),
-      10 => array (
+      10 => 
+      array (
         'stage' => '11',
         'label' => 'warning',
         'title' => 'Monitorozás és értesítés',
         'body' => 'Futtass monitort cronból vagy Task Schedulerből, ments JSON outputot, és küldj dashboard/email/webhook értesítést.',
       ),
-      11 => array (
+      11 => 
+      array (
         'stage' => '12',
         'label' => 'default',
         'title' => 'Audit és karbantartás',
         'body' => 'Audit Log, System Health és JSON export segítségével tartsd visszakövethetően a műveleteket és operációs evidence-t.',
       ),
     ),
-    'steps' => array (
-      0 => array (
+    'steps' => 
+    array (
+      0 => 
+      array (
         'title' => 'Telepítés előkészítése',
         'body' => 'Telepítsd a dependencyket, állítsd be a .env-et, futtasd a migrationöket, fejezd be a setupot és ellenőrizd a telepítést System Health alatt.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Futtasd: composer install a telepített projektben.',
           1 => 'Futtasd: php artisan migrate.',
           2 => 'Futtasd: php artisan aptoria:health és nézd át a warningokat.',
@@ -2532,10 +2811,12 @@ return array (
         'output' => 'Működő local/self-hosted Aptoria admin fiókkal és egészséges system diagnostics állapottal.',
         'tip' => 'Windows/XAMPP alatt tesztek előtt használd a scripts/update-windows-xampp.ps1 scriptet.',
       ),
-      1 => array (
+      1 => 
+      array (
         'title' => 'Projekt létrehozása vagy demo import',
         'body' => 'Valódi munkához projektvarázsló, tanuláshoz Demo Project oldal használható.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Valódi projektnél add meg a projektnevet, base URL-t, environmentet és auth profilt.',
           1 => 'Tanuláshoz importáld a Northstar Commerce demo projektet.',
           2 => 'Létrehozás után nézd át a projekt dashboardot.',
@@ -2543,10 +2824,12 @@ return array (
         'output' => 'Projekt workspace környezettel, auth kontextussal és induló QA struktúrával.',
         'tip' => 'A demo biztonságos, mert csak szintetikus tárolt adatot használ.',
       ),
-      2 => array (
+      2 => 
+      array (
         'title' => 'Endpoint inventory felépítése',
         'body' => 'Az Endpoint Inventory határozza meg azt az API felületet, amit az Aptoria vizsgál.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Importálj OpenAPI/Swagger vagy Postman collectiont.',
           1 => 'Add hozzá kézzel a hiányzó endpointokat.',
           2 => 'Állíts expected status/content type és path parameter értékeket.',
@@ -2554,10 +2837,12 @@ return array (
         ),
         'output' => 'Kereshető endpoint katalógus method, path, environment, auth context és legutóbbi QA státusszal.',
       ),
-      3 => array (
+      3 => 
+      array (
         'title' => 'Környezetek és authentication beállítása',
         'body' => 'Evidence gyűjtés előtt válaszd szét a tesztkörnyezeteket és auth profilokat.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Hozz létre local/dev/staging/production environmentet.',
           1 => 'Hozz létre no-auth és authenticated profilokat.',
           2 => 'Minden valódi auth profilra futtasd a Test Authenticationt.',
@@ -2566,10 +2851,12 @@ return array (
         'output' => 'Átlátható auth/environment mátrix scanhez, monitorhoz és riporthoz.',
         'tip' => 'Broken-auth összehasonlításhoz no-auth és bearer/basic profil is kell.',
       ),
-      4 => array (
+      4 => 
+      array (
         'title' => 'Safe scan futtatása',
         'body' => 'A safe scan élő evidence-t gyűjt destruktív metódusok futtatása nélkül.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Futtass project scan vagy endpoint scan műveletet.',
           1 => 'Nézd át a status code, response time, content type és error mezőket.',
           2 => 'Ellenőrizd a sensitive data detector és broken-auth jelzéseket.',
@@ -2577,10 +2864,12 @@ return array (
         ),
         'output' => 'Tárolt scan evidence endpoint státuszhoz, findinghoz, readinesshez és riporthoz.',
       ),
-      5 => array (
+      5 => 
+      array (
         'title' => 'Snapshot mentés és változások összevetése',
         'body' => 'A snapshot ismert állapotot ment. A compare megmutatja a későbbi változást.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Stabil scan után ments baseline snapshotot.',
           1 => 'Változás után futtass újabb scant.',
           2 => 'Hasonlítsd össze baseline vs current állapotot.',
@@ -2588,10 +2877,12 @@ return array (
         ),
         'output' => 'Regression evidence arról, hogy az API biztonságosan vagy váratlanul változott-e.',
       ),
-      6 => array (
+      6 => 
+      array (
         'title' => 'Regression suite és assertionök',
         'body' => 'A regression suite-ok láthatóvá teszik az ismétlődő ellenőrzéseket és külső teszteredményeket.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Építs suite-ot endpointból vagy importált folderekből.',
           1 => 'Adj assertion rule-t expected status/body mezőkre.',
           2 => 'Importálj Newman JSON vagy JUnit XML eredményt.',
@@ -2599,10 +2890,12 @@ return array (
         ),
         'output' => 'Ismételhető QA evidence, amely release readinesshez és monitorhoz köthető.',
       ),
-      7 => array (
+      7 => 
+      array (
         'title' => 'Finding lifecycle és evidence',
         'body' => 'A finding ne lapos lista legyen, hanem látható javítási életciklus.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Állíts severityt és lifecycle státuszt.',
           1 => 'Adj megjegyzést a státuszváltáshoz.',
           2 => 'Csatolj screenshotot, JSON-t, cURL-t vagy request/response evidence-t.',
@@ -2612,10 +2905,12 @@ return array (
         'output' => 'Auditálható hibakezelési történet bizonyítékkal és világos release hatással.',
         'tip' => 'Az accepted risk látható döntés, nem törlés.',
       ),
-      8 => array (
+      8 => 
+      array (
         'title' => 'Release readiness és gate',
         'body' => 'A Release Readiness összegzi, hogy a projekt kiadható-e.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Nézd át a 100 pontos score-t.',
           1 => 'Ellenőrizd az aktív critical/high findingokat.',
           2 => 'Ellenőrizd a regression és coverage státuszt.',
@@ -2623,10 +2918,12 @@ return array (
         ),
         'output' => 'Evidence-szel alátámasztott pass/warning/blocked döntés.',
       ),
-      9 => array (
+      9 => 
+      array (
         'title' => 'Megfelelő riport exportálása',
         'body' => 'Riportot célközönség alapján válassz.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Executive Report vezetői/ügyfél döntéshez.',
           1 => 'Technical Report QA/fejlesztői evidence-hez.',
           2 => 'Full Project Report teljes átadási csomaghoz.',
@@ -2635,10 +2932,12 @@ return array (
         'output' => 'Markdown, HTML vagy PDF evidence profil/projekt brandinggel.',
         'tip' => 'A projekt branding csak az adott projektre írja felül a Default Report Identityt.',
       ),
-      10 => array (
+      10 => 
+      array (
         'title' => 'Monitorok és értesítések',
         'body' => 'Az első QA kör után monitorokkal marad látható a regresszió.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Hozz létre monitort environmenttel és opcionális suite-tal.',
           1 => 'Teszteld --dry-run és --json kapcsolóval.',
           2 => 'Kapcsold be dashboard/email/webhook értesítést.',
@@ -2646,10 +2945,12 @@ return array (
         ),
         'output' => 'Folyamatos regression/security monitorozás tárolt JSON summaryval és alerttel.',
       ),
-      11 => array (
+      11 => 
+      array (
         'title' => 'Audit és karbantartás',
         'body' => 'Az operációs evidence ugyanúgy fontos, mint a QA evidence.',
-        'actions' => array (
+        'actions' => 
+        array (
           0 => 'Nézd át az Audit Logot felhasználói és projektműveletekhez.',
           1 => 'Szükség esetén exportálj audit vagy health JSON-t.',
           2 => 'Deployment változás után futtasd a System Health ellenőrzést.',
@@ -2744,6 +3045,7 @@ return array (
     'preview_button' => 'Import előnézet',
     'confirm_button' => 'Import megerősítése',
     'back_to_import' => 'Vissza az import űrlaphoz',
+    'total' => 'Összesen',
     'total_rows' => 'Összes sor',
     'to_create' => 'Létrehozás',
     'to_update' => 'Frissítés',
@@ -2993,6 +3295,11 @@ return array (
       'auth_ready' => 'Auth-ready endpointok',
       'release_gates' => 'Release gate-ek',
       'enabled_monitors' => 'Engedélyezett monitorok',
+      'blind_spots' => 'QA vakfoltok',
+      'retest_failed_findings' => 'Sikertelen újratesztelésű findingok',
+      'fixed_unverified_findings' => 'Javított, de nem verifikált findingok',
+      'ready_for_retest_findings' => 'Újratesztelésre kész findingok',
+      'overdue_findings' => 'Lejárt findingok',
     ),
     'coverage' => 'Lefedettség',
     'endpoint_coverage' => 'Endpoint lefedettség',
@@ -3034,6 +3341,10 @@ return array (
       'contract_failed' => ':count OpenAPI contract validációs ellenőrzés sikertelen.',
       'critical_findings' => ':count nyitott critical finding blokkolja a release-t.',
       'failed_tests' => ':count sikertelen teszteset blokkolja a kiadást.',
+      'release_blocking_blind_spots' => ':count release blocker QA vakfolt van nyitva.',
+      'retest_failed_findings' => ':count finding sikertelen újratesztelésű és blokkolja a release-t.',
+      'expired_risk_acceptances' => ':count elfogadott kockázat lejárt, release előtt felül kell vizsgálni.',
+      'contract_reality_breaking' => ':count Contract Reality eltérés release-blokkoló.',
     ),
     'warnings' => 
     array (
@@ -3050,6 +3361,13 @@ return array (
       'medium_findings' => ':count nyitott medium súlyosságú finding átnézést igényel.',
       'blocked_tests' => ':count blokkolt teszteset QA felülvizsgálatot igényel.',
       'low_test_execution' => 'A tesztfuttatási lefedettség csak :percent%.',
+      'blind_spots' => ':count nem blokkoló QA vakfolt további ellenőrzést igényel.',
+      'fixed_unverified_findings' => ':count javított finding még QA-verifikációra vár.',
+      'ready_for_retest_findings' => ':count finding újratesztelésre kész.',
+      'overdue_findings' => ':count finding határideje lejárt.',
+      'risk_acceptance_without_expiry' => ':count elfogadott kockázatnak nincs lejárati dátuma.',
+      'risk_acceptance_expiring_soon' => ':count elfogadott kockázat hamarosan lejár.',
+      'contract_reality_warnings' => ':count Contract Reality tétel átnézést igényel.',
     ),
     'actions' => 
     array (
@@ -3060,11 +3378,15 @@ return array (
       'review_warnings' => 'Nézd át a figyelmeztetéseket és döntsd el, elfogadhatók-e ebben a release-ben.',
       'save_clean_baseline' => 'Elfogadott release után ments tiszta baseline snapshotot.',
       'review_findings' => 'Nézd át a nyitott findingokat, majd javítsd őket vagy dokumentáld az elfogadott kockázatot jóváhagyás előtt.',
+      'close_blind_spots' => 'Zárd le vagy dokumentáld a QA vakfoltokat a release döntés előtt.',
+      'verify_findings' => 'Release jóváhagyás előtt verifikáld a javított findingokat újratesztelési bizonyítékkal.',
+      'review_risk_acceptances' => 'Nézd át a kockázatvállalási ledgert, és újítsd meg, zárd le vagy vond vissza az elavult elfogadott kockázatokat.',
     ),
     'overview_title' => 'Release Readiness áttekintés',
     'overview_intro' => 'Projekt szintű release readiness pontszámok összehasonlítása és a részletes release döntési dashboard megnyitása.',
     'project_scores' => 'Projekt readiness pontszámok',
     'no_projects_help' => 'Hozz létre projektet, importálj endpointokat és futtass safe scant a release readiness ellenőrzés előtt.',
+    'verification_summary' => 'Finding verifikációs összesítő',
   ),
   'test_suites' => 
   array (
@@ -3283,10 +3605,20 @@ $.data.items',
       'body_preview' => 'Mentett JSON response body preview',
       'valid_json_body' => 'Érvényes JSON response body',
       'operation_in_contract' => 'Az endpoint műveletnek szerepelnie kell az OpenAPI contractban',
+      'auth_required' => 'Az OpenAPI művelet authentikációt igényel',
+      'auth_not_required' => 'Az OpenAPI művelet nem igényel authentikációt',
+      'auth_protected_when_required' => 'A védett endpointnak el kell utasítania az authentikáció nélküli hozzáférést',
+      'documented_response_fields' => 'Minden response mező szerepeljen az OpenAPI sémában',
+      'no_undocumented_fields' => 'Nincs nem dokumentált top-level response mező',
+
     ),
     'actual' => 
     array (
       'schema_valid' => 'Schema ellenőrzések sikeresek',
+      'endpoint_requires_auth' => 'Az Aptoria endpoint inventory szerint az endpoint auth-required',
+      'endpoint_no_auth_required' => 'Az Aptoria endpoint inventory szerint az endpoint public/no-auth',
+      'no_undocumented_fields' => 'Nem látszott nem dokumentált top-level response mező',
+
     ),
     'evidence' => 'Bizonyíték',
     'no_operations_detected' => 'Nem található OpenAPI művelet a contract dokumentumban.',
@@ -3325,6 +3657,9 @@ $.data.items',
       'content_type' => 'Content-Type',
       'response_schema' => 'Response schema',
       'scan_evidence' => 'Scan bizonyíték',
+      'auth_requirement' => 'Auth követelmény',
+      'undocumented_response_field' => 'Nem dokumentált response mező',
+
     ),
     'messages' => 
     array (
@@ -3343,11 +3678,58 @@ $.data.items',
       'body_not_json' => 'A mentett response body preview nem érvényes JSON.',
       'schema_matches' => 'A mentett response body megfelel az alap contract schema ellenőrzéseknek.',
       'schema_mismatch' => 'A mentett response body nem felel meg a contract schema-nak.',
+      'auth_requirement_matches' => 'Az endpoint auth követelménye megfelel az OpenAPI security contractnak.',
+      'auth_contract_mismatch' => 'Az endpoint auth követelménye nem felel meg az OpenAPI security contractnak.',
+      'auth_behavior_mismatch' => 'A no-auth comparison bizonyíték authentikációs határ eltérésre utal.',
+      'no_undocumented_response_fields' => 'Nem látszott nem dokumentált top-level response mező.',
+      'undocumented_response_fields' => 'A tényleges response olyan mezőket tartalmaz, amelyek nincsenek dokumentálva az OpenAPI sémában.',
+      'undocumented_sensitive_response_fields' => 'A tényleges response nem dokumentált, érzékenynek tűnő mezőket tartalmaz.',
+
     ),
     'schema_problem_type' => 'Típuseltérés itt: :path. Elvárt típus: :type.',
     'schema_problem_required' => 'Hiányzó kötelező mező: :field itt: :path.',
     'expected_label' => 'Elvárt',
     'actual_label' => 'Tényleges',
+  ),
+  'contract_reality' => 
+  array (
+    'title' => 'Contract Reality Check',
+    'short_title' => 'Contract Reality',
+    'intro' => 'Az OpenAPI contract, a mentett scan evidence és az Aptoria endpoint metadata összevetése: hol tér el a dokumentált működés a valóságtól.',
+    'latest_run' => 'Legutóbbi contract futás',
+    'open_validation' => 'Validációs eredmény megnyitása',
+    'run_validation' => 'Contract validáció futtatása',
+    'no_run' => 'Még nincs contract validációs futás. Előbb futtass OpenAPI contract validációt.',
+    'summary_title' => 'Contract Reality összefoglaló',
+    'results_title' => 'Reality ellenőrzések',
+    'type' => 'Reality típus',
+    'blocking' => 'Blokkoló eltérések',
+    'matches_contract' => 'Megfelel a contractnak',
+    'contract_drift' => 'Contract drift',
+    'missing_documented_endpoint' => 'Hiányzó dokumentált endpoint',
+    'undocumented_endpoint' => 'Nem dokumentált endpoint',
+    'undocumented_response' => 'Nem dokumentált response',
+    'auth_contract_mismatch' => 'Auth contract eltérés',
+    'breaking_contract_mismatch' => 'Breaking contract eltérés',
+    'skipped' => 'Kihagyva',
+    'statuses' => 
+    array (
+      'missing' => 'Hiányzó contract bizonyíték',
+      'aligned' => 'Contract és valóság egyezik',
+      'review' => 'Átnézést igényel',
+      'blocking' => 'Release-blokkoló eltérés',
+    ),
+    'types' => 
+    array (
+      'matches_contract' => 'Megfelel a contractnak',
+      'contract_drift' => 'Contract drift',
+      'missing_documented_endpoint' => 'Hiányzó dokumentált endpoint',
+      'undocumented_endpoint' => 'Nem dokumentált endpoint',
+      'undocumented_response' => 'Nem dokumentált response',
+      'auth_contract_mismatch' => 'Auth contract eltérés',
+    ),
+    'report_summary_title' => 'Contract Reality összefoglaló',
+    'report_empty' => 'Még nem készült Contract Reality Check.',
   ),
   'findings' => 
   array (
@@ -3443,6 +3825,9 @@ $.data.items',
       'accepted_risk' => 'Elfogadott kockázat',
       'closed' => 'Lezárva',
       'reopened' => 'Újranyitva',
+      'ready_for_retest' => 'Újratesztelésre kész',
+      'retest_failed' => 'Sikertelen újratesztelés',
+      'verified' => 'Verifikálva',
     ),
     'lifecycle' => 
     array (
@@ -3472,6 +3857,9 @@ $.data.items',
         'accept_risk' => 'Kockázat elfogadása',
         'close' => 'Finding lezárása',
         'reopen' => 'Finding újranyitása',
+        'ready_for_retest' => 'Áthelyezés újratesztelésre kész állapotba',
+        'retest_failed' => 'Sikertelen újratesztelés jelölése',
+        'verify' => 'Javítás verifikálása',
       ),
     ),
     'evidence_types' => 
@@ -3486,6 +3874,78 @@ $.data.items',
       'http' => 'HTTP bizonyíték',
       'log' => 'Log részlet',
       'contract' => 'Contract bizonyíték',
+      'retest' => 'Retest evidence',
+    ),
+    'accepted_risk_expires_at' => 'Accepted risk lejárata',
+    'accepted_risk_expires_at_help' => 'Accepted risk státusznál add meg, meddig vállalható a kockázat.',
+    'accepted_risk_note' => 'Accepted risk indoklás',
+    'accepted_risk_note_placeholder' => 'Miért vállalható ideiglenesen ez a kockázat, milyen mitigáció mellett?',
+    'ready_for_retest' => 'Újratesztelésre kész',
+    'retest_failed' => 'Sikertelen újratesztelés',
+    'verified' => 'Verifikálva',
+    'priority' => 'Prioritás',
+    'priorities' => 
+    array (
+      'low' => 'Alacsony',
+      'medium' => 'Közepes',
+      'high' => 'Magas',
+      'critical' => 'Kritikus',
+    ),
+    'owner' => 'Felelős',
+    'unassigned' => 'Nincs kiosztva',
+    'all_owners' => 'Minden felelős',
+    'due_date' => 'Határidő',
+    'all_due_dates' => 'Minden határidő',
+    'only_overdue' => 'Csak lejárt',
+    'overdue' => 'Lejárt',
+    'linked_release_gate' => 'Kapcsolt release gate',
+    'ownership' => 
+    array (
+      'title' => 'Felelősség',
+    ),
+    'verification' => 
+    array (
+      'title' => 'QA verifikáció',
+    ),
+    'verification_status' => 'Verifikációs állapot',
+    'all_verification_statuses' => 'Minden verifikációs állapot',
+    'verification_statuses' => 
+    array (
+      'pending' => 'Verifikációra vár',
+      'ready_for_retest' => 'Újratesztelésre kész',
+      'retest_failed' => 'Sikertelen újratesztelés',
+      'verified' => 'Verifikálva',
+      'not_required' => 'Nem szükséges',
+    ),
+    'retest_required' => 'Újratesztelés szükséges',
+    'retest_result' => 'Újratesztelés eredménye',
+    'retest_results' => 
+    array (
+      'pending' => 'Függőben',
+      'pass' => 'Sikeres',
+      'fail' => 'Sikertelen',
+      'blocked' => 'Blokkolt',
+    ),
+    'fix_evidence_required' => 'Javítási bizonyíték szükséges',
+    'verified_by' => 'Verifikálta',
+    'verified_at' => 'Verifikálva ekkor',
+    'last_retest_at' => 'Utolsó újratesztelés',
+    'retest_evidence' => 'Újratesztelési bizonyíték',
+    'retest_evidence_present' => 'Újratesztelési bizonyíték rögzítve',
+    'retest_evidence_missing' => 'Újratesztelési bizonyíték hiányzik',
+    'comments' => 'Finding kommentek',
+    'add_comment' => 'Komment hozzáadása',
+    'comment_created' => 'Finding komment hozzáadva.',
+    'comment_body' => 'Komment',
+    'comment_body_placeholder' => 'QA, fejlesztői, verifikációs, újratesztelési vagy kockázatelfogadási megjegyzés.',
+    'no_comments' => 'Még nincs finding komment.',
+    'comment_types' => 
+    array (
+      'qa_note' => 'QA megjegyzés',
+      'developer_note' => 'Fejlesztői megjegyzés',
+      'verification_note' => 'Verifikációs megjegyzés',
+      'risk_acceptance_note' => 'Kockázatelfogadási megjegyzés',
+      'retest_note' => 'Újratesztelési megjegyzés',
     ),
   ),
   'test_execution' => 
@@ -3643,11 +4103,15 @@ $.data.items',
       'test_suites_cases' => 'Test Suite-ok és Test Case-ek',
       'findings_evidence' => 'Findingok és evidence',
       'contract_validation' => 'OpenAPI contract validáció',
+      'contract_reality' => 'Contract Reality Check',
       'scans_snapshots' => 'Scan, snapshot és regressziós bizonyíték',
       'endpoint_inventory' => 'Endpoint inventory',
+      'api_behavior' => 'API Behavior Map',
+      'evidence_graph' => 'Evidence Graph',
       'recommendations' => 'Ajánlások',
       'appendix' => 'Függelék / biztonsági megjegyzések',
       'release_gate' => 'QA Release Gate',
+      'blind_spots' => 'Blind Spot Summary',
     ),
     'section_help' => 
     array (
@@ -3658,8 +4122,11 @@ $.data.items',
       'test_suites_cases' => 'Suite és test case inventory.',
       'findings_evidence' => 'Nyitott findingok és opcionális evidence részletek.',
       'contract_validation' => 'Legutóbbi OpenAPI validációs összefoglaló és eltérések.',
+      'contract_reality' => 'OpenAPI és tényleges API viselkedés, auth és nem dokumentált response mezők eltérései.',
       'scans_snapshots' => 'Legutóbbi scan, snapshot és regressziós bizonyíték.',
       'endpoint_inventory' => 'Endpoint tábla risk, assertion és coverage állapottal.',
+      'api_behavior' => 'Producer/consumer függőségek, destruktív endpointok és javasolt teszt sorrendek.',
+      'evidence_graph' => 'Auditálható endpoint, finding és release bizonyítékláncok.',
       'recommendations' => 'Következő lépések az aktuális kockázati profil alapján.',
       'appendix' => 'Safe-export és bizonyítékértelmezési megjegyzések.',
       'release_gate' => 'Mentett release gate döntési pillanatkép státusszal, blokkolókkal és figyelmeztetésekkel.',
@@ -4477,6 +4944,7 @@ $.data.items',
     'duration' => 'Időtartam',
     'endpoint_match' => 'Endpoint egyezés',
     'notes' => 'Megjegyzés',
+    'total' => 'Összesen',
     'total_rows' => 'Összes sor',
     'no_rows' => 'Nem található Newman futtatási sor.',
     'confirm_import' => 'Newman eredmények importálása',
@@ -4557,7 +5025,6 @@ $.data.items',
       'critical' => 'Kritikus',
     ),
   ),
-
   'demo_project' => 
   array (
     'title' => 'Demo projekt',
@@ -4596,4 +5063,453 @@ $.data.items',
       'monitor' => 'Ütemezett monitor alert-ready kontextussal',
     ),
   ),
+  'blind_spots' => 
+  array (
+    'title' => 'QA vakfoltok',
+    'short_title' => 'Vakfoltok',
+    'heading' => 'QA Blind Spot Detector',
+    'intro' => 'Ez az oldal azt mutatja meg, milyen bizonyíték hiányzik vagy avult el egy felelős release döntéshez.',
+    'open' => 'Vakfoltok megnyitása',
+    'report_summary_title' => 'Blind Spot Summary',
+    'report_details_title' => 'Blind Spot részletek',
+    'release_blocker' => 'Release blocker',
+    'no_items' => 'Nincs detektált QA vakfolt a jelenlegi bizonyítékok alapján.',
+    'type' => 'Típus',
+    'category' => 'Kategória',
+    'severity' => 'Súlyosság',
+    'module' => 'Modul',
+    'affected' => 'Érintett elem',
+    'reason' => 'Ok',
+    'suggested_action' => 'Javasolt teendő',
+    'detected_at' => 'Detektálva',
+    'summary' => 
+    array (
+      'title' => 'Összegzés',
+      'total' => 'Összes vakfolt',
+      'critical_blind_spots' => 'Critical vakfoltok',
+      'high_blind_spots' => 'High vakfoltok',
+      'stale_evidence' => 'Elavult evidence',
+      'untested_endpoints' => 'Scan nélküli endpointok',
+      'unverified_fixes' => 'Nem verifikált fixek',
+      'expiring_accepted_risks' => 'Accepted risk lejárati gondok',
+      'release_blockers' => 'Release blocker vakfoltok',
+    ),
+    'filters' => 
+    array (
+      'title' => 'Szűrők',
+      'all_severities' => 'Minden súlyosság',
+      'all_categories' => 'Minden kategória',
+      'all_modules' => 'Minden modul',
+      'only_release_blockers' => 'Csak release blocker',
+    ),
+    'table' => 
+    array (
+      'title' => 'Detektált vakfoltok',
+    ),
+    'severities' => 
+    array (
+      'critical' => 'Critical',
+      'high' => 'High',
+      'medium' => 'Medium',
+      'low' => 'Low',
+    ),
+    'categories' => 
+    array (
+      'untested_endpoint' => 'Teszteletlen endpoint',
+      'missing_assertion' => 'Hiányzó assertion',
+      'missing_auth_comparison' => 'Hiányzó auth comparison',
+      'unverified_fix' => 'Nem verifikált fix',
+      'risk_without_expiry' => 'Lejárat nélküli accepted risk',
+      'expired_accepted_risk' => 'Lejárt accepted risk',
+      'stale_evidence' => 'Elavult evidence',
+      'missing_report_context' => 'Hiányzó riport kontextus',
+    ),
+    'modules' => 
+    array (
+      'endpoints' => 'Endpointok',
+      'assertions' => 'Assertions',
+      'auth' => 'Auth',
+      'findings' => 'Findings',
+      'release' => 'Release',
+    ),
+    'types' => 
+    array (
+      'endpoint_without_scan' => 'Endpoint scan nélkül',
+      'endpoint_without_assertion' => 'Endpoint assertion nélkül',
+      'auth_endpoint_without_no_auth_comparison' => 'Auth endpoint no-auth comparison nélkül',
+      'fixed_finding_without_retest' => 'Fixed finding retest evidence nélkül',
+      'accepted_risk_without_expiry' => 'Accepted risk lejárat nélkül',
+      'accepted_risk_expired' => 'Lejárt accepted risk',
+      'accepted_risk_expiring' => 'Hamarosan lejáró accepted risk',
+      'stale_scan_evidence' => 'Elavult scan evidence',
+      'release_without_recent_report' => 'Release friss riport nélkül',
+    ),
+    'reasons' => 
+    array (
+      'endpoint_without_scan' => 'Az endpoint szerepel az inventoryban, de nincs hozzá scan result evidence.',
+      'endpoint_without_assertion' => 'Az endpointnak nincs aktív, effektív assertion szabálya.',
+      'auth_endpoint_without_no_auth_comparison' => 'Auth required endpointnál nincs eltárolt no-auth comparison evidence.',
+      'fixed_finding_without_retest' => 'A finding Fixed állapotú, de nincs hozzá retest vagy verifikációs evidence.',
+      'accepted_risk_without_expiry' => 'Az accepted risk nincs lejárati dátummal időkeretbe rakva.',
+      'accepted_risk_expired' => 'Az accepted risk lejárt: :date.',
+      'accepted_risk_expiring' => 'Az accepted risk hamarosan lejár: :date.',
+      'stale_scan_evidence' => 'A legutóbbi scan evidence régebbi, mint :days nap.',
+      'release_without_recent_report_missing' => 'A projekthez még nincs mentett release gate / release report snapshot.',
+      'release_without_recent_report_stale' => 'A legutóbbi release report régebbi, mint :days nap.',
+    ),
+    'actions' => 
+    array (
+      'endpoint_without_scan' => 'Futtass scan/probe-ot, majd ments friss evidence-t.',
+      'endpoint_without_assertion' => 'Adj hozzá legalább egy alap assertion szabályt.',
+      'auth_endpoint_without_no_auth_comparison' => 'Futtass no-auth comparison scant az auth boundary bizonyítására.',
+      'fixed_finding_without_retest' => 'Adj hozzá retest evidence-t, vagy verifikáld a javítást.',
+      'accepted_risk_without_expiry' => 'Adj accepted risk expiry dátumot és indoklást.',
+      'accepted_risk_expired' => 'Újítsd meg, zárd le, vagy nyisd újra a kockázatot.',
+      'accepted_risk_expiring' => 'Ellenőrizd, hogy a kockázat még elfogadható-e a release scope-ban.',
+      'stale_scan_evidence' => 'Futtass friss scant a release döntés előtt.',
+      'release_without_recent_report' => 'Generálj friss release readiness / release gate riportot.',
+    ),
+  ),
+  'risk_acceptances' => 
+  array (
+    'title' => 'Kockázatvállalási nyilvántartás',
+    'short_title' => 'Kockázati ledger',
+    'heading' => 'Kockázatvállalási nyilvántartás',
+    'intro' => 'Minden elfogadott kockázat külön döntési rekordként jelenik meg felelőssel, indoklással, release scope-pal, lejárattal és release hatással. Az Accepted risk így nem csak finding státusz, hanem auditálható bizonyíték.',
+    'panel_title' => 'Kockázat elfogadása',
+    'open_ledger' => 'Ledger megnyitása',
+    'accept_risk' => 'Kockázat elfogadása',
+    'created' => 'A kockázatvállalás rögzítve.',
+    'updated' => 'A kockázatvállalás frissítve.',
+    'lifecycle_note' => '#:id kockázatvállalási rekord rögzítve a ledgerben.',
+    'no_items' => 'Nincs a szűrésnek megfelelő kockázatvállalás.',
+    'no_finding_items' => 'Ehhez a findinghoz még nincs kockázatvállalás rögzítve.',
+    'table_title' => 'Elfogadott kockázatok',
+    'accepted_by' => 'Elfogadta',
+    'accepted_at' => 'Elfogadás ideje',
+    'accepted_until' => 'Elfogadva eddig',
+    'accepted_until_help' => 'Lehetőleg mindig adj meg lejárati dátumot. Lejárat nélküli accepted risk figyelmeztetés marad.',
+    'reason' => 'Indoklás',
+    'reason_placeholder' => 'Írd le, miért vállalható ez a kockázat az aktuális release-ben.',
+    'business_justification' => 'Üzleti indoklás',
+    'mitigation_note' => 'Mitigációs megjegyzés',
+    'evidence_requirement' => 'Bizonyíték-elvárás',
+    'release_scope' => 'Release scope',
+    'expiry_action' => 'Lejáratkori teendő',
+    'expiry_filter' => 'Lejárati szűrő',
+    'active' => 'Aktív elfogadott kockázatok',
+    'expired' => 'Lejárt elfogadott kockázatok',
+    'without_expiry' => 'Lejárat nélkül',
+    'expiring_soon' => 'Hamarosan lejár',
+    'report_summary_title' => 'Kockázatvállalási ledger összefoglaló',
+    'filters' => 
+    array (
+      'title' => 'Ledger szűrők',
+      'all_severities' => 'Minden súlyosság',
+    ),
+    'metrics' => 
+    array (
+      'active' => 'Aktív',
+      'high_or_critical' => 'High / critical',
+      'without_expiry' => 'Lejárat nélkül',
+      'expiring_soon' => 'Hamarosan lejár',
+      'expired' => 'Lejárt',
+      'total' => 'Összesen',
+    ),
+    'statuses' => 
+    array (
+      'active' => 'Aktív',
+      'expired' => 'Lejárt',
+      'renewed' => 'Megújított',
+      'revoked' => 'Visszavont',
+    ),
+    'expiry_actions' => 
+    array (
+      'review' => 'Lejáratkor felülvizsgálat',
+      'reopen_finding' => 'Lejáratkor finding újranyitása',
+      'block_release' => 'Lejáratkor release blokkolása',
+      'renew_or_close' => 'Lejárat előtt megújítás vagy lezárás',
+    ),
+  ),
+
+  'release_decisions' => 
+  array (
+    'title' => 'Release Decision Room',
+    'short_title' => 'Decision Room',
+    'heading' => 'Release Decision Room',
+    'intro' => 'Go / No-Go / Conditional Go döntés véglegesítése az aktuális release readiness, blocker, warning, blind spot, accepted risk és evidence chain alapján.',
+    'created' => 'A release döntési csomag mentve.',
+    'package_title' => 'Release döntési csomag',
+    'recommended_decision' => 'Javasolt döntés',
+    'finalize_title' => 'Release döntés véglegesítése',
+    'finalize_button' => 'Döntési csomag véglegesítése',
+    'latest_decision' => 'Legutóbbi döntés',
+    'no_decisions' => 'Még nincs mentett release döntési csomag.',
+    'history' => 'Döntési előzmények',
+    'decision_inputs' => 'Döntési bemenetek',
+    'evidence_chain' => 'Evidence chain',
+    'finding_state_snapshot' => 'Finding állapot snapshot',
+    'back_to_room' => 'Vissza a Decision Roomhoz',
+    'release_name' => 'Release neve',
+    'target_environment' => 'Célkörnyezet',
+    'decision_status' => 'Döntési státusz',
+    'decision_owner' => 'Döntéshozó',
+    'decision_timestamp' => 'Döntés időpontja',
+    'decision_notes' => 'Döntési megjegyzés',
+    'decision_notes_placeholder' => 'Írd le, miért mehet, miért blokkolt, miért feltételes, vagy milyen evidence hiányzik még.',
+    'release_score' => 'Release score',
+    'blockers' => 'Blockerek',
+    'warnings' => 'Warningok',
+    'blind_spots' => 'Vakfoltok',
+    'accepted_risks' => 'Accepted riskek',
+    'latest_scan' => 'Legutóbbi scan',
+    'latest_snapshot' => 'Legutóbbi snapshot',
+    'latest_compare' => 'Legutóbbi compare',
+    'latest_contract' => 'Legutóbbi contract validation',
+    'latest_gate' => 'Legutóbbi release gate',
+    'package_checksum' => 'Csomag checksum',
+    'pending' => 'Függőben',
+    'no_blockers' => 'Jelenleg nincs release blocker.',
+    'no_warnings' => 'Jelenleg nincs warning.',
+    'statuses' => 
+    array (
+      'go' => 'Go',
+      'no_go' => 'No-Go',
+      'conditional_go' => 'Conditional Go',
+      'pending_evidence' => 'Pending evidence',
+      'blocked' => 'Blocked',
+    ),
+  ),
+  'report_versions' => 
+  array (
+    'title' => 'Riport verziózás és jóváhagyás',
+    'short_title' => 'Riport jóváhagyások',
+    'detail_title' => 'Riport verzió',
+    'intro' => 'Jóváhagyható riportverziók checksum-mal, forrás evidence pillanatképpel és approval státusszal.',
+    'detail_intro' => 'Ez a riportverzió mentett döntési objektum, nem csak letöltött fájl.',
+    'report_center_help' => 'Ügyfélátadás vagy release döntés előtt ments jóváhagyható riportverziót.',
+    'open_history' => 'Riporttörténet megnyitása',
+    'history' => 'Riporttörténet',
+    'empty' => 'Még nincs mentett riportverzió.',
+    'create_draft' => 'Riport draft létrehozása',
+    'create_technical_draft' => 'Technikai riport draft',
+    'manage_versions' => 'Verziók kezelése',
+    'title_placeholder' => 'Opcionális riportcím',
+    'report_type' => 'Riport típusa',
+    'checksum' => 'Checksum',
+    'generated_by' => 'Generálta',
+    'generated_at' => 'Generálva',
+    'reviewed_at' => 'Átnézve',
+    'approved_by' => 'Jóváhagyta',
+    'latest_approved' => 'Legutóbbi jóváhagyott riport',
+    'approved_at' => 'Jóváhagyva',
+    'archived_at' => 'Archiválva',
+    'approval' => 'Jóváhagyás',
+    'sources' => 'Forrás evidence pillanatkép',
+    'source_scans' => 'Forrás scanek',
+    'source_snapshots' => 'Forrás snapshotok',
+    'source_compares' => 'Forrás összehasonlítások',
+    'source_findings' => 'Finding állapotsorok',
+    'source_gates' => 'Release gate-ek',
+    'source_decisions' => 'Release döntések',
+    'source_evidence' => 'Evidence csatolmányok',
+    'markdown_preview' => 'Markdown előnézet',
+    'export_actions' => 'Export formátumok',
+    'workflow_actions' => 'Jóváhagyási műveletek',
+    'archived_note' => 'Ez a riportverzió archiválva van.',
+    'mark_reviewed' => 'Átnézettnek jelölés',
+    'approve' => 'Riport jóváhagyása',
+    'archive' => 'Archiválás',
+    'created' => 'Riportverzió létrehozva.',
+    'reviewed' => 'Riportverzió átnézettként jelölve.',
+    'approved' => 'Riportverzió jóváhagyva.',
+    'archived' => 'Riportverzió archiválva.',
+    'default_titles' => 
+    array (
+      'executive' => 'Executive release riport',
+      'technical' => 'Technikai QA evidence riport',
+      'release_readiness' => 'Release readiness riport',
+      'full_project' => 'Teljes projekt QA riport',
+    ),
+    'types' => 
+    array (
+      'executive' => 'Executive riport',
+      'technical' => 'Technikai riport',
+      'release_readiness' => 'Release readiness riport',
+      'full_project' => 'Teljes projekt riport',
+    ),
+    'statuses' => 
+    array (
+      'draft' => 'Draft',
+      'reviewed' => 'Átnézve',
+      'approved' => 'Jóváhagyva',
+      'archived' => 'Archiválva',
+    ),
+  ),
+  'client_portal' => 
+  array (
+    'title' => 'Client Audit Portal',
+    'short_title' => 'Client Portal',
+    'public_title' => 'Client Audit Portal',
+    'intro' => 'Hozz létre limitált, token-alapú ügyfél vagy külső reviewer hozzáférést jóváhagyott riportokhoz, release döntésekhez, accepted riskekhez, finding összefoglalóhoz és evidence csomaghoz.',
+    'public_intro' => 'Ez a limitált portál az adott projekthez tartozó jóváhagyott release evidence adatokat és az aktuális ügyfélbiztos projekt-összefoglalót mutatja. Nem ad hozzáférést beállításokhoz, debug adatokhoz, auth profilokhoz vagy más projektekhez.',
+    'header_subtitle' => 'Projekt-szintű ügyfél review portál',
+    'footer_credit' => 'Evidence-first API QA és release decision platform',
+    'create_access' => 'Portálhozzáférés létrehozása',
+    'create_button' => 'Portállink létrehozása',
+    'active_links' => 'Portállinkek',
+    'empty' => 'Még nincs client portal link létrehozva.',
+    'new_link' => 'Új portállink',
+    'open_portal' => 'Portál megnyitása',
+    'revoke' => 'Visszavonás',
+    'revoked' => 'Client portal hozzáférés visszavonva.',
+    'created' => 'Client portal hozzáférés létrehozva.',
+    'acknowledged' => 'Visszaigazolás rögzítve.',
+    'label' => 'Megnevezés',
+    'contact_name' => 'Kapcsolattartó neve',
+    'contact_email' => 'Kapcsolattartó e-mail',
+    'role' => 'Portál szerepkör',
+    'expires_at' => 'Lejárat',
+    'last_viewed' => 'Utolsó megtekintés',
+    'permissions' => 'Ügyfél számára engedélyezett tartalom',
+    'approved_reports' => 'Jóváhagyott riportok',
+    'current_snapshot' => 'Aktuális ügyfélbiztos release pillanatkép',
+    'latest_approved_report' => 'Legutóbbi jóváhagyott riport',
+    'latest_release_decision' => 'Legutóbbi release döntés',
+    'handoff_ready' => 'Az ügyfélátadás készen áll',
+    'handoff_ready_help' => 'A jóváhagyott evidence és az aktuális readiness adatok elérhetők az ügyféloldali áttekintéshez.',
+    'handoff_gaps' => 'Ügyfélátadási hiányok',
+    'approved_reports_hint' => 'Jóváhagyott riport megjelenítéséhez menj a Project → Report approvals oldalra, és hagyj jóvá egy riportverziót.',
+    'current_readiness_fallback' => 'Még nincs mentett döntési csomag; helyette az aktuális release readiness pillanatkép látható.',
+    'release_decisions' => 'Release döntések',
+    'accepted_risks' => 'Accepted riskek',
+    'open_findings' => 'Nyitott findingok',
+    'finding_summary' => 'Finding összefoglaló',
+    'evidence_package' => 'Evidence csomag',
+    'evidence_package_intro' => 'Ügyfélbiztos JSON összefoglaló vagy ZIP evidence csomag letöltése az adott projekt bizonyítékaiból.',
+    'download_summary' => 'JSON összefoglaló letöltése',
+    'download_package' => 'Evidence ZIP letöltése',
+    'no_approved_reports' => 'Még nincs ügyfélátadásra jóváhagyott riport.',
+    'no_accepted_risks' => 'Jelenleg nincs a portálon látható accepted risk.',
+    'acknowledge' => 'Visszaigazolás',
+    'acknowledgements' => 'Visszaigazolások',
+    'no_acknowledgements' => 'Még nincs ügyféloldali visszaigazolás rögzítve.',
+    'roles' => 
+    array (
+      'client_viewer' => 'Ügyfél megtekintő',
+      'client_approver' => 'Ügyfél jóváhagyó',
+      'reviewer' => 'Külső reviewer',
+    ),
+    'statuses' => 
+    array (
+      'active' => 'Aktív',
+      'revoked' => 'Visszavonva',
+    ),
+    'permission_labels' => 
+    array (
+      'reports' => 'Jóváhagyott riportok',
+      'release_decisions' => 'Release döntések',
+      'accepted_risks' => 'Accepted risk ledger',
+      'findings' => 'Finding összefoglaló',
+      'evidence_package' => 'Evidence csomag letöltés',
+      'approve_reports' => 'Riport visszaigazolás',
+      'acknowledge_release' => 'Release döntés visszaigazolás',
+      'approve_risks' => 'Accepted risk visszaigazolás',
+    ),
+    'gaps' => 
+    array (
+      'no_approved_reports' => 'Nincs ügyfélátadásra jóváhagyott riport.',
+      'no_release_decision' => 'Nincs mentett release decision package.',
+      'no_scan_evidence' => 'Még nincs scan evidence.',
+      'release_blocking_blind_spots' => ':count release-blokkoló blind spot még döntést igényel.',
+    ),
+    'acknowledgement_types' => 
+    array (
+      'report_approval' => 'Riport visszaigazolás',
+      'release_acknowledgement' => 'Release döntés visszaigazolás',
+      'risk_acceptance_acknowledgement' => 'Accepted risk visszaigazolás',
+    ),
+  ),
+
+  'qa_cockpit' => 
+  array (
+    'title' => 'QA Cockpit',
+    'short_title' => 'QA Cockpit',
+    'subtitle' => 'Napi QA prioritási tábla release blokkolókhoz, evidence hiányokhoz, retest feladatokhoz és döntési érettséghez.',
+    'priority_queue' => 'Mai QA prioritási lista',
+    'empty_priority_queue' => 'Jelenleg nincs sürgős QA cockpit teendő.',
+    'empty_queue' => 'Ebben a sorban nincs elem.',
+    'item' => 'Elem',
+    'due_or_age' => 'Határidő / kor',
+    'release_snapshot' => 'Release pillanatkép',
+    'top_blind_spots' => 'Legfontosabb vakfoltok',
+    'no_blind_spots' => 'A projektnél nincs detektált vakfolt.',
+    'recent_risk_endpoints' => 'Frissen változott magas kockázatú endpointok',
+    'expires_on' => 'Lejárat: :date',
+    'no_expiry' => 'Nincs lejárati dátum',
+    'days_old' => ':days napos',
+    'metrics' => 
+    array (
+      'open_blockers' => 'Nyitott blokkolók',
+      'fixes_waiting_for_retest' => 'Retestre váró javítások',
+      'accepted_risks_expiring' => 'Lejáró accepted riskek',
+      'stale_scans' => 'Elavult scanek',
+      'stale_reports' => 'Elavult riportok',
+      'endpoints_without_evidence' => 'Evidence nélküli endpointok',
+      'release_candidates_needing_decision' => 'Döntésre váró release-ek',
+      'monitor_alerts' => 'Monitor alertok',
+      'top_blind_spots' => 'Top vakfoltok',
+      'recent_risk_endpoints' => 'Magas kockázatú endpointok',
+    ),
+    'queues' => 
+    array (
+      'blockers' => 'Nyitott blokkolók',
+      'fixes_waiting_for_retest' => 'Retestre váró javítások',
+      'accepted_risks_expiring' => 'Hamarosan lejáró accepted riskek',
+      'stale_scan_evidence' => 'Elavult scan evidence',
+      'stale_reports' => 'Hiányzó vagy elavult approved reportok',
+      'endpoints_without_evidence' => 'Evidence nélküli endpointok',
+      'release_candidates_needing_decision' => 'Döntésre váró release candidate-ek',
+      'monitor_alerts' => 'Triage-ra váró monitor alertok',
+    ),
+    'kinds' => 
+    array (
+      'finding' => 'Finding',
+      'retest' => 'Retest',
+      'risk' => 'Risk',
+      'scan' => 'Scan evidence',
+      'report' => 'Report',
+      'endpoint' => 'Endpoint',
+      'release' => 'Release döntés',
+      'monitor_alert' => 'Monitor alert',
+      'endpoint_risk' => 'Endpoint risk',
+    ),
+    'items' => 
+    array (
+      'no_scan_evidence' => 'Még nincs scan evidence',
+      'stale_scan_evidence' => 'A legutóbbi scan evidence elavult',
+      'no_approved_report' => 'Nincs approved report',
+      'stale_approved_report' => 'A legutóbbi approved report elavult',
+      'endpoint_without_scan' => 'Az endpointnak nincs scan evidence-e',
+      'endpoint_without_assertion' => 'Az endpointnak nincs assertion szabálya',
+      'release_needs_decision' => 'A release evidence változott, de nincs mentett döntés',
+      'monitor_alert' => 'Monitor alert triage-ra vár',
+    ),
+    'actions' => 
+    array (
+      'run_safe_scan' => 'Futtass safe scant és ments friss evidence-et.',
+      'approve_report' => 'Készíts vagy hagyj jóvá ügyfél/release-ready report verziót.',
+    ),
+    'quick_actions' => 
+    array (
+      'title' => 'Gyors műveletek',
+      'blind_spots' => 'Vakfoltok áttekintése',
+      'release_readiness' => 'Release readiness megnyitása',
+      'release_decision' => 'Decision room megnyitása',
+      'report_approvals' => 'Report approvals megnyitása',
+      'run_scan' => 'Safe scan futtatása',
+      'findings' => 'Findingok áttekintése',
+    ),
+  ),
+
 );

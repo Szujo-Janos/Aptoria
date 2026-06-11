@@ -1,4 +1,86 @@
+# v1.1.28 - QA Cockpit Pass
+
+- Added Project → QA Cockpit as a daily QA priority board.
+- Added cockpit queues for open blockers, fixes waiting for retest, expiring accepted risks, stale scans/reports, endpoints without evidence, release candidates needing decision and monitor alerts.
+- Added release snapshot, top blind spots, high-risk endpoint queue and quick action shortcuts.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.28 system audit notes.
+
+# v1.1.27 - Client Audit Portal Pass
+
+- Added project-scoped Client Audit Portal links for external client/reviewer evidence handoff.
+- Added token-based client portal access records with viewer, approver and reviewer roles.
+- Added approved report, release decision, accepted risk, finding summary and evidence package visibility controls.
+- Added client-side report, release decision and accepted risk acknowledgement records.
+- Added public client-safe export routes and project isolation checks.
+
+# v1.1.26 - Report Versioning & Approval Pass
+
+- Added report version history with draft, reviewed, approved and archived states.
+- Added report checksums and source evidence snapshots for scans, snapshots, compares, findings, release gates, release decisions and evidence attachments.
+- Added Markdown / HTML / PDF / JSON exports for saved report versions.
+- Added report approval metadata and audit log events.
+
+# Aptoria v1.1.25 - Contract Reality Check Pass
+
+- Added Project → Contract Reality.
+- Added OpenAPI security vs endpoint auth requirement comparison.
+- Added undocumented top-level response field detection from stored scan evidence.
+- Escalated sensitive-looking undocumented response fields as high severity contract reality mismatches.
+- Added Contract Reality summary to Release Readiness and Full QA reports.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.25 system audit notes.
+
+# Aptoria v1.1.24 - Evidence Graph Pass
+
+- Added Project → Evidence Graph.
+- Added endpoint-level Endpoint Evidence Map summaries.
+- Added finding-level Finding Evidence Chain summaries.
+- Added release-level Release Evidence Graph with scan, snapshot, release gate, decision, accepted risk and blind spot nodes.
+- Added missing evidence link detection and report builder Evidence Graph Summary.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.24 system audit notes.
+
+# Aptoria v1.1.23 - API Behavior Map Pass
+
+- Added Project → API Behavior Map.
+- Added endpoint producer/consumer behavior detection.
+- Added path parameter dependency links and suggested API call sequences.
+- Added destructive endpoint and auth boundary behavior flags.
+- Added endpoint detail behavior panel and report builder API Behavior Map summary.
+
 # Changelog
+
+## v1.1.22 - Release Decision Room Pass
+
+- Added project-level Release Decision Room for Go / No-Go / Conditional Go / Pending evidence / Blocked release decisions.
+- Added persisted release_decisions packages with decision owner, timestamp, notes, readiness score, blockers, warnings, blind spots, accepted risks and evidence chain snapshots.
+- Added Markdown, HTML, PDF and JSON exports for saved release decision packages.
+- Integrated latest release decision metadata into Release Readiness and Full QA reports.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.22 system audit notes.
+
+## v1.1.21 - Risk Acceptance Ledger Pass
+
+- Added a dedicated risk_acceptances ledger for accepted risk decisions with accepted by, accepted until, reason, business justification, mitigation note, evidence requirement, release scope and expiry action.
+- Added project-level Risk Ledger page with active, high/critical, missing expiry, expiring soon and expired summaries.
+- Added finding detail risk acceptance panel that records accepted risk decisions and syncs the legacy finding Accepted risk fields for backward compatibility.
+- Integrated risk acceptance expiry status into Release Readiness blockers, warnings, score checks and recommended actions.
+- Added Risk Acceptance Ledger Summary to Release Readiness and Full QA reports.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.21 system audit notes.
+
+## v1.1.20 - Finding Verification & Ownership Pass
+
+- Added finding ownership fields: owner, due date, priority and linked release gate context.
+- Added QA verification fields: verification status, retest required, retest result, fix evidence required, verified by, verified at and last retest timestamp.
+- Added Ready for retest, Retest failed and Verified lifecycle states with release readiness impact.
+- Added finding comments for QA, developer, verification, risk acceptance and retest notes.
+- Integrated finding verification summary into Release Readiness and Full QA reports.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.20 system audit notes.
+
+## v1.1.19 - QA Blind Spot Detector Pass
+
+- Added project-level QA Blind Spots to show missing or stale release evidence before sign-off.
+- Detects endpoints without scans, endpoints without assertions, auth endpoints without no-auth comparison, fixed findings without retest evidence, accepted risks without expiry, stale scan evidence and missing recent release reports.
+- Added accepted risk expiry fields and a Retest evidence type for finding verification.
+- Integrated Blind Spot Summary into Release Readiness, Full QA Report Builder and standard report exports.
+- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.19 system audit notes.
 
 ### v1.1.18 Help / How it works completeness polish
 

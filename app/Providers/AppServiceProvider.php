@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\ApiMonitor;
 use App\Models\AuthProfile;
 use App\Models\CalendarEvent;
+use App\Models\ClientPortalAccess;
+use App\Models\ClientPortalAcknowledgement;
 use App\Models\CompareItem;
 use App\Models\CompareRun;
 use App\Models\ContractValidationResult;
@@ -20,6 +22,7 @@ use App\Models\Project;
 use App\Models\ProjectSetting;
 use App\Models\QaReleaseGate;
 use App\Models\QaReleaseGateItem;
+use App\Models\ReportVersion;
 use App\Models\ScanResult;
 use App\Models\ScanRun;
 use App\Models\Setting;
@@ -108,6 +111,8 @@ class AppServiceProvider extends ServiceProvider
                     'projects.calendar.*',
                     'projects.audit-log.*',
                     'projects.reports.*',
+                    'projects.report-versions.*',
+                    'projects.client-portal.*',
                     'projects.release-readiness.*',
                     'projects.release-gates.*'
                 ),
@@ -164,6 +169,9 @@ class AppServiceProvider extends ServiceProvider
             ProjectSetting::class,
             QaReleaseGate::class,
             QaReleaseGateItem::class,
+            ReportVersion::class,
+            ClientPortalAccess::class,
+            ClientPortalAcknowledgement::class,
             ScanRun::class,
             Setting::class,
             Snapshot::class,

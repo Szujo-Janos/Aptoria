@@ -82,6 +82,65 @@
 @endif
 
 
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel hviolet">
+            <div class="panel-heading hbuilt">
+                <div class="panel-tools">
+                    <a href="{{ route('projects.api-behavior.index', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-random"></i> {{ __('messages.api_behavior.short_title') }}</a>
+                </div>
+                {{ __('messages.api_behavior.endpoint_panel_title') }}
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <dl class="dl-horizontal">
+                            <dt>{{ __('messages.api_behavior.role') }}</dt><dd>{{ $endpoint->behavior_role_label }}</dd>
+                            <dt>{{ __('messages.api_behavior.resource') }}</dt><dd><code>{{ $endpoint->behavior_resource ?: __('messages.common.not_available') }}</code></dd>
+                            <dt>{{ __('messages.api_behavior.summary') }}</dt><dd>{{ $endpoint->behavior_summary }}</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-4">
+                        <h5>{{ __('messages.api_behavior.flags.title') }}</h5>
+                        @if($endpoint->destructive_action || $endpoint->auth_boundary || $endpoint->sequence_candidate)
+                            @if($endpoint->destructive_action)<span class="label label-danger">{{ __('messages.api_behavior.flags.destructive') }}</span>@endif
+                            @if($endpoint->auth_boundary)<span class="label label-warning">{{ __('messages.api_behavior.flags.auth_boundary') }}</span>@endif
+                            @if($endpoint->sequence_candidate)<span class="label label-info">{{ __('messages.api_behavior.flags.sequence_candidate') }}</span>@endif
+                        @else
+                            <p class="text-muted m-b-none">{{ __('messages.api_behavior.no_behavior_detected') }}</p>
+                        @endif
+                    </div>
+                    <div class="col-md-4">
+                        <h5>{{ __('messages.common.notes') }}</h5>
+                        <p class="text-muted m-b-none">{{ $endpoint->behavior_notes ?: __('messages.api_behavior.no_behavior_detected') }}</p>
+                    </div>
+                </div>
+
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>{{ __('messages.api_behavior.produces_for') }}</h5>
+                        @forelse($endpoint->producedBehaviorLinks as $link)
+                            <p><span class="label label-{{ $link->confidence_css }}">{{ $link->confidence }}%</span> <code>{{ $endpoint->method }} {{ $endpoint->path }}</code> → <code>{{ $link->consumerEndpoint->method }} {{ $link->consumerEndpoint->path }}</code></p>
+                        @empty
+                            <p class="text-muted m-b-none">{{ __('messages.api_behavior.no_produced_links') }}</p>
+                        @endforelse
+                    </div>
+                    <div class="col-md-6">
+                        <h5>{{ __('messages.api_behavior.consumes_from') }}</h5>
+                        @forelse($endpoint->consumedBehaviorLinks as $link)
+                            <p><span class="label label-{{ $link->confidence_css }}">{{ $link->confidence }}%</span> <code>{{ $link->producerEndpoint->method }} {{ $link->producerEndpoint->path }}</code> → <code>{{ $endpoint->method }} {{ $endpoint->path }}</code></p>
+                        @empty
+                            <p class="text-muted m-b-none">{{ __('messages.api_behavior.no_consumed_links') }}</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-lg-12">
         <div class="hpanel hgreen">

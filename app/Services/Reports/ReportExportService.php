@@ -20,6 +20,7 @@ use App\Services\RegressionEvaluationService;
 use App\Services\Risk\RiskAnalyzer;
 use App\Services\Settings\SettingService;
 use App\Services\Settings\SettingsRuntimeService;
+use App\Services\BlindSpots\QaBlindSpotDetectorService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -33,7 +34,8 @@ class ReportExportService
         private readonly QaCoverageMatrixService $coverageMatrix,
         private readonly SettingService $settings,
         private readonly SettingsRuntimeService $runtime,
-        private readonly ExportCreditService $credits
+        private readonly ExportCreditService $credits,
+        private readonly QaBlindSpotDetectorService $blindSpots
     ) {
     }
 
@@ -55,8 +57,9 @@ class ReportExportService
             'findings.testCase',
             'findings.evidence.capturedBy',
             'qaReleaseGates',
+            'latestApprovedReportVersion.approvedBy',
         ]);
-        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates']);
+        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates', 'reportVersions']);
 
         $latestScan = $project->scanRuns()
             ->with(['environment', 'results.endpoint'])
@@ -82,6 +85,8 @@ class ReportExportService
             ->latest()
             ->first();
 
+        $latestApprovedReport = $project->latestApprovedReportVersion;
+
         $latestSensitiveResults = $latestScan
             ? $latestScan->results->where('sensitive_data_detected', true)->count()
             : 0;
@@ -94,6 +99,8 @@ class ReportExportService
 
         $coverageMatrix = $this->coverageMatrix->summarize($project);
         $coverageSummary = $coverageMatrix['summary'];
+        $blindSpots = $this->blindSpots->summarize($project);
+        $blindSpotCounts = $blindSpots['summary'];
 
         $riskSummary = collect(Endpoint::RISKS)->mapWithKeys(fn (string $risk): array => [$risk => 0]);
         $assertionSummary = [
@@ -191,7 +198,11 @@ class ReportExportService
         $lines[] = '| Test suites | '.$project->test_suites_count.' |';
         $lines[] = '| Test cases | '.$project->test_cases_count.' |';
         $lines[] = '| Contract validations | '.$project->contract_validation_runs_count.' |';
+        $lines[] = '| Blind spots | '.$blindSpotCounts['total'].' |';
+        $lines[] = '| Release-blocking blind spots | '.$blindSpotCounts['release_blockers'].' |';
         $lines[] = '| Release gates | '.$project->qa_release_gates_count.' |';
+        $lines[] = '| Report versions | '.$project->report_versions_count.' |';
+        $lines[] = '| Latest approved report | '.$this->md($latestApprovedReport ? '#'.$latestApprovedReport->id.' '.$latestApprovedReport->title.' checksum '.$latestApprovedReport->short_checksum : 'n/a').' |';
         $lines[] = '| Latest release gate | '.$this->md($latestReleaseGate ? '#'.$latestReleaseGate->id.' '.$latestReleaseGate->final_decision_label : 'n/a').' |';
         $lines[] = '| Latest scan sensitive data results | '.$latestSensitiveResults.' |';
         $lines[] = '| Latest scan broken auth results | '.$latestBrokenAuthResults.' |';
@@ -200,6 +211,9 @@ class ReportExportService
         $lines[] = '| Open Findings | '.$openFindings->count().' |';
         $lines[] = '| Critical Open Findings | '.$criticalFindings.' |';
         $lines[] = '| High Open Findings | '.$highFindings.' |';
+        $lines[] = '| Active risk acceptances | '.$project->riskAcceptances()->where('status', \App\Models\RiskAcceptance::STATUS_ACTIVE)->count().' |';
+        $lines[] = '| Expired risk acceptances | '.$project->riskAcceptances()->where('status', \App\Models\RiskAcceptance::STATUS_ACTIVE)->whereNotNull('accepted_until')->where('accepted_until', '<', now())->count().' |';
+        $lines[] = '| Risk acceptances without expiry | '.$project->riskAcceptances()->where('status', \App\Models\RiskAcceptance::STATUS_ACTIVE)->whereNull('accepted_until')->count().' |';
         $lines[] = '| Test execution coverage | '.$testExecutionCoverage.'% |';
         $lines[] = '| Test pass rate | '.$testPassRate.'% |';
         $lines[] = '| QA coverage | '.$coverageSummary['coverage_percent'].'% |';
@@ -221,6 +235,41 @@ class ReportExportService
         }
         $lines[] = '| Latest contract validation | '.$this->md($latestContractValidation ? '#'.$latestContractValidation->id.' '.$latestContractValidation->health_label : 'n/a').' |';
         $lines[] = '';
+
+        $lines[] = '## Blind Spot Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Critical | '.$blindSpotCounts['critical'].' |';
+        $lines[] = '| High | '.$blindSpotCounts['high'].' |';
+        $lines[] = '| Release blockers | '.$blindSpotCounts['release_blockers'].' |';
+        $lines[] = '| Untested endpoints | '.$blindSpotCounts['untested_endpoints'].' |';
+        $lines[] = '| Missing assertions | '.$blindSpotCounts['missing_assertions'].' |';
+        $lines[] = '| Missing auth comparisons | '.$blindSpotCounts['missing_auth_comparisons'].' |';
+        $lines[] = '| Unverified fixes | '.$blindSpotCounts['unverified_fixes'].' |';
+        $lines[] = '| Risk expiry issues | '.($blindSpotCounts['risk_without_expiry'] + $blindSpotCounts['expired_accepted_risks']).' |';
+        $lines[] = '| Stale evidence | '.$blindSpotCounts['stale_evidence'].' |';
+        $lines[] = '';
+
+        $lines[] = '## Risk Acceptance Ledger Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Active risk acceptances | '.$project->riskAcceptances()->where('status', \App\Models\RiskAcceptance::STATUS_ACTIVE)->count().' |';
+        $lines[] = '| Expired risk acceptances | '.$project->riskAcceptances()->where('status', \App\Models\RiskAcceptance::STATUS_ACTIVE)->whereNotNull('accepted_until')->where('accepted_until', '<', now())->count().' |';
+        $lines[] = '| Without expiry | '.$project->riskAcceptances()->where('status', \App\Models\RiskAcceptance::STATUS_ACTIVE)->whereNull('accepted_until')->count().' |';
+        $lines[] = '';
+        if ($blindSpots['items']->isEmpty()) {
+            $lines[] = 'No QA blind spots were detected.';
+            $lines[] = '';
+        } else {
+            $lines[] = '| Severity | Type | Module | Related | Reason | Suggested action |';
+            $lines[] = '|---|---|---|---|---|---|';
+            foreach ($blindSpots['items']->take(25) as $item) {
+                $lines[] = '| '.$this->md($item['severity_label']).' | '.$this->md($item['type_label']).' | '.$this->md($item['module_label']).' | '.$this->md($item['related_label']).' | '.$this->md($item['reason']).' | '.$this->md($item['suggested_action']).' |';
+            }
+            $lines[] = '';
+        }
 
         if ($project->environments->isNotEmpty()) {
             $lines[] = '## Environment Matrix';
@@ -526,6 +575,9 @@ class ReportExportService
         }
         if (($latestContractValidation?->breaking_count ?? 0) > 0 || ($latestContractValidation?->failed_count ?? 0) > 0) {
             $lines[] = '- Fix OpenAPI contract validation failures before accepting release readiness.';
+        }
+        if ($blindSpotCounts['total'] > 0) {
+            $lines[] = '- Resolve QA blind spots or document why the release decision can be accepted without that evidence.';
         }
         if ($criticalFindings > 0 || $highFindings > 0) {
             $lines[] = '- Resolve critical/high open findings or document an accepted-risk decision before release.';

@@ -60,13 +60,16 @@ class OpenApiContractValidationService
                 /** @var ScanResult|null $scanResult */
                 $scanResult = $scanResults->get($endpoint->id) ?: $endpoint->latestScanResult;
                 if (! $scanResult) {
+                    $this->validateAuthRequirement($run, $endpoint, null, $operation);
                     $this->result($run, $endpoint, null, $endpoint->method, $endpoint->path, ContractValidationResult::CHECK_SCAN_EVIDENCE, ContractValidationResult::STATUS_WARNING, ContractValidationResult::SEVERITY_MEDIUM, __('messages.contract_validations.messages.no_scan_evidence'), __('messages.contract_validations.expected.latest_scan'), null);
                     continue;
                 }
 
+                $this->validateAuthRequirement($run, $endpoint, $scanResult, $operation);
                 $this->validateStatusCode($run, $endpoint, $scanResult, $operation);
                 $this->validateContentType($run, $endpoint, $scanResult, $operation);
                 $this->validateResponseSchema($run, $endpoint, $scanResult, $operation, $document);
+                $this->validateUndocumentedResponseFields($run, $endpoint, $scanResult, $operation, $document);
             }
 
             foreach ($endpoints as $key => $endpoint) {
@@ -125,6 +128,7 @@ class OpenApiContractValidationService
                     'primary_status' => $primaryStatus,
                     'content_types' => $contentTypes,
                     'schema' => $schema,
+                    'security_required' => $this->securityRequired($operation, $document),
                 ];
             }
         }
@@ -204,6 +208,151 @@ class OpenApiContractValidationService
         $passes = $problems === [];
 
         $this->result($run, $endpoint, $scanResult, $endpoint->method, $endpoint->path, ContractValidationResult::CHECK_RESPONSE_SCHEMA, $passes ? ContractValidationResult::STATUS_PASS : ContractValidationResult::STATUS_FAIL, $passes ? ContractValidationResult::SEVERITY_LOW : ContractValidationResult::SEVERITY_HIGH, $passes ? __('messages.contract_validations.messages.schema_matches') : __('messages.contract_validations.messages.schema_mismatch'), $this->schemaSummary($resolved), $passes ? __('messages.contract_validations.actual.schema_valid') : implode('; ', array_slice($problems, 0, 5)), ['problems' => $problems]);
+    }
+
+    /** @param array<string,mixed> $operation */
+    private function validateAuthRequirement(ContractValidationRun $run, Endpoint $endpoint, ?ScanResult $scanResult, array $operation): void
+    {
+        $contractRequiresAuth = (bool) ($operation['security_required'] ?? false);
+        $endpointRequiresAuth = (bool) $endpoint->auth_required;
+        $scanAuthApplied = $scanResult?->auth_applied;
+
+        if ($scanResult?->broken_auth_detected) {
+            $this->result(
+                $run,
+                $endpoint,
+                $scanResult,
+                $endpoint->method,
+                $endpoint->path,
+                ContractValidationResult::CHECK_AUTH_REQUIREMENT,
+                ContractValidationResult::STATUS_FAIL,
+                ContractValidationResult::SEVERITY_CRITICAL,
+                __('messages.contract_validations.messages.auth_behavior_mismatch'),
+                __('messages.contract_validations.expected.auth_protected_when_required'),
+                $scanResult->broken_auth_summary_label,
+                ['contract_requires_auth' => $contractRequiresAuth, 'endpoint_auth_required' => $endpointRequiresAuth, 'scan_auth_applied' => $scanAuthApplied]
+            );
+            return;
+        }
+
+        if ($contractRequiresAuth !== $endpointRequiresAuth) {
+            $this->result(
+                $run,
+                $endpoint,
+                $scanResult,
+                $endpoint->method,
+                $endpoint->path,
+                ContractValidationResult::CHECK_AUTH_REQUIREMENT,
+                ContractValidationResult::STATUS_FAIL,
+                ContractValidationResult::SEVERITY_HIGH,
+                __('messages.contract_validations.messages.auth_contract_mismatch'),
+                $contractRequiresAuth ? __('messages.contract_validations.expected.auth_required') : __('messages.contract_validations.expected.auth_not_required'),
+                $endpointRequiresAuth ? __('messages.contract_validations.actual.endpoint_requires_auth') : __('messages.contract_validations.actual.endpoint_no_auth_required'),
+                ['contract_requires_auth' => $contractRequiresAuth, 'endpoint_auth_required' => $endpointRequiresAuth, 'scan_auth_applied' => $scanAuthApplied]
+            );
+            return;
+        }
+
+        $this->result(
+            $run,
+            $endpoint,
+            $scanResult,
+            $endpoint->method,
+            $endpoint->path,
+            ContractValidationResult::CHECK_AUTH_REQUIREMENT,
+            ContractValidationResult::STATUS_PASS,
+            ContractValidationResult::SEVERITY_LOW,
+            __('messages.contract_validations.messages.auth_requirement_matches'),
+            $contractRequiresAuth ? __('messages.contract_validations.expected.auth_required') : __('messages.contract_validations.expected.auth_not_required'),
+            $endpointRequiresAuth ? __('messages.contract_validations.actual.endpoint_requires_auth') : __('messages.contract_validations.actual.endpoint_no_auth_required'),
+            ['contract_requires_auth' => $contractRequiresAuth, 'endpoint_auth_required' => $endpointRequiresAuth, 'scan_auth_applied' => $scanAuthApplied]
+        );
+    }
+
+    /** @param array<string,mixed> $operation */
+    private function validateUndocumentedResponseFields(ContractValidationRun $run, Endpoint $endpoint, ScanResult $scanResult, array $operation, array $document): void
+    {
+        $schema = $operation['schema'] ?? null;
+        if (! is_array($schema) || $schema === []) {
+            return;
+        }
+
+        $body = trim((string) $scanResult->body_preview);
+        if ($body === '') {
+            return;
+        }
+
+        $decoded = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decoded) || array_is_list($decoded)) {
+            return;
+        }
+
+        $resolved = $this->resolveSchema($schema, $document);
+        $properties = is_array($resolved['properties'] ?? null) ? array_keys($resolved['properties']) : [];
+        if ($properties === []) {
+            return;
+        }
+
+        $extraFields = array_values(array_diff(array_keys($decoded), array_map('strval', $properties)));
+        if ($extraFields === []) {
+            $this->result(
+                $run,
+                $endpoint,
+                $scanResult,
+                $endpoint->method,
+                $endpoint->path,
+                ContractValidationResult::CHECK_UNDOCUMENTED_RESPONSE_FIELD,
+                ContractValidationResult::STATUS_PASS,
+                ContractValidationResult::SEVERITY_LOW,
+                __('messages.contract_validations.messages.no_undocumented_response_fields'),
+                __('messages.contract_validations.expected.no_undocumented_fields'),
+                __('messages.contract_validations.actual.no_undocumented_fields')
+            );
+            return;
+        }
+
+        $sensitive = array_values(array_filter($extraFields, fn (string $field): bool => $this->looksSensitiveField($field)));
+        $hasSensitive = $sensitive !== [];
+
+        $this->result(
+            $run,
+            $endpoint,
+            $scanResult,
+            $endpoint->method,
+            $endpoint->path,
+            ContractValidationResult::CHECK_UNDOCUMENTED_RESPONSE_FIELD,
+            $hasSensitive ? ContractValidationResult::STATUS_FAIL : ContractValidationResult::STATUS_WARNING,
+            $hasSensitive ? ContractValidationResult::SEVERITY_HIGH : ContractValidationResult::SEVERITY_MEDIUM,
+            $hasSensitive ? __('messages.contract_validations.messages.undocumented_sensitive_response_fields') : __('messages.contract_validations.messages.undocumented_response_fields'),
+            __('messages.contract_validations.expected.documented_response_fields'),
+            implode(', ', $extraFields),
+            ['extra_fields' => $extraFields, 'sensitive_fields' => $sensitive]
+        );
+    }
+
+    private function securityRequired(array $operation, array $document): bool
+    {
+        if (array_key_exists('security', $operation)) {
+            $security = $operation['security'];
+            return is_array($security) && $security !== [];
+        }
+
+        $security = $document['security'] ?? [];
+
+        return is_array($security) && $security !== [];
+    }
+
+    private function looksSensitiveField(string $field): bool
+    {
+        $field = strtolower($field);
+
+        foreach (['password', 'token', 'secret', 'internal', 'credential', 'session', 'apikey', 'api_key'] as $needle) {
+            if (str_contains($field, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @return array<int,string> */
@@ -407,6 +556,11 @@ class OpenApiContractValidationService
             'summary_json' => [
                 'contract_operations' => count($operations),
                 'checked_at' => now()->toIso8601String(),
+                'contract_reality' => [
+                    'auth_contract_mismatches' => $results->where('check_type', ContractValidationResult::CHECK_AUTH_REQUIREMENT)->where('status', ContractValidationResult::STATUS_FAIL)->count(),
+                    'undocumented_response_fields' => $results->where('check_type', ContractValidationResult::CHECK_UNDOCUMENTED_RESPONSE_FIELD)->whereIn('status', [ContractValidationResult::STATUS_FAIL, ContractValidationResult::STATUS_WARNING])->count(),
+                    'breaking_contract_mismatches' => $results->where('status', ContractValidationResult::STATUS_FAIL)->whereIn('severity', [ContractValidationResult::SEVERITY_HIGH, ContractValidationResult::SEVERITY_CRITICAL])->count(),
+                ],
             ],
         ]);
 

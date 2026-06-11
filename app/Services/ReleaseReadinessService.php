@@ -6,9 +6,13 @@ use App\Models\ApiMonitor;
 use App\Models\Endpoint;
 use App\Models\Finding;
 use App\Models\Project;
+use App\Models\ReleaseDecision;
 use App\Models\ScanResult;
 use App\Models\TestCase;
 use App\Services\Risk\RiskAnalyzer;
+use App\Services\Risk\RiskAcceptanceLedgerService;
+use App\Services\BlindSpots\QaBlindSpotDetectorService;
+use App\Services\Contracts\ContractRealityService;
 use App\Services\Settings\SettingService;
 use App\Services\Exports\ExportCreditService;
 use Illuminate\Support\Collection;
@@ -27,6 +31,8 @@ class ReleaseReadinessService
         private readonly QaCoverageMatrixService $coverageMatrix,
         private readonly SettingService $settings,
         private readonly ExportCreditService $credits,
+        private readonly QaBlindSpotDetectorService $blindSpots,
+        private readonly RiskAcceptanceLedgerService $riskLedger,
     ) {
     }
 
@@ -39,7 +45,12 @@ class ReleaseReadinessService
             'compareRuns.items',
             'apiMonitors.environment',
             'contractValidationRuns',
-            'findings',
+            'findings.owner',
+            'findings.verifiedBy',
+            'findings.evidence',
+            'riskAcceptances.finding.endpoint',
+            'riskAcceptances.acceptedBy',
+            'latestReleaseDecision.owner',
             'testCases',
         ]);
         $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'apiMonitors', 'testCases']);
@@ -63,6 +74,16 @@ class ReleaseReadinessService
         $findingLifecycleCounts = collect(Finding::LIFECYCLE_STATUSES)
             ->mapWithKeys(fn (string $status): array => [$status => (int) ($findingStatusCounts[$status] ?? 0)])
             ->all();
+        $fixedUnverifiedCount = $project->findings
+            ->filter(fn (Finding $finding): bool => $finding->status === Finding::STATUS_FIXED && $finding->verification_status !== Finding::VERIFICATION_VERIFIED)
+            ->count();
+        $overdueFindingsCount = $project->findings
+            ->filter(fn (Finding $finding): bool => $finding->is_overdue)
+            ->count();
+        $fixEvidenceMissingCount = $project->findings
+            ->filter(fn (Finding $finding): bool => (bool) $finding->fix_evidence_required && $finding->evidence->isEmpty())
+            ->count();
+
         $findingCounts = [
             'total' => (int) $project->findings->count(),
             'open' => $openFindings->count(),
@@ -71,10 +92,16 @@ class ReleaseReadinessService
             'medium_open' => $openFindings->where('severity', Finding::SEVERITY_MEDIUM)->count(),
             'low_open' => $openFindings->where('severity', Finding::SEVERITY_LOW)->count(),
             'fixed' => $findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0,
+            'ready_for_retest' => $findingLifecycleCounts[Finding::STATUS_READY_FOR_RETEST] ?? 0,
+            'retest_failed' => $findingLifecycleCounts[Finding::STATUS_RETEST_FAILED] ?? 0,
+            'verified' => $findingLifecycleCounts[Finding::STATUS_VERIFIED] ?? 0,
+            'fixed_unverified' => $fixedUnverifiedCount,
+            'overdue' => $overdueFindingsCount,
+            'fix_evidence_missing' => $fixEvidenceMissingCount,
             'false_positive' => $findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0,
             'accepted_risk' => $findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0,
             'reopened' => $findingLifecycleCounts[Finding::STATUS_REOPENED] ?? 0,
-            'resolved' => (int) (($findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0)),
+            'resolved' => (int) (($findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_VERIFIED] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0)),
             'status_counts' => $findingLifecycleCounts,
         ];
         $testRunCounts = collect(TestCase::RUN_STATUSES)
@@ -154,9 +181,22 @@ class ReleaseReadinessService
             : $endpoints->filter(fn (Endpoint $endpoint): bool => $endpoint->latestScanResult !== null)->count();
         $endpointCount = max(0, (int) $project->endpoints_count);
         $coveragePercent = $endpointCount > 0 ? (int) round(($coverageCount / $endpointCount) * 100) : 0;
+        $blindSpotSummary = $this->blindSpots->summarize($project);
+        $riskAcceptanceSummary = $this->riskLedger->summarize($project);
+        $contractRealitySummary = app(ContractRealityService::class)->summarize($project, $latestContractValidation);
 
-        $blockingIssues = $this->blockingIssues($project, $latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $latestContractValidation, $findingCounts, $testExecution);
-        $warnings = $this->warnings($latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $project, $latestContractValidation, $findingCounts, $testExecution);
+        $blockingIssues = $this->blockingIssues($project, $latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $latestContractValidation, $findingCounts, $testExecution, $blindSpotSummary, $riskAcceptanceSummary);
+        if (($contractRealitySummary['summary']['breaking_contract_mismatch'] ?? 0) > 0) {
+            $blockingIssues[] = __('messages.release_readiness.issues.contract_reality_breaking', ['count' => $contractRealitySummary['summary']['breaking_contract_mismatch']]);
+        }
+
+        $warnings = $this->warnings($latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $project, $latestContractValidation, $findingCounts, $testExecution, $blindSpotSummary, $riskAcceptanceSummary);
+        $contractRealityWarnings = (int) (($contractRealitySummary['summary']['auth_contract_mismatch'] ?? 0) + ($contractRealitySummary['summary']['undocumented_response'] ?? 0) + ($contractRealitySummary['summary']['undocumented_endpoint'] ?? 0));
+        if ($contractRealityWarnings > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.contract_reality_warnings', ['count' => $contractRealityWarnings]);
+        }
+        $blockingIssues = array_values(array_unique($blockingIssues));
+        $warnings = array_values(array_unique($warnings));
 
         $scoreComponents = $this->scoreComponents(
             $project,
@@ -171,7 +211,9 @@ class ReleaseReadinessService
             $assertionCounts,
             $regression,
             $riskCounts,
-            $coveragePercent
+            $coveragePercent,
+            $blindSpotSummary,
+            $riskAcceptanceSummary
         );
         $score = $this->componentScore($scoreComponents);
         $status = $this->status($project, $latestScan, $blockingIssues, $warnings, $score);
@@ -198,6 +240,10 @@ class ReleaseReadinessService
             'assertion_counts' => $assertionCounts,
             'risk_counts' => $riskCounts,
             'regression' => $regression,
+            'blind_spots' => $blindSpotSummary,
+            'risk_acceptances' => $riskAcceptanceSummary,
+            'contract_reality' => $contractRealitySummary,
+            'latest_release_decision' => $project->latestReleaseDecision,
             'risk_trend' => $riskTrend,
             'regression_trend' => $regressionTrend,
             'blocking_issues' => $blockingIssues,
@@ -207,7 +253,7 @@ class ReleaseReadinessService
             'top_slow_endpoints' => $slowEndpoints->sortByDesc(fn (array $row): int => (int) ($row['latest']?->response_time_ms ?? 0))->take(10)->values(),
             'top_risk_endpoints' => $topRiskEndpoints->sortByDesc(fn (array $row): int => (int) ($row['analysis']['score'] ?? 0))->take(10)->values(),
             'security_header_issues' => $securityHeaderIssues->take(10)->values(),
-            'recommended_actions' => $this->recommendedActions($blockingIssues, $warnings, $regression, $assertionCounts, $coveragePercent, $findingCounts),
+            'recommended_actions' => $this->recommendedActions($blockingIssues, $warnings, $regression, $assertionCounts, $coveragePercent, $findingCounts, $blindSpotSummary, $riskAcceptanceSummary),
             'policy' => $this->releasePolicy(),
         ];
     }
@@ -243,6 +289,18 @@ class ReleaseReadinessService
         $lines[] = '| QA coverage blocked endpoints | '.$summary['qa_coverage']['blocked'].' |';
         $lines[] = '| Blocking issues | '.count($summary['blocking_issues']).' |';
         $lines[] = '| Warnings | '.count($summary['warnings']).' |';
+        $lines[] = '| Blind spots | '.($summary['blind_spots']['summary']['total'] ?? 0).' |';
+        $lines[] = '| Release-blocking blind spots | '.($summary['blind_spots']['summary']['release_blockers'] ?? 0).' |';
+        $lines[] = '| Contract reality breaking mismatches | '.($summary['contract_reality']['summary']['breaking_contract_mismatch'] ?? 0).' |';
+        $lines[] = '| Contract reality auth mismatches | '.($summary['contract_reality']['summary']['auth_contract_mismatch'] ?? 0).' |';
+        $lines[] = '| Undocumented response fields | '.($summary['contract_reality']['summary']['undocumented_response'] ?? 0).' |';
+        if ($summary['latest_release_decision'] instanceof ReleaseDecision) {
+            $lines[] = '| Latest release decision | '.$this->md($summary['latest_release_decision']->status_label).' |';
+            $lines[] = '| Release decision owner | '.$this->md($summary['latest_release_decision']->owner?->name ?: 'n/a').' |';
+            $lines[] = '| Release decision checksum | '.$this->md($summary['latest_release_decision']->package_checksum ?: 'n/a').' |';
+        } else {
+            $lines[] = '| Latest release decision | n/a |';
+        }
         $lines[] = '';
         $lines[] = '## Evidence Summary';
         $lines[] = '';
@@ -257,10 +315,32 @@ class ReleaseReadinessService
         $lines[] = '| High open findings | '.$summary['finding_counts']['high_open'].' |';
         $lines[] = '| Reopened findings | '.($summary['finding_counts']['reopened'] ?? 0).' |';
         $lines[] = '| Fixed findings | '.($summary['finding_counts']['fixed'] ?? 0).' |';
+        $lines[] = '| Fixed but unverified findings | '.($summary['finding_counts']['fixed_unverified'] ?? 0).' |';
+        $lines[] = '| Ready for retest findings | '.($summary['finding_counts']['ready_for_retest'] ?? 0).' |';
+        $lines[] = '| Retest failed findings | '.($summary['finding_counts']['retest_failed'] ?? 0).' |';
+        $lines[] = '| Verified findings | '.($summary['finding_counts']['verified'] ?? 0).' |';
+        $lines[] = '| Overdue findings | '.($summary['finding_counts']['overdue'] ?? 0).' |';
         $lines[] = '| False positives | '.($summary['finding_counts']['false_positive'] ?? 0).' |';
         $lines[] = '| Accepted risks | '.($summary['finding_counts']['accepted_risk'] ?? 0).' |';
+        $lines[] = '| Active risk acceptances | '.($summary['risk_acceptances']['summary']['active'] ?? 0).' |';
+        $lines[] = '| Expired risk acceptances | '.($summary['risk_acceptances']['summary']['expired'] ?? 0).' |';
+        $lines[] = '| Accepted risks without expiry | '.($summary['risk_acceptances']['summary']['without_expiry'] ?? 0).' |';
         $lines[] = '| Regression status | '.$this->md($summary['regression']['label']).' |';
         $lines[] = '';
+
+        $this->appendBlindSpotMarkdownSummary($lines, $summary['blind_spots']);
+
+        $lines[] = '## Contract Reality Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Matches contract | '.($summary['contract_reality']['summary']['matches_contract'] ?? 0).' |';
+        $lines[] = '| Contract drift | '.($summary['contract_reality']['summary']['contract_drift'] ?? 0).' |';
+        $lines[] = '| Auth mismatches | '.($summary['contract_reality']['summary']['auth_contract_mismatch'] ?? 0).' |';
+        $lines[] = '| Undocumented response | '.($summary['contract_reality']['summary']['undocumented_response'] ?? 0).' |';
+        $lines[] = '| Breaking mismatches | '.($summary['contract_reality']['summary']['breaking_contract_mismatch'] ?? 0).' |';
+        $lines[] = '';
+
         $lines[] = '## Finding Lifecycle Status Summary';
         $lines[] = '';
         $lines[] = '| Status | Count | Release impact |';
@@ -270,6 +350,34 @@ class ReleaseReadinessService
                 ? 'Counts as open release risk'
                 : 'Does not count as open release risk';
             $lines[] = '| '.$this->md(__('messages.findings.statuses.'.$status)).' | '.($summary['finding_counts']['status_counts'][$status] ?? 0).' | '.$this->md($impact).' |';
+        }
+        $lines[] = '';
+        $lines[] = '## Finding Verification Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Ready for retest | '.($summary['finding_counts']['ready_for_retest'] ?? 0).' |';
+        $lines[] = '| Retest failed | '.($summary['finding_counts']['retest_failed'] ?? 0).' |';
+        $lines[] = '| Fixed but not verified | '.($summary['finding_counts']['fixed_unverified'] ?? 0).' |';
+        $lines[] = '| Verified | '.($summary['finding_counts']['verified'] ?? 0).' |';
+        $lines[] = '| Overdue | '.($summary['finding_counts']['overdue'] ?? 0).' |';
+        $lines[] = '';
+
+        $this->appendRiskAcceptanceMarkdownSummary($lines, $summary['risk_acceptances']);
+
+        $lines[] = '## Release Decision';
+        $lines[] = '';
+        if ($summary['latest_release_decision'] instanceof ReleaseDecision) {
+            $decision = $summary['latest_release_decision'];
+            $lines[] = '| Metric | Value |';
+            $lines[] = '|---|---|';
+            $lines[] = '| Decision | '.$this->md($decision->status_label).' |';
+            $lines[] = '| Release | '.$this->md($decision->release_name ?: 'n/a').' |';
+            $lines[] = '| Owner | '.$this->md($decision->owner?->name ?: 'n/a').' |';
+            $lines[] = '| Timestamp | '.$this->md($decision->decided_at?->format('Y-m-d H:i:s') ?: 'pending').' |';
+            $lines[] = '| Package checksum | '.$this->md($decision->package_checksum ?: 'n/a').' |';
+        } else {
+            $lines[] = 'No release decision package has been finalized yet.';
         }
         $lines[] = '';
 
@@ -389,7 +497,7 @@ class ReleaseReadinessService
      * @param Collection<int, Endpoint> $endpoints
      * @return array<int, array<string, mixed>>
      */
-    private function scoreComponents(Project $project, Collection $endpoints, $latestScan, $latestSnapshot, $latestCompare, $latestContractValidation, array $findingCounts, array $testExecution, array $qaCoverage, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent): array
+    private function scoreComponents(Project $project, Collection $endpoints, $latestScan, $latestSnapshot, $latestCompare, $latestContractValidation, array $findingCounts, array $testExecution, array $qaCoverage, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, array $blindSpotSummary, array $riskAcceptanceSummary): array
     {
         $latestScanResults = $latestScan?->results ?? collect();
         $evidenceCount = $project->findingEvidence()->count();
@@ -435,7 +543,8 @@ class ReleaseReadinessService
             __('messages.release_readiness.score_checks.security_events').': '.$securityEvents,
             __('messages.release_readiness.score_checks.auth_ready').': '.$authConfigured->count().' / '.$authRequired->count(),
         ]);
-        $findingPenalty = min(10, (($findingCounts['critical_open'] ?? 0) * 5) + (($findingCounts['high_open'] ?? 0) * 3) + (($findingCounts['medium_open'] ?? 0) * 1));
+        $riskAcceptanceCounts = $riskAcceptanceSummary['summary'] ?? [];
+        $findingPenalty = min(10, (($findingCounts['critical_open'] ?? 0) * 5) + (($findingCounts['high_open'] ?? 0) * 3) + (($findingCounts['medium_open'] ?? 0) * 1) + (($findingCounts['retest_failed'] ?? 0) * 4) + (($findingCounts['fixed_unverified'] ?? 0) * 2) + (($findingCounts['overdue'] ?? 0) * 2) + (($riskAcceptanceCounts['expired'] ?? 0) * 4) + (($riskAcceptanceCounts['without_expiry'] ?? 0) * 1));
         $components[] = $this->scoreComponent('findings', 10, max(0, 10 - $findingPenalty), [
             __('messages.findings.open_findings').': '.($findingCounts['open'] ?? 0),
             __('messages.findings.severities.critical').': '.($findingCounts['critical_open'] ?? 0),
@@ -444,6 +553,11 @@ class ReleaseReadinessService
             __('messages.findings.statuses.accepted_risk').': '.($findingCounts['accepted_risk'] ?? 0),
             __('messages.findings.statuses.false_positive').': '.($findingCounts['false_positive'] ?? 0),
             __('messages.findings.statuses.fixed').': '.($findingCounts['fixed'] ?? 0),
+            __('messages.release_readiness.score_checks.retest_failed_findings').': '.($findingCounts['retest_failed'] ?? 0),
+            __('messages.release_readiness.score_checks.fixed_unverified_findings').': '.($findingCounts['fixed_unverified'] ?? 0),
+            __('messages.release_readiness.score_checks.overdue_findings').': '.($findingCounts['overdue'] ?? 0),
+            __('messages.risk_acceptances.expired').': '.($riskAcceptanceCounts['expired'] ?? 0),
+            __('messages.risk_acceptances.without_expiry').': '.($riskAcceptanceCounts['without_expiry'] ?? 0),
         ]);
         if ($latestContractValidation) {
             $contractPenalty = min(5, (($latestContractValidation->breaking_count ?? 0) * 3) + (($latestContractValidation->failed_count ?? 0) * 2) + (($latestContractValidation->warning_count ?? 0) * 1));
@@ -454,9 +568,13 @@ class ReleaseReadinessService
         $components[] = $this->scoreComponent('contract', 5, $contractEarned, [
             __('messages.contract_validations.short_title').': '.($latestContractValidation ? $latestContractValidation->health_label : __('messages.common.not_available')),
         ]);
-        $components[] = $this->scoreComponent('report_signoff', 5, min(5, ($releaseGateCount > 0 ? 3 : 0) + ($project->apiMonitors()->where('is_enabled', true)->exists() ? 1 : 0) + ($project->is_active ? 1 : 0)), [
+        $blindSpotCounts = $blindSpotSummary['summary'] ?? [];
+        $blindSpotPenalty = min(5, (($blindSpotCounts['release_blockers'] ?? 0) * 2) + (($blindSpotCounts['high'] ?? 0) * 1) + (($blindSpotCounts['medium'] ?? 0) > 0 ? 1 : 0));
+        $components[] = $this->scoreComponent('report_signoff', 5, max(0, min(5, ($releaseGateCount > 0 ? 3 : 0) + ($project->apiMonitors()->where('is_enabled', true)->exists() ? 1 : 0) + ($project->is_active ? 1 : 0)) - $blindSpotPenalty), [
             __('messages.release_readiness.score_checks.release_gates').': '.$releaseGateCount,
             __('messages.release_readiness.score_checks.enabled_monitors').': '.$project->apiMonitors()->where('is_enabled', true)->count(),
+            __('messages.release_readiness.score_checks.blind_spots').': '.($blindSpotCounts['total'] ?? 0),
+            __('messages.risk_acceptances.active').': '.($riskAcceptanceCounts['active'] ?? 0),
         ]);
 
         return $components;
@@ -500,7 +618,7 @@ class ReleaseReadinessService
     }
 
     /** @return array<int, string> */
-    private function blockingIssues(Project $project, $latestScan, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, $latestContractValidation, array $findingCounts, array $testExecution): array
+    private function blockingIssues(Project $project, $latestScan, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, $latestContractValidation, array $findingCounts, array $testExecution, array $blindSpotSummary, array $riskAcceptanceSummary): array
     {
         $issues = [];
 
@@ -544,6 +662,9 @@ class ReleaseReadinessService
         if (($testExecution['run_counts'][TestCase::RUN_FAIL] ?? 0) > 0) {
             $issues[] = __('messages.release_readiness.issues.failed_tests', ['count' => $testExecution['run_counts'][TestCase::RUN_FAIL]]);
         }
+        if (($findingCounts['retest_failed'] ?? 0) > 0) {
+            $issues[] = __('messages.release_readiness.issues.retest_failed_findings', ['count' => $findingCounts['retest_failed']]);
+        }
         if ($this->settings->boolean('release.required_evidence_before_release', true) && $project->findingEvidence()->count() === 0) {
             $issues[] = 'No QA evidence has been recorded for this project.';
         }
@@ -553,12 +674,18 @@ class ReleaseReadinessService
         if ($this->settings->boolean('release.required_report_before_release', true) && $project->qaReleaseGates()->count() === 0) {
             $issues[] = 'No release gate/report snapshot has been generated for this project.';
         }
+        if (($blindSpotSummary['summary']['release_blockers'] ?? 0) > 0) {
+            $issues[] = __('messages.release_readiness.issues.release_blocking_blind_spots', ['count' => $blindSpotSummary['summary']['release_blockers']]);
+        }
+        if (($riskAcceptanceSummary['summary']['expired'] ?? 0) > 0) {
+            $issues[] = __('messages.release_readiness.issues.expired_risk_acceptances', ['count' => $riskAcceptanceSummary['summary']['expired']]);
+        }
 
         return array_values(array_unique($issues));
     }
 
     /** @return array<int, string> */
-    private function warnings($latestScan, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, Project $project, $latestContractValidation, array $findingCounts, array $testExecution): array
+    private function warnings($latestScan, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, Project $project, $latestContractValidation, array $findingCounts, array $testExecution, array $blindSpotSummary, array $riskAcceptanceSummary): array
     {
         $warnings = [];
 
@@ -597,8 +724,27 @@ class ReleaseReadinessService
         if (($testExecution['run_counts'][TestCase::RUN_BLOCKED] ?? 0) > 0) {
             $warnings[] = __('messages.release_readiness.warnings.blocked_tests', ['count' => $testExecution['run_counts'][TestCase::RUN_BLOCKED]]);
         }
+        if (($findingCounts['fixed_unverified'] ?? 0) > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.fixed_unverified_findings', ['count' => $findingCounts['fixed_unverified']]);
+        }
+        if (($findingCounts['ready_for_retest'] ?? 0) > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.ready_for_retest_findings', ['count' => $findingCounts['ready_for_retest']]);
+        }
+        if (($findingCounts['overdue'] ?? 0) > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.overdue_findings', ['count' => $findingCounts['overdue']]);
+        }
         if (($testExecution['total'] ?? 0) > 0 && ($testExecution['execution_percent'] ?? 0) < 80) {
             $warnings[] = __('messages.release_readiness.warnings.low_test_execution', ['percent' => $testExecution['execution_percent']]);
+        }
+        if (($riskAcceptanceSummary['summary']['without_expiry'] ?? 0) > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.risk_acceptance_without_expiry', ['count' => $riskAcceptanceSummary['summary']['without_expiry']]);
+        }
+        if (($riskAcceptanceSummary['summary']['expiring_soon'] ?? 0) > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.risk_acceptance_expiring_soon', ['count' => $riskAcceptanceSummary['summary']['expiring_soon']]);
+        }
+        $nonBlockingBlindSpots = max(0, (int) ($blindSpotSummary['summary']['total'] ?? 0) - (int) ($blindSpotSummary['summary']['release_blockers'] ?? 0));
+        if ($nonBlockingBlindSpots > 0) {
+            $warnings[] = __('messages.release_readiness.warnings.blind_spots', ['count' => $nonBlockingBlindSpots]);
         }
 
         return array_values(array_unique($warnings));
@@ -704,7 +850,7 @@ class ReleaseReadinessService
     }
 
     /** @return array<int, string> */
-    private function recommendedActions(array $blockingIssues, array $warnings, array $regression, array $assertionCounts, int $coveragePercent, array $findingCounts): array
+    private function recommendedActions(array $blockingIssues, array $warnings, array $regression, array $assertionCounts, int $coveragePercent, array $findingCounts, array $blindSpotSummary, array $riskAcceptanceSummary): array
     {
         $actions = [];
         if ($blockingIssues !== []) {
@@ -722,6 +868,15 @@ class ReleaseReadinessService
         if (($findingCounts['open'] ?? 0) > 0) {
             $actions[] = __('messages.release_readiness.actions.review_findings');
         }
+        if (($findingCounts['fixed_unverified'] ?? 0) > 0 || ($findingCounts['ready_for_retest'] ?? 0) > 0 || ($findingCounts['retest_failed'] ?? 0) > 0) {
+            $actions[] = __('messages.release_readiness.actions.verify_findings');
+        }
+        if (($blindSpotSummary['summary']['total'] ?? 0) > 0) {
+            $actions[] = __('messages.release_readiness.actions.close_blind_spots');
+        }
+        if (($riskAcceptanceSummary['summary']['expired'] ?? 0) > 0 || ($riskAcceptanceSummary['summary']['without_expiry'] ?? 0) > 0 || ($riskAcceptanceSummary['summary']['expiring_soon'] ?? 0) > 0) {
+            $actions[] = __('messages.release_readiness.actions.review_risk_acceptances');
+        }
         if ($warnings !== []) {
             $actions[] = __('messages.release_readiness.actions.review_warnings');
         }
@@ -730,6 +885,82 @@ class ReleaseReadinessService
         return array_values(array_unique($actions));
     }
 
+
+
+    /** @param array<int, string> $lines @param array<string, mixed> $blindSpots */
+    private function appendBlindSpotMarkdownSummary(array &$lines, array $blindSpots): void
+    {
+        $counts = $blindSpots['summary'] ?? [];
+        $lines[] = '## '.$this->md(__('messages.blind_spots.report_summary_title'));
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Total blind spots | '.($counts['total'] ?? 0).' |';
+        $lines[] = '| Critical blind spots | '.($counts['critical'] ?? 0).' |';
+        $lines[] = '| High blind spots | '.($counts['high'] ?? 0).' |';
+        $lines[] = '| Stale evidence | '.($counts['stale_evidence'] ?? 0).' |';
+        $lines[] = '| Untested endpoints | '.($counts['untested_endpoints'] ?? 0).' |';
+        $lines[] = '| Missing assertions | '.($counts['missing_assertions'] ?? 0).' |';
+        $lines[] = '| Missing auth comparisons | '.($counts['missing_auth_comparisons'] ?? 0).' |';
+        $lines[] = '| Unverified fixes | '.($counts['unverified_fixes'] ?? 0).' |';
+        $lines[] = '| Risk expiry issues | '.(($counts['risk_without_expiry'] ?? 0) + ($counts['expired_accepted_risks'] ?? 0)).' |';
+        $lines[] = '| Missing recent reports | '.($counts['missing_recent_reports'] ?? 0).' |';
+        $lines[] = '| Release blockers | '.($counts['release_blockers'] ?? 0).' |';
+        $lines[] = '';
+
+        $items = $blindSpots['top_items'] ?? $blindSpots['items'] ?? collect();
+        if (is_array($items)) {
+            $items = collect($items);
+        }
+
+        if ($items instanceof Collection && $items->isNotEmpty()) {
+            $lines[] = '| Severity | Module | Type | Affected item | Release blocker | Suggested action |';
+            $lines[] = '|---|---|---|---|---|---|';
+            foreach ($items->take(10) as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $lines[] = '| '
+                    .$this->md((string) ($item['severity_label'] ?? $item['severity'] ?? 'n/a')).' | '
+                    .$this->md((string) ($item['module_label'] ?? $item['module'] ?? 'n/a')).' | '
+                    .$this->md((string) ($item['type_label'] ?? $item['category_label'] ?? $item['category'] ?? 'n/a')).' | '
+                    .$this->md((string) ($item['related_label'] ?? 'n/a')).' | '
+                    .(($item['release_blocker'] ?? false) ? 'Yes' : 'No').' | '
+                    .$this->md((string) ($item['suggested_action'] ?? 'n/a')).' |';
+            }
+            $lines[] = '';
+        }
+    }
+
+
+
+    /** @param array<int, string> $lines @param array<string, mixed> $riskAcceptances */
+    private function appendRiskAcceptanceMarkdownSummary(array &$lines, array $riskAcceptances): void
+    {
+        $counts = $riskAcceptances['summary'] ?? [];
+        $lines[] = '## Risk Acceptance Ledger Summary';
+        $lines[] = '';
+        $lines[] = '| Metric | Count |';
+        $lines[] = '|---|---:|';
+        $lines[] = '| Total accepted risks | '.($counts['total'] ?? 0).' |';
+        $lines[] = '| Active accepted risks | '.($counts['active'] ?? 0).' |';
+        $lines[] = '| High or critical active accepted risks | '.($counts['active_high_or_critical'] ?? 0).' |';
+        $lines[] = '| Without expiry | '.($counts['without_expiry'] ?? 0).' |';
+        $lines[] = '| Expiring soon | '.($counts['expiring_soon'] ?? 0).' |';
+        $lines[] = '| Expired | '.($counts['expired'] ?? 0).' |';
+        $lines[] = '';
+
+        $items = $riskAcceptances['active_items'] ?? collect();
+        if ($items instanceof Collection && $items->isNotEmpty()) {
+            $lines[] = '| Finding | Severity | Accepted by | Accepted until | Scope | Expiry action | Reason |';
+            $lines[] = '|---|---|---|---|---|---|---|';
+            foreach ($items->take(10) as $acceptance) {
+                $lines[] = '| '.$this->md((string) $acceptance->finding?->title).' | '.$this->md((string) $acceptance->finding?->severity_label).' | '.$this->md((string) ($acceptance->acceptedBy?->name ?: 'n/a')).' | '.$this->md((string) ($acceptance->accepted_until?->format('Y-m-d') ?: 'n/a')).' | '.$this->md((string) ($acceptance->release_scope ?: 'n/a')).' | '.$this->md((string) $acceptance->expiry_action_label).' | '.$this->md((string) $acceptance->reason).' |';
+            }
+            $lines[] = '';
+        }
+    }
 
     /** @return array<string, mixed> */
     private function releasePolicy(): array

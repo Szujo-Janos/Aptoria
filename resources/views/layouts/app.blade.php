@@ -54,9 +54,13 @@
         'projects.test-execution.*',
         'projects.qa-coverage.*',
         'projects.qa-evidence.*',
+        'projects.qa-cockpit.*',
+        'projects.blind-spots.*',
+        'projects.risk-acceptances.*',
         'projects.contract-validations.*',
         'projects.findings.*',
         'projects.endpoint-inventory.*',
+        'projects.api-behavior.*',
         'projects.endpoints.*',
         'projects.scans.*',
         'projects.snapshots.*',
@@ -65,7 +69,8 @@
         'projects.audit-log.*',
         'projects.reports.*',
         'projects.release-readiness.*',
-        'projects.release-gates.*'
+        'projects.release-gates.*',
+        'projects.release-decisions.*'
     );
     $aptoriaOperationsNavActive = $aptoriaOperationsNavActive ?? request()->routeIs('monitors.*', 'calendar.*');
     $aptoriaReleaseNavActive = $aptoriaReleaseNavActive ?? request()->routeIs('reports.*', 'release-readiness.*');
@@ -267,10 +272,13 @@
 
                         <li class="nav-header"><span>{{ __('messages.nav.api_inventory') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.endpoint-inventory.*') }}"><a href="{{ route('projects.endpoint-inventory.index', $aptoriaCurrentProject) }}"><i class="fa fa-list-alt"></i> {{ __('messages.nav.endpoint_inventory') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.api-behavior.*') }}"><a href="{{ route('projects.api-behavior.index', $aptoriaCurrentProject) }}"><i class="fa fa-random"></i> {{ __('messages.api_behavior.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.endpoints.*', 'projects.assertion-rules.*') }}"><a href="{{ route('projects.endpoints.index', $aptoriaCurrentProject) }}"><i class="fa fa-sitemap"></i> {{ __('messages.nav.endpoints') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.contract-validations.*') }}"><a href="{{ route('projects.contract-validations.index', $aptoriaCurrentProject) }}"><i class="fa fa-code"></i> {{ __('messages.contract_validations.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.contract-reality.*') }}"><a href="{{ route('projects.contract-reality.index', $aptoriaCurrentProject) }}"><i class="fa fa-exchange"></i> {{ __('messages.contract_reality.short_title') }}</a></li>
 
                         <li class="nav-header"><span>{{ __('messages.nav.quality_workflow') }}</span></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.qa-cockpit.*') }}"><a href="{{ route('projects.qa-cockpit.index', $aptoriaCurrentProject) }}"><i class="fa fa-tasks"></i> {{ __('messages.qa_cockpit.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.scans.*', 'projects.snapshots.*') }}"><a href="{{ route('projects.scans.index', $aptoriaCurrentProject) }}"><i class="fa fa-crosshairs"></i> {{ __('messages.nav.scans_snapshots') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-suites.*') }}"><a href="{{ route('projects.test-suites.index', $aptoriaCurrentProject) }}"><i class="fa fa-folder-open"></i> {{ __('messages.test_suites.title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-cases.*') }}"><a href="{{ route('projects.test-cases.index', $aptoriaCurrentProject) }}"><i class="fa fa-check-square-o"></i> {{ __('messages.test_cases.title') }}</a></li>
@@ -280,11 +288,17 @@
                         <li class="nav-header"><span>{{ __('messages.nav.risk_evidence') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.findings.*') }}"><a href="{{ route('projects.findings.index', $aptoriaCurrentProject) }}"><i class="fa fa-bug"></i> {{ __('messages.findings.title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.qa-evidence.*') }}"><a href="{{ route('projects.qa-evidence.index', $aptoriaCurrentProject) }}"><i class="fa fa-archive"></i> {{ __('messages.qa_evidence.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.blind-spots.*') }}"><a href="{{ route('projects.blind-spots.index', $aptoriaCurrentProject) }}"><i class="fa fa-eye-slash"></i> {{ __('messages.blind_spots.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.risk-acceptances.*') }}"><a href="{{ route('projects.risk-acceptances.index', $aptoriaCurrentProject) }}"><i class="fa fa-balance-scale"></i> {{ __('messages.risk_acceptances.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.evidence-graph.*') }}"><a href="{{ route('projects.evidence-graph.index', $aptoriaCurrentProject) }}"><i class="fa fa-share-alt"></i> {{ __('messages.evidence_graph.short_title') }}</a></li>
 
                         <li class="nav-header"><span>{{ __('messages.nav.release_reporting') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.release-readiness.*') }}"><a href="{{ route('projects.release-readiness.show', $aptoriaCurrentProject) }}"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness_short') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.release-gates.*') }}"><a href="{{ route('projects.release-gates.index', $aptoriaCurrentProject) }}"><i class="fa fa-flag-checkered"></i> {{ __('messages.release_gates.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.release-decisions.*') }}"><a href="{{ route('projects.release-decisions.index', $aptoriaCurrentProject) }}"><i class="fa fa-gavel"></i> {{ __('messages.release_decisions.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.reports.index') }}"><a href="{{ route('projects.reports.index', $aptoriaCurrentProject) }}"><i class="fa fa-file-text-o"></i> {{ __('messages.nav.reports') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.report-versions.*') }}"><a href="{{ route('projects.report-versions.index', $aptoriaCurrentProject) }}"><i class="fa fa-check-square-o"></i> {{ __('messages.report_versions.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.client-portal.*') }}"><a href="{{ route('projects.client-portal.index', $aptoriaCurrentProject) }}"><i class="fa fa-users"></i> {{ __('messages.client_portal.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.reports.builder.*') }}"><a href="{{ route('projects.reports.builder.create', $aptoriaCurrentProject) }}"><i class="fa fa-pencil-square-o"></i> {{ __('messages.report_builder.short_title') }}</a></li>
 
                         <li class="nav-header"><span>{{ __('messages.nav.automation_audit') }}</span></li>

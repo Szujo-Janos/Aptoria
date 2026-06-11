@@ -3,6 +3,17 @@
 @section('title', __('messages.release_readiness.title'))
 
 @section('content')
+@php
+    $riskOrder = ['critical', 'high', 'review', 'public', 'low'];
+    $riskClassMap = [
+        'critical' => 'danger',
+        'high' => 'warning',
+        'review' => 'default',
+        'public' => 'info',
+        'low' => 'success',
+    ];
+    $riskTotal = max(1, array_sum($summary['risk_counts'] ?? []));
+@endphp
 <div class="row">
     <div class="col-lg-12">
         <div class="hpanel h{{ $summary['css'] === 'danger' ? 'red' : ($summary['css'] === 'warning' ? 'yellow' : 'green') }}">
@@ -12,6 +23,7 @@
                     <a href="{{ route('projects.scans.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.scans.new') }}</a>
                     <a href="{{ route('projects.reports.release-readiness.markdown', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.release_readiness.download_report') }}</a>
                     <a href="{{ route('projects.release-gates.create', $project) }}" class="btn btn-xs btn-danger">{{ __('messages.release_gates.create') }}</a>
+                    <a href="{{ route('projects.release-decisions.index', $project) }}" class="btn btn-xs btn-info"><i class="fa fa-gavel"></i> {{ __('messages.release_decisions.short_title') }}</a>
                 </div>
                 {{ __('messages.release_readiness.title') }} — {{ $project->name }}
             </div>
@@ -26,6 +38,105 @@
                 </div>
                 <hr>
                 <p class="text-muted m-b-none">{{ __('messages.release_readiness.intro') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@php($blindSpotCounts = $summary['blind_spots']['summary'] ?? [])
+<div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel {{ ($blindSpotCounts['release_blockers'] ?? 0) > 0 ? 'hred' : (($blindSpotCounts['total'] ?? 0) > 0 ? 'hyellow' : 'hgreen') }}">
+            <div class="panel-heading hbuilt">
+                <div class="panel-tools">
+                    <a href="{{ route('projects.blind-spots.index', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-eye-slash"></i> {{ __('messages.blind_spots.open') }}</a>
+                </div>
+                {{ __('messages.blind_spots.report_summary_title') }}
+            </div>
+            <div class="panel-body">
+                <div class="row text-center">
+                    <div class="col-sm-2"><h3>{{ $blindSpotCounts['total'] ?? 0 }}</h3><small>{{ __('messages.blind_spots.summary.total') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $blindSpotCounts['critical'] ?? 0 }}</h3><small>{{ __('messages.blind_spots.summary.critical_blind_spots') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $blindSpotCounts['high'] ?? 0 }}</h3><small>{{ __('messages.blind_spots.summary.high_blind_spots') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $blindSpotCounts['release_blockers'] ?? 0 }}</h3><small>{{ __('messages.blind_spots.summary.release_blockers') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $blindSpotCounts['unverified_fixes'] ?? 0 }}</h3><small>{{ __('messages.blind_spots.summary.unverified_fixes') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ ($blindSpotCounts['risk_without_expiry'] ?? 0) + ($blindSpotCounts['expired_accepted_risks'] ?? 0) }}</h3><small>{{ __('messages.blind_spots.summary.expiring_accepted_risks') }}</small></div>
+                </div>
+                @if(($summary['blind_spots']['top_items'] ?? collect())->isNotEmpty())
+                    <hr>
+                    <div class="table-responsive">
+                        <table class="table table-condensed table-striped m-b-none">
+                            <thead><tr><th>{{ __('messages.blind_spots.severity') }}</th><th>{{ __('messages.blind_spots.type') }}</th><th>{{ __('messages.blind_spots.affected') }}</th><th>{{ __('messages.blind_spots.suggested_action') }}</th></tr></thead>
+                            <tbody>
+                            @foreach($summary['blind_spots']['top_items']->take(5) as $item)
+                                <tr>
+                                    <td><span class="label label-{{ $item['severity_css'] }}">{{ $item['severity_label'] }}</span></td>
+                                    <td>{{ $item['type_label'] }}</td>
+                                    <td>{{ $item['related_label'] }}</td>
+                                    <td>{{ $item['suggested_action'] }}</td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <hr>
+                    <p class="text-muted m-b-none">{{ __('messages.blind_spots.no_items') }}</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@php($riskAcceptanceCounts = $summary['risk_acceptances']['summary'] ?? [])
+<div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel {{ ($riskAcceptanceCounts['expired'] ?? 0) > 0 ? 'hred' : ((($riskAcceptanceCounts['without_expiry'] ?? 0) + ($riskAcceptanceCounts['expiring_soon'] ?? 0)) > 0 ? 'hyellow' : 'hgreen') }}">
+            <div class="panel-heading hbuilt">
+                <div class="panel-tools">
+                    <a href="{{ route('projects.risk-acceptances.index', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-balance-scale"></i> {{ __('messages.risk_acceptances.open_ledger') }}</a>
+                </div>
+                {{ __('messages.risk_acceptances.report_summary_title') }}
+            </div>
+            <div class="panel-body">
+                <div class="row text-center">
+                    <div class="col-sm-2"><h3>{{ $riskAcceptanceCounts['active'] ?? 0 }}</h3><small>{{ __('messages.risk_acceptances.metrics.active') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $riskAcceptanceCounts['active_high_or_critical'] ?? 0 }}</h3><small>{{ __('messages.risk_acceptances.metrics.high_or_critical') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $riskAcceptanceCounts['without_expiry'] ?? 0 }}</h3><small>{{ __('messages.risk_acceptances.metrics.without_expiry') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $riskAcceptanceCounts['expiring_soon'] ?? 0 }}</h3><small>{{ __('messages.risk_acceptances.metrics.expiring_soon') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $riskAcceptanceCounts['expired'] ?? 0 }}</h3><small>{{ __('messages.risk_acceptances.metrics.expired') }}</small></div>
+                    <div class="col-sm-2"><h3>{{ $riskAcceptanceCounts['total'] ?? 0 }}</h3><small>{{ __('messages.risk_acceptances.metrics.total') }}</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@php($latestReleaseDecision = $summary['latest_release_decision'] ?? null)
+<div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel {{ $latestReleaseDecision ? 'hblue' : 'hyellow' }}">
+            <div class="panel-heading hbuilt">
+                <div class="panel-tools">
+                    <a href="{{ route('projects.release-decisions.index', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-gavel"></i> {{ __('messages.release_decisions.short_title') }}</a>
+                </div>
+                {{ __('messages.release_decisions.latest_decision') }}
+            </div>
+            <div class="panel-body">
+                @if($latestReleaseDecision)
+                    <div class="row text-center">
+                        <div class="col-sm-2"><h3><span class="label label-{{ $latestReleaseDecision->status_css }}">{{ $latestReleaseDecision->status_label }}</span></h3><small>{{ __('messages.release_decisions.decision_status') }}</small></div>
+                        <div class="col-sm-2"><h3>{{ $latestReleaseDecision->release_score }}</h3><small>{{ __('messages.release_decisions.release_score') }}</small></div>
+                        <div class="col-sm-2"><h3>{{ $latestReleaseDecision->blocker_count }}</h3><small>{{ __('messages.release_decisions.blockers') }}</small></div>
+                        <div class="col-sm-2"><h3>{{ $latestReleaseDecision->blind_spot_count }}</h3><small>{{ __('messages.release_decisions.blind_spots') }}</small></div>
+                        <div class="col-sm-2"><h3>{{ $latestReleaseDecision->accepted_risk_count }}</h3><small>{{ __('messages.release_decisions.accepted_risks') }}</small></div>
+                        <div class="col-sm-2"><h3>{{ $latestReleaseDecision->decided_at?->format('Y-m-d') ?: __('messages.release_decisions.pending') }}</h3><small>{{ __('messages.release_decisions.decision_timestamp') }}</small></div>
+                    </div>
+                @else
+                    <p class="text-muted m-b-none">{{ __('messages.release_decisions.no_decisions') }}</p>
+                @endif
             </div>
         </div>
     </div>
@@ -116,36 +227,25 @@
         <div class="hpanel hred aptoria-risk-summary-panel">
             <div class="panel-heading hbuilt">{{ __('messages.release_readiness.risk_summary') }}</div>
             <div class="panel-body">
-                @php
-                    $riskOrder = ['critical', 'high', 'review', 'public', 'low'];
-                    $riskClassMap = [
-                        'critical' => 'danger',
-                        'high' => 'warning',
-                        'review' => 'default',
-                        'public' => 'info',
-                        'low' => 'success',
-                    ];
-                    $riskTotal = max(1, array_sum($summary['risk_counts'] ?? []));
-                @endphp
                 <div class="aptoria-risk-summary-list">
-                    @foreach($riskOrder as $risk)
-                        @php
+                    <?php foreach ($riskOrder as $risk): ?>
+                        <?php
                             $count = (int) ($summary['risk_counts'][$risk] ?? 0);
                             $labelClass = $riskClassMap[$risk] ?? 'default';
                             $percent = min(100, max(0, (int) round(($count / $riskTotal) * 100)));
-                        @endphp
+                        ?>
                         <div class="aptoria-risk-summary-item">
                             <div class="aptoria-risk-summary-copy">
-                                <span class="label label-{{ $labelClass }}">{{ __('messages.endpoints.risks.'.$risk) }}</span>
-                                <strong>{{ $count }}</strong>
+                                <span class="label label-<?php echo e($labelClass); ?>"><?php echo e(__('messages.endpoints.risks.'.$risk)); ?></span>
+                                <strong><?php echo e($count); ?></strong>
                             </div>
                             <div class="progress aptoria-risk-summary-progress m-b-none">
-                                <div class="progress-bar progress-bar-{{ $labelClass }}" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ $percent }}%">
-                                    <span class="sr-only">{{ $percent }}%</span>
+                                <div class="progress-bar progress-bar-<?php echo e($labelClass); ?>" role="progressbar" aria-valuenow="<?php echo e($percent); ?>" aria-valuemin="0" aria-valuemax="100" style="width: <?php echo e($percent); ?>%">
+                                    <span class="sr-only"><?php echo e($percent); ?>%</span>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -173,12 +273,19 @@
                     <div class="col-xs-3"><span class="label label-default">{{ $summary['finding_counts']['false_positive'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.false_positive') }}</small></div>
                     <div class="col-xs-3"><span class="label label-warning">{{ $summary['finding_counts']['accepted_risk'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.accepted_risk') }}</small></div>
                 </div>
+                <hr>
+                <div class="row text-center small">
+                    <div class="col-xs-3"><span class="label label-warning">{{ $summary['finding_counts']['ready_for_retest'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.ready_for_retest') }}</small></div>
+                    <div class="col-xs-3"><span class="label label-danger">{{ $summary['finding_counts']['retest_failed'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.retest_failed') }}</small></div>
+                    <div class="col-xs-3"><span class="label label-success">{{ $summary['finding_counts']['verified'] ?? 0 }}</span><br><small>{{ __('messages.findings.statuses.verified') }}</small></div>
+                    <div class="col-xs-3"><span class="label label-danger">{{ $summary['finding_counts']['overdue'] ?? 0 }}</span><br><small>{{ __('messages.findings.overdue') }}</small></div>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="hpanel hyellow">
-            <div class="panel-heading hbuilt">{{ __('messages.contract_validations.short_title') }}</div>
+            <div class="panel-heading hbuilt"><div class="panel-tools"><a href="{{ route('projects.contract-reality.index', $project) }}" class="btn btn-xs btn-default">{{ __('messages.contract_reality.short_title') }}</a></div>{{ __('messages.contract_validations.short_title') }}</div>
             <div class="panel-body">
                 @if($summary['latest_contract_validation'])
                     <div class="row text-center">
@@ -186,6 +293,12 @@
                         <div class="col-xs-3"><h3>{{ $summary['latest_contract_validation']->failed_count }}</h3><small>{{ __('messages.contract_validations.failed') }}</small></div>
                         <div class="col-xs-3"><h3>{{ $summary['latest_contract_validation']->warning_count }}</h3><small>{{ __('messages.contract_validations.warnings') }}</small></div>
                         <div class="col-xs-3"><h3>{{ $summary['latest_contract_validation']->passed_count }}</h3><small>{{ __('messages.contract_validations.passed') }}</small></div>
+                    </div>
+                    <hr>
+                    <div class="row text-center small">
+                        <div class="col-xs-4"><span class="label label-danger">{{ $summary['contract_reality']['summary']['breaking_contract_mismatch'] ?? 0 }}</span><br><small>{{ __('messages.contract_reality.breaking_contract_mismatch') }}</small></div>
+                        <div class="col-xs-4"><span class="label label-warning">{{ $summary['contract_reality']['summary']['auth_contract_mismatch'] ?? 0 }}</span><br><small>{{ __('messages.contract_reality.auth_contract_mismatch') }}</small></div>
+                        <div class="col-xs-4"><span class="label label-warning">{{ $summary['contract_reality']['summary']['undocumented_response'] ?? 0 }}</span><br><small>{{ __('messages.contract_reality.undocumented_response') }}</small></div>
                     </div>
                 @else
                     <p class="text-muted m-b-none">{{ __('messages.release_readiness.warnings.no_contract_validation') }}</p>

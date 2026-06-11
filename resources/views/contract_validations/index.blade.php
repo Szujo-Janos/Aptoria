@@ -10,6 +10,7 @@
                 <div class="panel-tools">
                     <a href="{{ route('projects.show', $project) }}" class="btn btn-xs btn-default">{{ __('messages.projects.details') }}</a>
                     <a href="{{ route('projects.contract-validations.create', $project) }}" class="btn btn-xs btn-success">{{ __('messages.contract_validations.new') }}</a>
+                    <a href="{{ route('projects.contract-reality.index', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.contract_reality.short_title') }}</a>
                 </div>
                 {{ __('messages.contract_validations.title') }} — {{ $project->name }}
             </div>

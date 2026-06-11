@@ -3,18 +3,23 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\AuthProfileController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ClientAuditPortalController;
 use App\Http\Controllers\AssertionRuleController;
 use App\Http\Controllers\ApiMonitorController;
+use App\Http\Controllers\ApiBehaviorMapController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\ContractValidationController;
+use App\Http\Controllers\ContractRealityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DemoProjectController;
 use App\Http\Controllers\EnvironmentController;
+use App\Http\Controllers\EvidenceGraphController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\EndpointController;
 use App\Http\Controllers\EndpointInventoryController;
 use App\Http\Controllers\EndpointPathParameterController;
 use App\Http\Controllers\FindingController;
+use App\Http\Controllers\FindingCommentController;
 use App\Http\Controllers\FindingEvidenceController;
 use App\Http\Controllers\FullQaReportBuilderController;
 use App\Http\Controllers\LocaleController;
@@ -24,9 +29,14 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectWizardController;
 use App\Http\Controllers\ProjectSettingsController;
 use App\Http\Controllers\QaEvidencePackController;
+use App\Http\Controllers\QaBlindSpotController;
+use App\Http\Controllers\QaCockpitController;
 use App\Http\Controllers\QaCoverageMatrixController;
 use App\Http\Controllers\QaReleaseGateController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportVersionController;
+use App\Http\Controllers\RiskAcceptanceController;
+use App\Http\Controllers\ReleaseDecisionController;
 use App\Http\Controllers\ReleaseReadinessController;
 use App\Http\Controllers\RegressionSuiteBuilderController;
 use App\Http\Controllers\ScanController;
@@ -43,6 +53,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingPageController::class)->name('landing');
 Route::get('/language/{locale}', [LocaleController::class, 'switch'])->name('language.switch');
+
+Route::get('/client-portal/{clientPortalAccess}', [ClientAuditPortalController::class, 'show'])->name('client-portal.show');
+Route::get('/client-portal/{clientPortalAccess}/reports/{reportVersion}.md', [ClientAuditPortalController::class, 'reportMarkdown'])->name('client-portal.reports.markdown');
+Route::get('/client-portal/{clientPortalAccess}/reports/{reportVersion}.html', [ClientAuditPortalController::class, 'reportHtml'])->name('client-portal.reports.html');
+Route::get('/client-portal/{clientPortalAccess}/reports/{reportVersion}.json', [ClientAuditPortalController::class, 'reportJson'])->name('client-portal.reports.json');
+Route::get('/client-portal/{clientPortalAccess}/release-decisions/{releaseDecision}.json', [ClientAuditPortalController::class, 'releaseDecisionJson'])->name('client-portal.release-decisions.json');
+Route::get('/client-portal/{clientPortalAccess}/evidence-summary.json', [ClientAuditPortalController::class, 'evidenceSummary'])->name('client-portal.evidence.summary');
+Route::get('/client-portal/{clientPortalAccess}/evidence-package.zip', [ClientAuditPortalController::class, 'evidenceZip'])->name('client-portal.evidence.zip');
+Route::post('/client-portal/{clientPortalAccess}/acknowledgements', [ClientAuditPortalController::class, 'acknowledge'])->name('client-portal.acknowledgements.store');
 
 Route::prefix('setup')->name('setup.')->middleware('setup.access')->group(function (): void {
     Route::get('/', [SetupController::class, 'index'])->name('index');
@@ -111,6 +130,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::put('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'update'])->name('projects.assertion-rules.update');
     Route::delete('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'destroy'])->name('projects.assertion-rules.destroy');
     Route::get('projects/{project}/calendar', [CalendarController::class, 'project'])->name('projects.calendar.index');
+    Route::get('projects/{project}/qa-cockpit', QaCockpitController::class)->name('projects.qa-cockpit.index');
     Route::get('projects/{project}/audit-log', [AuditLogController::class, 'project'])->name('projects.audit-log.index');
     Route::get('projects/{project}/audit-log.json', [AuditLogController::class, 'json'])->name('projects.audit-log.json');
     Route::get('projects/{project}/monitors', [ApiMonitorController::class, 'index'])->name('projects.monitors.index');
@@ -136,6 +156,7 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('projects/{project}/test-execution/newman-import', [NewmanImportController::class, 'store'])->name('projects.newman-import.store');
     Route::get('projects/{project}/qa-coverage', [QaCoverageMatrixController::class, 'index'])->name('projects.qa-coverage.index');
     Route::get('projects/{project}/qa-evidence', [QaEvidencePackController::class, 'index'])->name('projects.qa-evidence.index');
+    Route::get('projects/{project}/blind-spots', QaBlindSpotController::class)->name('projects.blind-spots.index');
     Route::get('projects/{project}/qa-evidence/notes.md', [QaEvidencePackController::class, 'notes'])->name('projects.qa-evidence.notes');
     Route::get('projects/{project}/qa-evidence/summary.json', [QaEvidencePackController::class, 'summary'])->name('projects.qa-evidence.summary');
     Route::get('projects/{project}/qa-evidence/pack.zip', [QaEvidencePackController::class, 'zip'])->name('projects.qa-evidence.zip');
@@ -146,12 +167,24 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('projects/{project}/release-gates/{releaseGate}.html', [QaReleaseGateController::class, 'html'])->name('projects.release-gates.html');
     Route::get('projects/{project}/release-gates/{releaseGate}.pdf', [QaReleaseGateController::class, 'pdf'])->name('projects.release-gates.pdf');
     Route::get('projects/{project}/release-gates/{releaseGate}', [QaReleaseGateController::class, 'show'])->name('projects.release-gates.show');
+    Route::get('projects/{project}/release-decisions', [ReleaseDecisionController::class, 'index'])->name('projects.release-decisions.index');
+    Route::post('projects/{project}/release-decisions', [ReleaseDecisionController::class, 'store'])->name('projects.release-decisions.store');
+    Route::get('projects/{project}/release-decisions/{releaseDecision}.md', [ReleaseDecisionController::class, 'markdown'])->name('projects.release-decisions.markdown');
+    Route::get('projects/{project}/release-decisions/{releaseDecision}.html', [ReleaseDecisionController::class, 'html'])->name('projects.release-decisions.html');
+    Route::get('projects/{project}/release-decisions/{releaseDecision}.pdf', [ReleaseDecisionController::class, 'pdf'])->name('projects.release-decisions.pdf');
+    Route::get('projects/{project}/release-decisions/{releaseDecision}.json', [ReleaseDecisionController::class, 'json'])->name('projects.release-decisions.json');
+    Route::get('projects/{project}/release-decisions/{releaseDecision}', [ReleaseDecisionController::class, 'show'])->name('projects.release-decisions.show');
     Route::patch('projects/{project}/release-gates/{releaseGate}/decision', [QaReleaseGateController::class, 'updateDecision'])->name('projects.release-gates.decision.update');
     Route::post('projects/{project}/test-execution/test-cases/{testCase}/results', [TestExecutionDashboardController::class, 'markResult'])->name('projects.test-execution.results.store');
+    Route::get('projects/{project}/contract-reality', ContractRealityController::class)->name('projects.contract-reality.index');
     Route::resource('projects.contract-validations', ContractValidationController::class)
         ->only(['index', 'create', 'store', 'show'])
         ->parameters(['contract-validations' => 'contractValidation']);
+    Route::get('projects/{project}/risk-ledger', [RiskAcceptanceController::class, 'index'])->name('projects.risk-acceptances.index');
+    Route::post('projects/{project}/findings/{finding}/risk-acceptances', [RiskAcceptanceController::class, 'store'])->name('projects.findings.risk-acceptances.store');
+    Route::patch('projects/{project}/risk-acceptances/{riskAcceptance}', [RiskAcceptanceController::class, 'update'])->name('projects.risk-acceptances.update');
     Route::patch('projects/{project}/findings/{finding}/lifecycle', [FindingController::class, 'transition'])->name('projects.findings.lifecycle.update');
+    Route::post('projects/{project}/findings/{finding}/comments', [FindingCommentController::class, 'store'])->name('projects.findings.comments.store');
     Route::resource('projects.findings', FindingController::class)->parameters(['findings' => 'finding']);
     Route::post('projects/{project}/findings/{finding}/evidence', [FindingEvidenceController::class, 'store'])->name('projects.findings.evidence.store');
     Route::get('projects/{project}/findings/{finding}/evidence/{evidence}/download', [FindingEvidenceController::class, 'download'])->name('projects.findings.evidence.download');
@@ -166,6 +199,12 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('projects/{project}/snapshots/compare', [SnapshotController::class, 'compare'])->name('projects.snapshots.compare');
     Route::get('projects/{project}/snapshot-compares/{compareRun}', [SnapshotController::class, 'showCompare'])->name('projects.snapshots.compares.show');
     Route::get('projects/{project}/endpoint-inventory', EndpointInventoryController::class)->name('projects.endpoint-inventory.index');
+    Route::get('projects/{project}/api-behavior', [ApiBehaviorMapController::class, 'index'])->name('projects.api-behavior.index');
+    Route::post('projects/{project}/api-behavior/refresh', [ApiBehaviorMapController::class, 'refresh'])->name('projects.api-behavior.refresh');
+    Route::get('projects/{project}/evidence-graph', [EvidenceGraphController::class, 'index'])->name('projects.evidence-graph.index');
+    Route::get('projects/{project}/evidence-graph/release', [EvidenceGraphController::class, 'release'])->name('projects.evidence-graph.release');
+    Route::get('projects/{project}/evidence-graph/endpoints/{endpoint}', [EvidenceGraphController::class, 'endpoint'])->name('projects.evidence-graph.endpoint');
+    Route::get('projects/{project}/evidence-graph/findings/{finding}', [EvidenceGraphController::class, 'finding'])->name('projects.evidence-graph.finding');
     Route::post('projects/{project}/endpoints/{endpoint}/probe', [ScanController::class, 'probeEndpoint'])->name('projects.endpoints.probe');
     Route::post('projects/{project}/endpoints/{endpoint}/path-parameters', [EndpointPathParameterController::class, 'update'])->name('projects.endpoints.path-parameters.update');
     Route::get('projects/{project}/endpoints/import', [EndpointController::class, 'importForm'])->name('projects.endpoints.import.form');
@@ -178,6 +217,19 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::get('projects/{project}/reports/release-readiness.md', [ReleaseReadinessController::class, 'markdown'])->name('projects.reports.release-readiness.markdown');
     Route::get('projects/{project}/reports/release-readiness.html', [ReleaseReadinessController::class, 'html'])->name('projects.reports.release-readiness.html');
     Route::get('projects/{project}/reports/release-readiness.pdf', [ReleaseReadinessController::class, 'pdf'])->name('projects.reports.release-readiness.pdf');
+    Route::get('projects/{project}/report-versions', [ReportVersionController::class, 'index'])->name('projects.report-versions.index');
+    Route::post('projects/{project}/report-versions', [ReportVersionController::class, 'store'])->name('projects.report-versions.store');
+    Route::get('projects/{project}/report-versions/{reportVersion}.md', [ReportVersionController::class, 'markdown'])->name('projects.report-versions.markdown');
+    Route::get('projects/{project}/report-versions/{reportVersion}.html', [ReportVersionController::class, 'html'])->name('projects.report-versions.html');
+    Route::get('projects/{project}/report-versions/{reportVersion}.pdf', [ReportVersionController::class, 'pdf'])->name('projects.report-versions.pdf');
+    Route::get('projects/{project}/report-versions/{reportVersion}.json', [ReportVersionController::class, 'json'])->name('projects.report-versions.json');
+    Route::get('projects/{project}/report-versions/{reportVersion}', [ReportVersionController::class, 'show'])->name('projects.report-versions.show');
+    Route::patch('projects/{project}/report-versions/{reportVersion}/review', [ReportVersionController::class, 'markReviewed'])->name('projects.report-versions.review');
+    Route::patch('projects/{project}/report-versions/{reportVersion}/approve', [ReportVersionController::class, 'approve'])->name('projects.report-versions.approve');
+    Route::patch('projects/{project}/report-versions/{reportVersion}/archive', [ReportVersionController::class, 'archive'])->name('projects.report-versions.archive');
+    Route::get('projects/{project}/client-portal', [ClientAuditPortalController::class, 'index'])->name('projects.client-portal.index');
+    Route::post('projects/{project}/client-portal', [ClientAuditPortalController::class, 'store'])->name('projects.client-portal.store');
+    Route::patch('projects/{project}/client-portal/{clientPortalAccess}/revoke', [ClientAuditPortalController::class, 'revoke'])->name('projects.client-portal.revoke');
     Route::get('projects/{project}/reports/builder', [FullQaReportBuilderController::class, 'create'])->name('projects.reports.builder.create');
     Route::post('projects/{project}/reports/builder/markdown', [FullQaReportBuilderController::class, 'markdown'])->name('projects.reports.builder.markdown');
     Route::post('projects/{project}/reports/builder/html', [FullQaReportBuilderController::class, 'html'])->name('projects.reports.builder.html');

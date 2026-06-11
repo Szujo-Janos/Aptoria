@@ -26,6 +26,8 @@ class ContractValidationResult extends Model
     public const CHECK_CONTENT_TYPE = 'content_type';
     public const CHECK_RESPONSE_SCHEMA = 'response_schema';
     public const CHECK_SCAN_EVIDENCE = 'scan_evidence';
+    public const CHECK_AUTH_REQUIREMENT = 'auth_requirement';
+    public const CHECK_UNDOCUMENTED_RESPONSE_FIELD = 'undocumented_response_field';
 
     protected $fillable = [
         'contract_validation_run_id',

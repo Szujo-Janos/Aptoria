@@ -67,6 +67,11 @@ class Project extends Model
         return $this->hasMany(Endpoint::class);
     }
 
+    public function endpointBehaviorLinks(): HasMany
+    {
+        return $this->hasMany(EndpointBehaviorLink::class);
+    }
+
     public function testSuites(): HasMany
     {
         return $this->hasMany(TestSuite::class);
@@ -120,6 +125,46 @@ class Project extends Model
     public function findingEvidence(): HasMany
     {
         return $this->hasMany(FindingEvidence::class);
+    }
+
+    public function riskAcceptances(): HasMany
+    {
+        return $this->hasMany(RiskAcceptance::class);
+    }
+
+    public function releaseDecisions(): HasMany
+    {
+        return $this->hasMany(ReleaseDecision::class);
+    }
+
+    public function reportVersions(): HasMany
+    {
+        return $this->hasMany(ReportVersion::class);
+    }
+
+    public function clientPortalAccesses(): HasMany
+    {
+        return $this->hasMany(ClientPortalAccess::class);
+    }
+
+    public function clientPortalAcknowledgements(): HasMany
+    {
+        return $this->hasMany(ClientPortalAcknowledgement::class);
+    }
+
+    public function latestReportVersion(): HasOne
+    {
+        return $this->hasOne(ReportVersion::class)->latestOfMany();
+    }
+
+    public function latestApprovedReportVersion(): HasOne
+    {
+        return $this->hasOne(ReportVersion::class)->where('status', ReportVersion::STATUS_APPROVED)->latestOfMany();
+    }
+
+    public function latestReleaseDecision(): HasOne
+    {
+        return $this->hasOne(ReleaseDecision::class)->latestOfMany();
     }
 
     public function qaReleaseGates(): HasMany

@@ -122,6 +122,45 @@
 </div>
 
 <div class="row">
+    <div class="col-lg-12">
+        <div class="hpanel hgreen">
+            <div class="panel-heading hbuilt">
+                <div class="panel-tools">
+                    <a href="{{ route('projects.report-versions.index', $project) }}" class="btn btn-xs btn-success">{{ __('messages.report_versions.open_history') }}</a>
+                </div>
+                {{ __('messages.report_versions.title') }}
+            </div>
+            <div class="panel-body">
+                <p class="text-muted">{{ __('messages.report_versions.report_center_help') }}</p>
+                <form method="POST" action="{{ route('projects.report-versions.store', $project) }}" class="form-inline m-b-md">
+                    @csrf
+                    <input type="hidden" name="report_type" value="technical">
+                    <input type="text" name="title" class="form-control input-sm" placeholder="{{ __('messages.report_versions.title_placeholder') }}">
+                    <button type="submit" class="btn btn-sm btn-primary">{{ __('messages.report_versions.create_technical_draft') }}</button>
+                    <a href="{{ route('projects.report-versions.index', $project) }}" class="btn btn-sm btn-default">{{ __('messages.report_versions.manage_versions') }}</a>
+                </form>
+                @if(isset($latestReportVersions) && $latestReportVersions->isNotEmpty())
+                    <table class="table table-striped table-condensed m-b-none">
+                        <thead><tr><th>{{ __('messages.common.title') }}</th><th>{{ __('messages.common.status') }}</th><th>{{ __('messages.report_versions.checksum') }}</th><th>{{ __('messages.common.created') }}</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach($latestReportVersions as $version)
+                            <tr>
+                                <td>{{ $version->title }}</td>
+                                <td><span class="label label-{{ $version->status_css }}">{{ $version->status_label }}</span></td>
+                                <td><code>{{ $version->short_checksum }}</code></td>
+                                <td>{{ $version->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="text-right"><a href="{{ route('projects.report-versions.show', [$project, $version]) }}" class="btn btn-xs btn-default">{{ __('messages.common.details') }}</a></td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-lg-4">
         <div class="hpanel hgreen">
             <div class="panel-heading hbuilt">{{ __('messages.reports.endpoint_inventory_exports') }}</div>

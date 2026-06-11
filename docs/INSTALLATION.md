@@ -1,6 +1,6 @@
 # Aptoria Installation
 
-Current version: **v1.1.18**
+Current version: **v1.1.28**
 
 Aptoria is built for self-hosted Laravel deployment. The primary tested local workflow is Windows/XAMPP, with Linux/VPS scripts provided as helpers.
 
@@ -28,15 +28,15 @@ The update script installs dependencies and prepares local runtime folders.
 Use this exact PowerShell template for ZIP-based local updates:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.18.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.18"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.28.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.28"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.18\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.28\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -306,3 +306,21 @@ After installing v1.1.16 or later, open **Audit Log** from the global navigation
 ## v1.1.18 Navigation & Profile Menu Cleanup check
 
 After installing v1.1.18, review the sidebar and profile dropdown. Confirm global workflows are grouped into Release & reports, Operations, Audit & admin, and Help & workflow; project modules are grouped by task area; project monitors are available from the current project menu; and the profile dropdown contains only account-level actions with no empty rows.
+
+
+## v1.1.19 QA Blind Spot Detector check
+
+After installing v1.1.19 or later, open **Project → Blind Spots** and confirm missing scan, missing assertion, missing auth comparison, unverified fix, accepted risk expiry and stale evidence warnings are detected. Then open **Project → Release Readiness** and export executive/technical reports to confirm the Blind Spot Summary is included.
+
+
+## v1.1.20 Finding Verification & Ownership check
+
+After installing v1.1.20 or later, open **Project → Findings**, create or edit a finding, assign an owner, due date, priority, verification status and retest requirement. Move the finding through **Ready for retest → Retest failed → Fixed → Verified**, add retest evidence and a finding comment, then confirm Release Readiness and full QA reports show the verification summary.
+
+## v1.1.21 Risk Acceptance Ledger check
+
+After installing v1.1.21 or later, run migrations, open a finding, record an accepted risk, then open **Project → Risk Ledger**. Confirm missing expiry, expiring soon and expired accepted risk decisions are visible and that Release Readiness includes the Risk Acceptance Ledger Summary.
+
+## v1.1.28 QA Cockpit
+
+After installing v1.1.28 or later, run migrations and open **Project → QA Cockpit**. Confirm the daily QA queues show blockers, retest work, expiring accepted risks, stale scan/report evidence, endpoint evidence gaps and release candidates needing a saved decision.
