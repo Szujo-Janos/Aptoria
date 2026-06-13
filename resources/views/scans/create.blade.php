@@ -25,7 +25,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="scan_profile">Scan profile</label>
+                        <label for="scan_profile">{{ __('messages.scans.scan_profile') }}</label>
                         <select class="form-control" id="scan_profile" name="scan_profile">
                             @foreach($scanProfiles as $profileKey => $profile)
                                 <option value="{{ $profileKey }}" @selected(old('scan_profile', $defaultScanProfile) === $profileKey)>
@@ -33,7 +33,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <span class="help-block">Profiles apply the saved Settings Center limits to this scan without enabling destructive HTTP methods.</span>
+                        <span class="help-block">{{ __('messages.scans.scan_profile_help') }}</span>
                     </div>
 
                     <div class="well">
@@ -67,9 +67,9 @@
                         </div>
                         @if($requireTypedProductionConfirmation ?? true)
                             <div class="form-group">
-                                <label for="production_confirmation_phrase">Production typed confirmation</label>
+                                <label for="production_confirmation_phrase">{{ __('messages.scans.production_typed_confirmation') }}</label>
                                 <input id="production_confirmation_phrase" name="production_confirmation_phrase" class="form-control" value="{{ old('production_confirmation_phrase') }}" placeholder="{{ $productionConfirmationPhrase ?? 'SCAN PRODUCTION' }}">
-                                <span class="help-block">Required only when the selected environment is marked as production.</span>
+                                <span class="help-block">{{ __('messages.scans.production_typed_confirmation_help') }}</span>
                             </div>
                         @endif
                     @endif

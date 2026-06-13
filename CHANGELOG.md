@@ -1,3 +1,84 @@
+## [1.1.32] - Stale v2 test cleanup hotfix
+
+### Fixed
+- Added a v1.1.32-compatible `UiFoundationLayoutTest` so stale Aptoria 2.0 UI foundation assertions are overwritten when copying this package over an existing working tree.
+- Kept the package on v1.1.32 because this is a cleanup hotfix after reverting the project baseline.
+
+## [1.1.32]
+
+### Fixed
+- Members & Roles dashboard redesign polish.
+
+# Changelog
+
+## Aptoria v1.1.32 – Release Workflow State Machine Pass
+
+### Added
+
+- Added persistent release workflow state records through `release_workflows` and `release_workflow_steps`.
+- Rebuilt the Project → Release Workflow screen as a 15-step state machine from project setup to client acknowledgement.
+- Added workflow states: Not started, In progress, Blocked, Needs review, Ready, Completed and Skipped with reason.
+- Added blocker counts, missing evidence counts, completion criteria, required actions and next-action resolution for every workflow step.
+- Added release pre-check summary to show which steps block release finalization.
+- Added manual skip-with-reason and reopen actions for release approvers / project admins.
+- Added workflow snapshot data into saved release decision packages.
+- Added audit records for skipped and reopened workflow steps.
+
+### Fixed
+- Members & Roles UX redesign: split internal user directory, new-user creation, current project members, role matrix and current permission summary into clearer sections.
+- Added available-user list so project admins can see who can be added to the project without typing unknown e-mail addresses blindly.
+- Project membership form can create a missing internal Aptoria user and immediately assign a project role, avoiding the dead-end “user does not exist” flow.
+- Completed the Members & Roles localization pass so internal permission abilities no longer appear as raw codes such as `project.view` or `release.finalize` in the UI.
+- Added translated role and permission labels for both English and Hungarian, including the current project permissions panel and role matrix.
+- Localized project membership access-denied messages and audit summaries used by the internal role system.
+- Added a language audit note at `docs/LANGUAGE_AUDIT_v1.1.32.md` with the checks run for this hotfix.
+- Regression hotfix: kept the disabled page-load animation helper as `$.fn.animatePanel` so existing UI asset guards continue to pass while animations remain no-op.
+
+- Added missing English and Hungarian translation keys used by the header, QA Cockpit, Release Workflow, Evidence Graph, Scan form and report branding screens.
+- Restored language-key parity between `resources/lang/en/messages.php` and `resources/lang/hu/messages.php`.
+- Replaced scan form hardcoded labels/help text with translation keys.
+- Disabled page-load panel appearance/fade animations for a stable, immediate QA workspace.
+
+### Changed
+
+- Release Workflow now persists a recalculated project-scoped snapshot instead of rendering only a static navigation checklist.
+- Release Decision package version now follows the current Aptoria version from the `VERSION` file.
+- Updated English and Hungarian release workflow labels, states, criteria and blocker messages.
+
+### QA
+
+- Added workflow state machine coverage for 15 steps, persisted workflow snapshots, skip-with-reason and reopen behavior.
+
+# v1.1.31 - Internal Roles & Project Memberships Pass
+
+## Hotfix - Release Decision Room latest decision guard
+
+- Fixed a Release Decision Room view regression where the latest decision panel could throw an undefined `$latestDecision` variable during feature tests or after stale view compilation.
+- Kept the package version at v1.1.31 because this is a bugfix, not a feature release.
+
+- Added project-scoped internal memberships with Project admin, QA engineer, Reviewer, Release approver and Read-only viewer roles.
+- Added a central project permission map and workspace middleware so non-admin users can access only their assigned projects and allowed actions.
+- Added Project → Members & Roles with role assignment, role updates, member removal, permission matrix and current-role visibility.
+- Hardened critical release/report/risk/finding/evidence actions with server-side permission checks and restricted UI states.
+- Added audit log coverage for project member changes and denied project action attempts.
+- Added feature tests for project visibility, member assignment, read-only restrictions and release/report permission separation.
+
+# v1.1.30 - Client Portal Handoff Visibility Polish
+
+- Added an Aptoria-branded fixed Client Audit Portal header with the application logo and project-scoped portal context.
+- Added a public role access summary so each client portal link clearly shows which content sections and acknowledgement actions are visible or restricted.
+- Added a safe restricted-role fallback: even if all client content permissions are disabled, the portal still shows the current client-safe release snapshot instead of feeling empty.
+- Added an internal role default permission matrix and role selector behavior so viewer, approver and reviewer permissions are understandable before creating a link.
+- Extended client portal feature coverage for restricted links and updated release documentation, install templates and QA checklist.
+
+# v1.1.29 - Workflow Consolidation & Permission Hardening Pass
+
+- Added Project → Release Workflow as a guided release sign-off flow from QA Cockpit through blind spots, readiness, release gate, release decision, report approval and client handoff.
+- Hardened Client Audit Portal backend permissions for evidence package downloads and acknowledgement actions.
+- Extended audit logging coverage to release decisions, accepted risk ledger entries and API behavior links.
+- Updated project navigation active-state handling for newer release/evidence workflow modules.
+- Added feature tests for workflow consolidation, client portal permission enforcement and audit coverage.
+
 # v1.1.28 - QA Cockpit Pass
 
 - Added Project → QA Cockpit as a daily QA priority board.
@@ -946,3 +1027,8 @@
 - `database/database.sqlite` is not included.
 - `storage/app/installed.lock` is not included.
 - `public/assets/aptoria-ui/vendor` remains included.
+
+### Fixed
+- Decision Room Blade hotfix: normalized the inline PHP bootstrap block to prevent raw template code from leaking into the page header area.
+- Project navigation icon hotfix: replaced unsupported member-role icons with Font Awesome 4 compatible icons so menu icons render consistently.
+- Hungarian language polish: localized the visible Release Decision Room / Release Workflow labels for the Hungarian UI.

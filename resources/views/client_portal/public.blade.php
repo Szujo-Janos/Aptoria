@@ -76,6 +76,45 @@
         margin-right: 8px;
         margin-bottom: 8px;
     }
+
+    .client-portal-brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .client-portal-brand img {
+        display: block;
+        height: 36px;
+        max-width: 172px;
+        object-fit: contain;
+    }
+    .client-portal-brand-copy {
+        min-width: 0;
+    }
+    .client-portal-role-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .client-portal-capability {
+        border: 1px solid #e4e9ef;
+        border-radius: 4px;
+        padding: 8px 10px;
+        background: #fbfcfd;
+        min-height: 42px;
+    }
+    .client-portal-capability.is-enabled {
+        border-color: #d8ead0;
+        background: #f7fbf5;
+    }
+    .client-portal-capability.is-disabled {
+        color: #8d99a6;
+        background: #f7f8fa;
+    }
+    .client-portal-capability small {
+        display: block;
+        margin-top: 2px;
+    }
     @media (max-width: 767px) {
         .client-portal-shell {
             padding-top: 110px;
@@ -86,6 +125,16 @@
             text-align: left;
             margin-top: 8px;
         }
+        .client-portal-brand {
+            align-items: flex-start;
+        }
+        .client-portal-brand img {
+            height: 30px;
+            max-width: 142px;
+        }
+        .client-portal-role-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -93,8 +142,13 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-8">
-                <h1 class="portal-title">{{ __('messages.client_portal.public_title') }}</h1>
-                <p class="portal-subtitle">{{ $project->name }} · {{ __('messages.client_portal.header_subtitle') }}</p>
+                <div class="client-portal-brand">
+                    <img src="{{ asset('assets/aptoria/img/aptoria-logo-horizontal.png') }}" alt="Aptoria">
+                    <div class="client-portal-brand-copy">
+                        <h1 class="portal-title">{{ __('messages.client_portal.public_title') }}</h1>
+                        <p class="portal-subtitle">{{ $project->name }} · {{ __('messages.client_portal.header_subtitle') }}</p>
+                    </div>
+                </div>
             </div>
             <div class="col-sm-4 text-right">
                 <span class="label label-{{ $access->status_css }}">{{ $access->role_label }}</span>
@@ -159,6 +213,29 @@
             </div>
         </div>
     </div>
+
+    <div class="hpanel hblue">
+        <div class="panel-heading hbuilt">{{ __('messages.client_portal.role_access_summary') }}</div>
+        <div class="panel-body">
+            <p class="text-muted">{{ __('messages.client_portal.role_access_intro') }}</p>
+            @if(($dashboard['metrics']['visible_sections'] ?? 0) === 0)
+                <div class="alert alert-warning">
+                    <strong>{{ __('messages.client_portal.no_visible_sections_title') }}</strong><br>
+                    {{ __('messages.client_portal.no_visible_sections_help') }}
+                </div>
+            @endif
+            <div class="client-portal-role-grid">
+                @foreach($dashboard['role_capabilities'] as $capability)
+                    <div class="client-portal-capability {{ $capability['enabled'] ? 'is-enabled' : 'is-disabled' }}">
+                        <span class="label label-{{ $capability['enabled'] ? 'success' : 'default' }} pull-right">{{ $capability['enabled'] ? __('messages.client_portal.visible') : __('messages.client_portal.restricted') }}</span>
+                        <strong>{{ $capability['label'] }}</strong>
+                        <small>{{ $capability['approval'] ? __('messages.client_portal.approval_capability') : __('messages.client_portal.content_capability') }}</small>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
 
     <div class="row">
         <div class="col-md-7">

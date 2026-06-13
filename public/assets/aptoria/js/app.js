@@ -11,8 +11,7 @@
     }
 
     function scheduleUiReady() {
-        window.setTimeout(markUiReady, 60);
-        window.setTimeout(markUiReady, 700);
+        markUiReady();
     }
 
     if (window.toastr) {

@@ -1,6 +1,6 @@
 # Aptoria Server First-Run Installer
 
-Current version: **v1.1.28**
+Current version: **v1.1.32**
 
 Aptoria contains a first-run setup flow for fresh deployments. Until the application is installed and locked, normal web pages redirect to `/setup`.
 
@@ -34,15 +34,15 @@ This file must never be included in release ZIPs or committed to Git.
 ## Windows/XAMPP recommended update flow
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.28.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.28"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.32.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.32"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.28\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.32\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -180,6 +180,14 @@ After installing v1.1.20 or later, open **Project → Findings**, create or edit
 
 After installing v1.1.21 or later, run migrations, open a finding, record an accepted risk, then open **Project → Risk Ledger**. Confirm missing expiry, expiring soon and expired accepted risk decisions are visible and that Release Readiness includes the Risk Acceptance Ledger Summary.
 
-## v1.1.28 QA Cockpit
+## v1.1.32 Release Workflow State Machine
 
-After installing v1.1.28 or later, run migrations and open **Project → QA Cockpit**. Confirm the daily QA queues show blockers, retest work, expiring accepted risks, stale scan/report evidence, endpoint evidence gaps and release candidates needing a saved decision.
+After installing v1.1.32 or later, run migrations and open **Project → Release Workflow**. Confirm the 15-step state machine is visible, blocker / evidence counts are persisted, the release pre-check panel highlights incomplete steps and a Project admin or Release approver can skip a step only with a reason and reopen it afterwards.
+
+## v1.1.30 Client Portal Handoff Visibility Polish
+
+After installing v1.1.30 or later, run migrations and open **Project → Client Portal**. Confirm the role default permission matrix is visible and switching the role selector updates the permission checkboxes, then open viewer, approver and restricted public portal links. The public portal should show the Aptoria logo in the fixed header, a current client-safe release snapshot and a role access summary that marks visible and restricted sections clearly.
+
+## v1.1.29 Workflow Consolidation & Permission Hardening
+
+After installing v1.1.29 or later, run migrations and open **Project → Release Workflow**. Confirm the guided flow connects QA Cockpit, Blind Spots, Release Readiness, Release Gate, Release Decision, Report Approval and Client Portal handoff. Also verify restricted Client Portal links cannot download evidence packages or post acknowledgements without the matching permission.

@@ -3,6 +3,7 @@
 @section('title', __('messages.report_versions.detail_title'))
 
 @section('content')
+@php($projectPermissions = app(\App\Services\Access\ProjectAccessService::class)->permissionMap($project, request()->user()))
 <div class="row">
     <div class="col-lg-12">
         <div class="hpanel hblue">
@@ -35,12 +36,16 @@
                     <div class="col-md-6">
                         <div class="report-version-action-group">
                             <div class="text-muted report-version-action-label">{{ __('messages.report_versions.export_actions') }}</div>
-                            <div class="btn-group" role="group" aria-label="{{ __('messages.report_versions.export_actions') }}">
-                                <a href="{{ route('projects.report-versions.markdown', [$project, $reportVersion]) }}" class="btn btn-primary">MD</a>
-                                <a href="{{ route('projects.report-versions.html', [$project, $reportVersion]) }}" class="btn btn-default">HTML</a>
-                                <a href="{{ route('projects.report-versions.pdf', [$project, $reportVersion]) }}" class="btn btn-default">PDF</a>
-                                <a href="{{ route('projects.report-versions.json', [$project, $reportVersion]) }}" class="btn btn-default">JSON</a>
-                            </div>
+                            @if(($projectPermissions['exports.download'] ?? false))
+                                <div class="btn-group" role="group" aria-label="{{ __('messages.report_versions.export_actions') }}">
+                                    <a href="{{ route('projects.report-versions.markdown', [$project, $reportVersion]) }}" class="btn btn-primary">MD</a>
+                                    <a href="{{ route('projects.report-versions.html', [$project, $reportVersion]) }}" class="btn btn-default">HTML</a>
+                                    <a href="{{ route('projects.report-versions.pdf', [$project, $reportVersion]) }}" class="btn btn-default">PDF</a>
+                                    <a href="{{ route('projects.report-versions.json', [$project, $reportVersion]) }}" class="btn btn-default">JSON</a>
+                                </div>
+                            @else
+                                <span class="text-muted">{{ __('messages.project_members.manage_restricted') }}</span>
+                            @endif
                         </div>
                     </div>
                     <div class="col-md-6 text-right">
@@ -48,21 +53,28 @@
                             <div class="report-version-action-group">
                                 <div class="text-muted report-version-action-label">{{ __('messages.report_versions.workflow_actions') }}</div>
                                 <div class="report-version-workflow-actions">
-                                    <form method="POST" action="{{ route('projects.report-versions.review', [$project, $reportVersion]) }}" class="report-version-inline-form">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="btn btn-info">{{ __('messages.report_versions.mark_reviewed') }}</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('projects.report-versions.approve', [$project, $reportVersion]) }}" class="report-version-inline-form">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="btn btn-success">{{ __('messages.report_versions.approve') }}</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('projects.report-versions.archive', [$project, $reportVersion]) }}" class="report-version-inline-form">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="btn btn-warning">{{ __('messages.report_versions.archive') }}</button>
-                                    </form>
+                                    @if(($projectPermissions['report.review'] ?? false))
+                                        <form method="POST" action="{{ route('projects.report-versions.review', [$project, $reportVersion]) }}" class="report-version-inline-form">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-info">{{ __('messages.report_versions.mark_reviewed') }}</button>
+                                        </form>
+                                    @endif
+                                    @if(($projectPermissions['report.approve'] ?? false))
+                                        <form method="POST" action="{{ route('projects.report-versions.approve', [$project, $reportVersion]) }}" class="report-version-inline-form">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-success">{{ __('messages.report_versions.approve') }}</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('projects.report-versions.archive', [$project, $reportVersion]) }}" class="report-version-inline-form">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-warning">{{ __('messages.report_versions.archive') }}</button>
+                                        </form>
+                                    @endif
+                                    @if(!($projectPermissions['report.review'] ?? false) && !($projectPermissions['report.approve'] ?? false))
+                                        <span class="text-muted">{{ __('messages.project_members.manage_restricted') }}</span>
+                                    @endif
                                 </div>
                             </div>
                         @else

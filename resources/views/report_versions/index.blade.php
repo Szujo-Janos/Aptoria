@@ -3,6 +3,7 @@
 @section('title', __('messages.report_versions.title'))
 
 @section('content')
+@php($projectPermissions = app(\App\Services\Access\ProjectAccessService::class)->permissionMap($project, request()->user()))
 <div class="row">
     <div class="col-lg-12">
         <div class="hpanel hblue">
@@ -14,22 +15,26 @@
             </div>
             <div class="panel-body">
                 <p class="text-muted">{{ __('messages.report_versions.intro') }}</p>
-                <form method="POST" action="{{ route('projects.report-versions.store', $project) }}" class="form-inline">
-                    @csrf
-                    <div class="form-group m-r-sm">
-                        <label class="sr-only" for="title">{{ __('messages.common.title') }}</label>
-                        <input type="text" id="title" name="title" value="{{ old('title') }}" class="form-control" placeholder="{{ __('messages.report_versions.title_placeholder') }}">
-                    </div>
-                    <div class="form-group m-r-sm">
-                        <label class="sr-only" for="report_type">{{ __('messages.report_versions.report_type') }}</label>
-                        <select name="report_type" id="report_type" class="form-control">
-                            @foreach(\App\Models\ReportVersion::TYPES as $type)
-                                <option value="{{ $type }}">{{ __('messages.report_versions.types.'.$type) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">{{ __('messages.report_versions.create_draft') }}</button>
-                </form>
+                @if(($projectPermissions['report.generate'] ?? false))
+                    <form method="POST" action="{{ route('projects.report-versions.store', $project) }}" class="form-inline">
+                        @csrf
+                        <div class="form-group m-r-sm">
+                            <label class="sr-only" for="title">{{ __('messages.common.title') }}</label>
+                            <input type="text" id="title" name="title" value="{{ old('title') }}" class="form-control" placeholder="{{ __('messages.report_versions.title_placeholder') }}">
+                        </div>
+                        <div class="form-group m-r-sm">
+                            <label class="sr-only" for="report_type">{{ __('messages.report_versions.report_type') }}</label>
+                            <select name="report_type" id="report_type" class="form-control">
+                                @foreach(\App\Models\ReportVersion::TYPES as $type)
+                                    <option value="{{ $type }}">{{ __('messages.report_versions.types.'.$type) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">{{ __('messages.report_versions.create_draft') }}</button>
+                    </form>
+                @else
+                    <div class="alert alert-warning m-b-none">{{ __('messages.project_members.manage_restricted') }}</div>
+                @endif
             </div>
         </div>
     </div>

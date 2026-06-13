@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/assets/aptoria/img/aptoria-github-1.png" alt="Aptoria logo" width="360">
+  <img src="public/assets/aptoria/img/aptoria-logo-horizontal.png" alt="Aptoria logo" width="360">
 </p>
 
 
@@ -11,7 +11,7 @@
 
 **Aptoria** is a self-hosted, evidence-first API QA and release decision platform for endpoint visibility, regression monitoring, release evidence and lightweight security review.
 
-Current release: **v1.1.28**  
+Current release: **v1.1.32**  
 Product status: **post-MVP / early beta**
 
 The application is designed for teams or individual QA engineers who want to keep API endpoint inventories, safe scan evidence, assertions, snapshots, findings, test cases and release readiness decisions in one self-hosted workspace.
@@ -85,6 +85,8 @@ Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 
 ### QA workflow
 
+- Internal project memberships with Project admin, QA engineer, Reviewer, Release approver and Read-only viewer roles
+- Project-scoped permission checks for members, findings, evidence, accepted risks, release decisions, report approval and exports
 - QA operations calendar
 - Manual QA tasks, regression retests, release checkpoints and maintenance windows
 - Alert follow-up scheduling from monitor alert history
@@ -100,6 +102,7 @@ Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 - Release readiness dashboard
 - QA evidence pack export
 - QA release gate with stored decision
+- Client Audit Portal with role-based handoff links, client-safe release snapshot and evidence visibility summary
 
 ### Reporting and exports
 
@@ -181,18 +184,18 @@ The release ZIP intentionally does **not** include `vendor/`, `.env`, `database/
 
 Fresh installs are guarded by the first-run setup flow. Until `storage/app/installed.lock` exists, normal application pages and login attempts are redirected to `/setup`; creating database users alone is not enough to open the app. After setup is locked, `/setup` is closed and the first successful login sends the admin to **My Profile** so report identity details can be completed before QA work starts.
 
-Use this exact PowerShell template for the v1.1.28 release ZIP:
+Use this exact PowerShell template for the v1.1.32 release ZIP:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.28.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.28"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-1.1.32.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_1.1.32"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
 
-Copy-Item "$TempPath\aptoria-1.1.28\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-1.1.32\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -466,10 +469,10 @@ Before pushing public, review:
 
 - `docs/INSTALLATION.md` – installation notes
 - `docs/QA_CHECKLIST.md` – current release QA checklist
-- `docs/QA_CHECKLIST_v1.1.28.md` – v1.1.28 QA Cockpit QA checklist
+- `docs/QA_CHECKLIST_v1.1.32.md` – v1.1.32 release workflow state machine QA checklist
 - `docs/MVP_PLAN.md` – current product status and roadmap
 - `docs/PORTFOLIO_SHOWCASE.md` – portfolio/showcase overview
-- `docs/SYSTEM_AUDIT_v1.1.28.md` – current v1.1.28 QA Cockpit system audit
+- `docs/SYSTEM_AUDIT_v1.1.32.md` – current v1.1.32 release workflow state machine system audit
 - `docs/DATABASE_MAINTENANCE_OPERATIONS.md` – database export/import and hard reset guide
 - `docs/GITHUB_REPOSITORY_CHECKLIST.md` – GitHub preparation checklist
 - `docs/APTORIA_UI_TEMPLATE_AUDIT.md` – Aptoria UI template integration audit

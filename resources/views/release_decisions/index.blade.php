@@ -4,8 +4,9 @@
 
 @section('content')
 @php
+    $projectPermissions = app(\App\Services\Access\ProjectAccessService::class)->permissionMap($project, request()->user());
     $summary = $roomSummary['summary'];
-    $latestDecision = $roomSummary['latest_decision'];
+    $latestDecision = $roomSummary['latest_decision'] ?? null;
     $package = $roomSummary['current_package'];
     $readiness = $package['release_readiness'] ?? [];
     $acceptedRiskSummary = $package['accepted_risk_summary'] ?? [];
@@ -42,6 +43,7 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">{{ __('messages.release_decisions.finalize_title') }}</div>
             <div class="panel-body">
+                @if(($projectPermissions['release.finalize'] ?? false))
                 <form method="POST" action="{{ route('projects.release-decisions.store', $project) }}">
                     @csrf
                     <div class="row">
@@ -78,6 +80,9 @@
                     <button type="submit" class="btn btn-primary"><i class="fa fa-lock"></i> {{ __('messages.release_decisions.finalize_button') }}</button>
                     <span class="text-muted m-l-sm">{{ __('messages.release_decisions.package_checksum') }}: <code>{{ \Illuminate\Support\Str::limit($roomSummary['package_checksum'], 16, '') }}</code></span>
                 </form>
+                @else
+                    <div class="alert alert-warning m-b-none">{{ __('messages.project_members.manage_restricted') }}</div>
+                @endif
             </div>
         </div>
     </div>
@@ -85,6 +90,7 @@
         <div class="hpanel hblue">
             <div class="panel-heading hbuilt">{{ __('messages.release_decisions.latest_decision') }}</div>
             <div class="panel-body">
+                @php($latestDecision = $latestDecision ?? ($roomSummary['latest_decision'] ?? null))
                 @if($latestDecision)
                     <h4><span class="label label-{{ $latestDecision->status_css }}">{{ $latestDecision->status_label }}</span></h4>
                     <p><strong>{{ __('messages.release_decisions.release_name') }}:</strong> {{ $latestDecision->release_name ?: __('messages.common.not_available') }}</p>

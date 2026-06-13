@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
@@ -50,6 +51,19 @@ class Project extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(ProjectMembership::class);
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'project_memberships')
+            ->withPivot(['role', 'notes', 'invited_by_user_id', 'joined_at'])
+            ->withTimestamps();
     }
 
     public function environments(): HasMany
@@ -135,6 +149,16 @@ class Project extends Model
     public function releaseDecisions(): HasMany
     {
         return $this->hasMany(ReleaseDecision::class);
+    }
+
+    public function releaseWorkflow(): HasOne
+    {
+        return $this->hasOne(ReleaseWorkflow::class);
+    }
+
+    public function releaseWorkflowSteps(): HasMany
+    {
+        return $this->hasMany(ReleaseWorkflowStep::class);
     }
 
     public function reportVersions(): HasMany

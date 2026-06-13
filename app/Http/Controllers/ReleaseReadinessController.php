@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Services\Access\ProjectAccessService;
 use App\Services\ReleaseReadinessService;
 use App\Services\Reports\ReportPresentationService;
 use App\Services\Settings\SettingService;
@@ -12,9 +13,9 @@ use Illuminate\Support\Str;
 
 class ReleaseReadinessController extends Controller
 {
-    public function index(ReleaseReadinessService $readiness, SettingService $settings): View
+    public function index(ReleaseReadinessService $readiness, SettingService $settings, ProjectAccessService $access): View
     {
-        $projects = Project::query()
+        $projects = $access->scopeVisibleProjects(Project::query(), auth()->user())
             ->with(['endpoints.latestScanResult', 'scanRuns', 'snapshots', 'compareRuns.items', 'apiMonitors'])
             ->withCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'apiMonitors'])
             ->latest()

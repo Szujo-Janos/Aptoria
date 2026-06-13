@@ -100,12 +100,20 @@ class QaCockpitService
     /** @return Collection<int, array<string, mixed>> */
     private function blockers(Project $project): Collection
     {
+        $blockingStatuses = [
+            Finding::STATUS_OPEN,
+            Finding::STATUS_CONFIRMED,
+            Finding::STATUS_TRIAGED,
+            Finding::STATUS_IN_PROGRESS,
+            Finding::STATUS_REOPENED,
+        ];
+
         return $project->findings()
             ->with(['endpoint', 'owner'])
-            ->where(function ($query): void {
+            ->where(function ($query) use ($blockingStatuses): void {
                 $query->where('status', Finding::STATUS_RETEST_FAILED)
-                    ->orWhere(function ($subQuery): void {
-                        $subQuery->whereIn('status', Finding::OPEN_STATUSES)
+                    ->orWhere(function ($subQuery) use ($blockingStatuses): void {
+                        $subQuery->whereIn('status', $blockingStatuses)
                             ->whereIn('severity', [Finding::SEVERITY_CRITICAL, Finding::SEVERITY_HIGH]);
                     });
             })
@@ -409,6 +417,7 @@ class QaCockpitService
     private function quickActions(Project $project): array
     {
         return [
+            ['label' => __('messages.qa_cockpit.quick_actions.release_workflow'), 'icon' => 'road', 'url' => route('projects.release-workflow.index', $project)],
             ['label' => __('messages.qa_cockpit.quick_actions.blind_spots'), 'icon' => 'eye-slash', 'url' => route('projects.blind-spots.index', $project)],
             ['label' => __('messages.qa_cockpit.quick_actions.release_readiness'), 'icon' => 'check-circle', 'url' => route('projects.release-readiness.show', $project)],
             ['label' => __('messages.qa_cockpit.quick_actions.release_decision'), 'icon' => 'gavel', 'url' => route('projects.release-decisions.index', $project)],

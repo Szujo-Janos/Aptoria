@@ -31,6 +31,8 @@ class ReleaseDecisionController extends Controller
 
     public function store(Project $project, Request $request, ReleaseDecisionRoomService $room): RedirectResponse
     {
+        $this->authorizeProject($project, 'release.finalize');
+
         $validated = $request->validate([
             'release_name' => ['nullable', 'string', 'max:255'],
             'target_environment' => ['nullable', 'string', 'max:255'],
@@ -58,6 +60,7 @@ class ReleaseDecisionController extends Controller
     public function markdown(Project $project, ReleaseDecision $releaseDecision, ReleaseDecisionRoomService $room): Response
     {
         $this->ensureDecisionBelongsToProject($project, $releaseDecision);
+        $this->authorizeProject($project, 'exports.download');
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-decision-'.$releaseDecision->id.'-'.now()->format('Ymd-His').'.md';
 
         return response($room->markdown($releaseDecision), 200, [
@@ -70,6 +73,7 @@ class ReleaseDecisionController extends Controller
     public function html(Project $project, ReleaseDecision $releaseDecision, ReleaseDecisionRoomService $room, ReportPresentationService $presentation): Response
     {
         $this->ensureDecisionBelongsToProject($project, $releaseDecision);
+        $this->authorizeProject($project, 'exports.download');
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-decision-'.$releaseDecision->id.'-'.now()->format('Ymd-His').'.html';
         $markdown = $room->markdown($releaseDecision);
 
@@ -83,6 +87,7 @@ class ReleaseDecisionController extends Controller
     public function pdf(Project $project, ReleaseDecision $releaseDecision, ReleaseDecisionRoomService $room, ReportPresentationService $presentation): Response
     {
         $this->ensureDecisionBelongsToProject($project, $releaseDecision);
+        $this->authorizeProject($project, 'exports.download');
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-decision-'.$releaseDecision->id.'-'.now()->format('Ymd-His').'.pdf';
         $markdown = $room->markdown($releaseDecision);
 
@@ -96,6 +101,7 @@ class ReleaseDecisionController extends Controller
     public function json(Project $project, ReleaseDecision $releaseDecision): JsonResponse
     {
         $this->ensureDecisionBelongsToProject($project, $releaseDecision);
+        $this->authorizeProject($project, 'exports.download');
 
         return response()->json([
             'id' => $releaseDecision->id,

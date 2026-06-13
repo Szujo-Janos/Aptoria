@@ -68,6 +68,8 @@ class FindingController extends Controller
 
     public function create(Project $project, Request $request): View
     {
+        $this->authorizeProject($project, 'findings.manage');
+
         $finding = new Finding($this->prefill($project, $request));
         $formOptions = $this->loadFormData($project);
 
@@ -76,6 +78,8 @@ class FindingController extends Controller
 
     public function store(FindingRequest $request, Project $project): RedirectResponse
     {
+        $this->authorizeProject($project, 'findings.manage');
+
         $finding = $project->findings()->create($this->payload($request, $project));
         $finding->forceFill([
             'lifecycle_changed_at' => now(),
@@ -99,6 +103,7 @@ class FindingController extends Controller
     public function edit(Project $project, Finding $finding): View
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $this->authorizeProject($project, 'findings.manage');
         $formOptions = $this->loadFormData($project);
 
         return view('findings.edit', array_merge(compact('project', 'finding'), $formOptions));
@@ -107,6 +112,7 @@ class FindingController extends Controller
     public function update(FindingRequest $request, Project $project, Finding $finding): RedirectResponse
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $this->authorizeProject($project, 'findings.manage');
         $fromStatus = $finding->status;
         $finding->update($this->payload($request, $project));
 
@@ -126,6 +132,7 @@ class FindingController extends Controller
     public function transition(Request $request, Project $project, Finding $finding): RedirectResponse
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $this->authorizeProject($project, 'findings.review');
 
         $data = $request->validate([
             'status' => ['required', 'string', 'in:'.implode(',', Finding::LIFECYCLE_STATUSES)],
@@ -170,6 +177,7 @@ class FindingController extends Controller
     public function destroy(Project $project, Finding $finding): RedirectResponse
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $this->authorizeProject($project, 'findings.manage');
         $finding->delete();
 
         return redirect()

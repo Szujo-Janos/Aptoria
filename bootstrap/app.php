@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\EnsureApplicationIsInstalled;
 use App\Http\Middleware\EnsureAdminUser;
+use App\Http\Middleware\EnsureWorkspaceAccess;
 use App\Http\Middleware\EnsureSetupAccessIsAuthorized;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\EnforceSessionTimeout;
@@ -19,7 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [SetLocale::class, SecurityHeaders::class, EnsureApplicationIsInstalled::class, EnforceSessionTimeout::class]);
         $middleware->alias([
-            'admin' => EnsureAdminUser::class,
+            'admin' => EnsureWorkspaceAccess::class,
+            'system.admin' => EnsureAdminUser::class,
             'setup.access' => EnsureSetupAccessIsAuthorized::class,
         ]);
     })

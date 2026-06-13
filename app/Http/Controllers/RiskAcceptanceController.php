@@ -41,6 +41,7 @@ class RiskAcceptanceController extends Controller
     public function store(Request $request, Project $project, Finding $finding): RedirectResponse
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $this->authorizeProject($project, 'risk.accept');
 
         $data = $this->validatedPayload($request);
         $data['project_id'] = $project->id;
@@ -74,6 +75,7 @@ class RiskAcceptanceController extends Controller
     public function update(Request $request, Project $project, RiskAcceptance $riskAcceptance): RedirectResponse
     {
         $this->ensureAcceptanceBelongsToProject($project, $riskAcceptance);
+        $this->authorizeProject($project, 'risk.accept');
 
         $data = $request->validate([
             'status' => ['required', Rule::in(RiskAcceptance::STATUSES)],

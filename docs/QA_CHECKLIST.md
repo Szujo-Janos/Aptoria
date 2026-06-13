@@ -1,56 +1,35 @@
-# Aptoria v1.1.28 QA Checklist
+# Aptoria v1.1.32 QA Checklist – Release Workflow State Machine Pass
 
-Release: **v1.1.28 - QA Cockpit Pass**  
-ZIP: `aptoria-1.1.28.zip`
+1. Install from `aptoria-1.1.32.zip` using the documented PowerShell template.
+2. Run `php artisan migrate` and `php artisan test`.
+3. Open an empty or newly created project and go to **Project → Release Workflow**.
+4. Confirm that the workflow shows 15 steps from **Project setup complete** through **Client acknowledgement received**.
+5. Confirm that an empty project shows blocked / not started states for endpoint inventory, scan evidence, release gate, release decision and report steps.
+6. Add or import at least one endpoint.
+7. Reopen **Project → Release Workflow** and confirm the endpoint inventory step no longer blocks because of missing inventory.
+8. Run a safe scan.
+9. Confirm **Latest scan completed** changes to Completed when the scan succeeds, or Blocked when the latest scan fails.
+10. Create a Critical or High finding without evidence.
+11. Confirm the workflow shows blocker / missing evidence signals for triage or evidence-related steps.
+12. Move a finding to Fixed without retest verification and confirm the workflow still blocks.
+13. Add retest evidence and move the finding to Verified.
+14. Confirm the fixed / retested blocker is cleared.
+15. Create a release gate and verify that its decision is reflected in the workflow.
+16. Create a release decision and verify that the decision package contains a `release_workflow_snapshot` section.
+17. Generate a report version, mark it reviewed, then approve it.
+18. Confirm report generated, report reviewed and report approved steps update correctly.
+19. Create a client portal link and confirm **Client handoff prepared** becomes Completed or Ready depending on portal availability.
+20. Use a Release approver / Project admin account to skip **Client acknowledgement received** with a clear reason.
+21. Confirm the step changes to **Skipped with reason** and the reason is visible in the workflow table.
+22. Reopen the skipped step and confirm it recalculates to its computed state.
+23. Open the audit log and confirm workflow skip / reopen events are recorded.
 
-## Required checks
+## Hotfix check – stale v2 test cleanup
 
-- [ ] Install from `aptoria-1.1.28.zip` using the documented PowerShell template.
-- [ ] Run `php artisan migrate`.
-- [ ] Run `php artisan optimize:clear`, `view:clear`, `config:clear`, and `route:clear`.
-- [ ] Run `php artisan test`.
-- [ ] Open **Project → Reports** and confirm the QA Cockpit panel is visible.
-- [ ] Open **Project → QA Cockpit**.
-- [ ] Create an Executive, Technical, Release Readiness or Full Project report draft.
-- [ ] Confirm the saved version has a checksum and source evidence snapshot.
-- [ ] Mark a report version as Reviewed.
-- [ ] Approve a report version and confirm approved by / approved at metadata is populated.
-- [ ] Export the saved version as Markdown, HTML, PDF and JSON.
-- [ ] Confirm Audit Log records report version create / approve / archive events.
+1. Copy the hotfix ZIP over the existing local project.
+2. Run `php artisan optimize:clear`.
+3. Run `php artisan test --filter=UiFoundationLayoutTest`.
+4. Run the full `php artisan test` suite.
+5. Confirm the test output no longer expects `aptoria-v2-page-shell`, `aptoria-v2-actionbar` or `aptoria-v2-next-action`.
+6. Confirm Dashboard and Project Details still render with the v1.1.32 layout and workspace buttons.
 
-## Release ZIP exclusions
-
-- [ ] No root `vendor/` directory.
-- [ ] No root `.env` file.
-- [ ] No `database/database.sqlite`.
-- [ ] No `storage/app/installed.lock`.
-- [ ] No `storage/app/setup-token.txt`.
-- [ ] `public/assets/aptoria-ui/vendor` remains included.
-
-## v1.1.20 Finding Verification & Ownership check
-
-After installing v1.1.20 or later, open **Project → Findings**, create or edit a finding, assign an owner, due date, priority, verification status and retest requirement. Move the finding through **Ready for retest → Retest failed → Fixed → Verified**, add retest evidence and a finding comment, then confirm Release Readiness and full QA reports show the verification summary.
-
-## v1.1.21 Risk Acceptance Ledger check
-
-After installing v1.1.21 or later, run migrations, open a finding, record an accepted risk, then open **Project → Risk Ledger**. Confirm missing expiry, expiring soon and expired accepted risk decisions are visible and that Release Readiness includes the Risk Acceptance Ledger Summary.
-
-## v1.1.22 Release Decision Room check
-
-After installing v1.1.22 or later, open **Project → Release Decision Room**, finalize a Go / No-Go / Conditional Go decision package, and confirm Markdown, HTML, PDF and JSON exports are available.
-
-## v1.1.23 API Behavior Map check
-
-After installing v1.1.23 or later, create related endpoints such as `POST /orders`, `GET /orders/{id}` and `DELETE /orders/{id}`. Open **Project → API Behavior Map** and confirm producer / consumer links and destructive endpoint markers are visible.
-
-## v1.1.24 Evidence Graph check
-
-After installing v1.1.24 or later, open **Project → Evidence Graph** and confirm endpoint, finding and release evidence graph views show linked scans, assertions, findings, evidence attachments, accepted risks, release gates and release decisions.
-
-## v1.1.25 Contract Reality Check
-
-After installing v1.1.25 or later, run migrations and create or open an OpenAPI contract validation with scan evidence. Open **Project → Contract Reality** and confirm auth contract mismatches, undocumented response fields, missing documented endpoints and undocumented inventory endpoints are visible.
-
-## v1.1.28 QA Cockpit
-
-After installing v1.1.28 or later, open **Project → QA Cockpit** and confirm blockers, retest work, stale evidence, endpoint gaps and release decision queues are visible.

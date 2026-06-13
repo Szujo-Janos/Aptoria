@@ -28,7 +28,8 @@ class ClientAuditPortalTest extends TestCase
             ->get(route('projects.client-portal.index', $project))
             ->assertOk()
             ->assertSee(__('messages.client_portal.title'))
-            ->assertSee(__('messages.client_portal.create_access'));
+            ->assertSee(__('messages.client_portal.create_access'))
+            ->assertSee(__('messages.client_portal.role_defaults'));
 
         $response = $this->actingAs($admin)
             ->post(route('projects.client-portal.store', $project), [
@@ -95,6 +96,69 @@ class ClientAuditPortalTest extends TestCase
         $access->refresh();
         $this->assertSame(ClientPortalAccess::STATUS_REVOKED, $access->status);
         $this->get(route('client-portal.show', $access))->assertNotFound();
+    }
+
+
+    public function test_client_portal_backend_permissions_are_enforced_for_exports_and_acknowledgements(): void
+    {
+        [$admin, $project, $approvedReport, , $decision] = $this->fixture('client-portal-permissions@example.com');
+        $risk = RiskAcceptance::query()->where('project_id', $project->id)->firstOrFail();
+
+        $viewer = ClientPortalAccess::query()->create([
+            'project_id' => $project->id,
+            'created_by_user_id' => $admin->id,
+            'label' => 'Restricted viewer',
+            'role' => ClientPortalAccess::ROLE_CLIENT_VIEWER,
+            'permissions' => [
+                ClientPortalAccess::PERMISSION_REPORTS => true,
+                ClientPortalAccess::PERMISSION_RELEASE_DECISIONS => true,
+                ClientPortalAccess::PERMISSION_ACCEPTED_RISKS => true,
+                ClientPortalAccess::PERMISSION_FINDINGS => true,
+                ClientPortalAccess::PERMISSION_EVIDENCE_PACKAGE => false,
+                ClientPortalAccess::PERMISSION_APPROVE_REPORTS => false,
+                ClientPortalAccess::PERMISSION_ACKNOWLEDGE_RELEASE => false,
+                ClientPortalAccess::PERMISSION_APPROVE_RISKS => false,
+            ],
+        ]);
+
+        $this->get(route('client-portal.evidence.summary', $viewer))->assertForbidden();
+        $this->get(route('client-portal.evidence.zip', $viewer))->assertForbidden();
+
+        $this->post(route('client-portal.acknowledgements.store', $viewer), [
+            'acknowledgement_type' => ClientPortalAcknowledgement::TYPE_REPORT_APPROVAL,
+            'report_version_id' => $approvedReport->id,
+        ])->assertForbidden();
+
+        $this->post(route('client-portal.acknowledgements.store', $viewer), [
+            'acknowledgement_type' => ClientPortalAcknowledgement::TYPE_RELEASE_ACKNOWLEDGEMENT,
+            'release_decision_id' => $decision->id,
+        ])->assertForbidden();
+
+        $this->post(route('client-portal.acknowledgements.store', $viewer), [
+            'acknowledgement_type' => ClientPortalAcknowledgement::TYPE_RISK_ACCEPTANCE_ACKNOWLEDGEMENT,
+            'risk_acceptance_id' => $risk->id,
+        ])->assertForbidden();
+    }
+
+
+    public function test_restricted_client_portal_still_explains_snapshot_and_role_visibility(): void
+    {
+        [$admin, $project] = $this->fixture('client-portal-restricted@example.com');
+
+        $access = ClientPortalAccess::query()->create([
+            'project_id' => $project->id,
+            'created_by_user_id' => $admin->id,
+            'label' => 'Restricted handoff preview',
+            'role' => ClientPortalAccess::ROLE_CLIENT_VIEWER,
+            'permissions' => array_fill_keys(ClientPortalAccess::PERMISSIONS, false),
+        ]);
+
+        $this->get(route('client-portal.show', $access))
+            ->assertOk()
+            ->assertSee(__('messages.client_portal.current_snapshot'))
+            ->assertSee(__('messages.client_portal.role_access_summary'))
+            ->assertSee(__('messages.client_portal.no_visible_sections_title'))
+            ->assertSee(__('messages.client_portal.restricted'));
     }
 
     /** @return array{0: User, 1: Project, 2: ReportVersion, 3: ReportVersion, 4: ReleaseDecision} */

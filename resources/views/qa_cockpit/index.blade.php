@@ -19,6 +19,7 @@
     <div class="hpanel">
         <div class="panel-body">
             <div class="pull-right">
+                <a href="{{ route('projects.release-workflow.index', $project) }}" class="btn btn-primary btn-sm"><i class="fa fa-road"></i> {{ __('messages.release_workflow.short_title') }}</a>
                 <a href="{{ route('projects.release-readiness.show', $project) }}" class="btn btn-primary btn-sm"><i class="fa fa-check-circle"></i> {{ __('messages.nav.release_readiness_short') }}</a>
                 <a href="{{ route('projects.blind-spots.index', $project) }}" class="btn btn-default btn-sm"><i class="fa fa-eye-slash"></i> {{ __('messages.blind_spots.short_title') }}</a>
             </div>
@@ -28,7 +29,7 @@
     </div>
 </div>
 
-<div class="content animate-panel">
+<div class="content">
     <div class="row">
         @foreach([
             ['key' => 'open_blockers', 'icon' => 'exclamation-triangle', 'css' => 'hred'],

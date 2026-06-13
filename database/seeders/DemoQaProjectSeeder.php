@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AuthProfile;
 use App\Models\Project;
+use App\Models\ProjectMembership;
 use App\Models\User;
 use App\Services\Settings\ProjectSettingService;
 use App\Services\Audit\AuditLogService;
@@ -100,6 +101,13 @@ class DemoQaProjectSeeder extends Seeder
                 'auth_profile_id' => $bearer->id,
                 'is_production' => true,
                 ...$timestamps(),
+            ]);
+
+            $project->memberships()->create([
+                'user_id' => $admin->id,
+                'role' => ProjectMembership::ROLE_PROJECT_ADMIN,
+                'invited_by_user_id' => $admin->id,
+                'joined_at' => now(),
             ]);
 
             app(ProjectSettingService::class)->seedDefaults($project);

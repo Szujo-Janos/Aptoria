@@ -80,7 +80,7 @@ class ReleaseDecisionRoomTest extends TestCase
             ->get(route('projects.release-decisions.json', [$project, $decision]))
             ->assertOk()
             ->assertJsonPath('decision_status', ReleaseDecision::STATUS_BLOCKED)
-            ->assertJsonPath('decision_package.package_version', '1.1.24');
+            ->assertJsonPath('decision_package.package_version', config('aptoria.version'));
 
         $this->actingAs($admin)
             ->get(route('projects.release-readiness.show', $project))

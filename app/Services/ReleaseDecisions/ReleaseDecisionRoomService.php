@@ -11,6 +11,7 @@ use App\Models\ScanResult;
 use App\Models\User;
 use App\Services\Exports\ExportCreditService;
 use App\Services\ReleaseReadinessService;
+use App\Services\ReleaseWorkflow\WorkflowConsolidationService;
 use App\Services\Security\SensitiveValueMasker;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -91,7 +92,7 @@ class ReleaseDecisionRoomService
         $latestContract = $summary['latest_contract_validation'] ?? $project->contractValidationRuns()->latest()->first();
 
         return [
-            'package_version' => '1.1.24',
+            'package_version' => config('aptoria.version'),
             'generated_at' => now()->toIso8601String(),
             'project' => [
                 'id' => $project->id,
@@ -155,6 +156,7 @@ class ReleaseDecisionRoomService
                 'max_points' => $component['max_points'] ?? 0,
                 'status' => $component['status'] ?? null,
             ])->values()->all(),
+            'release_workflow_snapshot' => app(WorkflowConsolidationService::class)->snapshotForDecision($project),
         ];
     }
 

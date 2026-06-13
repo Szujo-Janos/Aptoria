@@ -29,6 +29,8 @@ class ReportVersionController extends Controller
 
     public function store(Project $project, Request $request, ReportVersioningService $versioning): RedirectResponse
     {
+        $this->authorizeProject($project, 'report.generate');
+
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'report_type' => ['required', 'string', Rule::in(ReportVersion::TYPES)],
@@ -54,6 +56,7 @@ class ReportVersionController extends Controller
     public function markReviewed(Project $project, ReportVersion $reportVersion, ReportVersioningService $versioning): RedirectResponse
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'report.review');
         $versioning->markReviewed($reportVersion, Auth::user());
 
         return redirect()
@@ -64,6 +67,7 @@ class ReportVersionController extends Controller
     public function approve(Project $project, ReportVersion $reportVersion, ReportVersioningService $versioning): RedirectResponse
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'report.approve');
         $versioning->approve($reportVersion, Auth::user());
 
         return redirect()
@@ -74,6 +78,7 @@ class ReportVersionController extends Controller
     public function archive(Project $project, ReportVersion $reportVersion, ReportVersioningService $versioning): RedirectResponse
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'report.approve');
         $versioning->archive($reportVersion);
 
         return redirect()
@@ -84,6 +89,7 @@ class ReportVersionController extends Controller
     public function markdown(Project $project, ReportVersion $reportVersion): Response
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'exports.download');
 
         return response((string) $reportVersion->markdown_content, 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
@@ -95,6 +101,7 @@ class ReportVersionController extends Controller
     public function html(Project $project, ReportVersion $reportVersion, ReportPresentationService $presentation): Response
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'exports.download');
 
         return response($presentation->htmlFromMarkdown((string) $reportVersion->markdown_content, $reportVersion->title, $project), 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
@@ -106,6 +113,7 @@ class ReportVersionController extends Controller
     public function pdf(Project $project, ReportVersion $reportVersion, ReportPresentationService $presentation): Response
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'exports.download');
 
         return response($presentation->pdfFromMarkdown((string) $reportVersion->markdown_content, $reportVersion->title, $project), 200, [
             'Content-Type' => 'application/pdf',
@@ -117,6 +125,7 @@ class ReportVersionController extends Controller
     public function json(Project $project, ReportVersion $reportVersion, ReportVersioningService $versioning): JsonResponse
     {
         $this->ensureVersionBelongsToProject($project, $reportVersion);
+        $this->authorizeProject($project, 'exports.download');
 
         return response()->json($versioning->jsonPackage($reportVersion), 200, ['X-Content-Type-Options' => 'nosniff']);
     }

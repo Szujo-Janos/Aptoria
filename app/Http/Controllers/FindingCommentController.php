@@ -14,6 +14,7 @@ class FindingCommentController extends Controller
     public function store(Request $request, Project $project, Finding $finding): RedirectResponse
     {
         abort_unless($finding->project_id === $project->id, 404);
+        $this->authorizeProject($project, 'findings.review');
 
         $data = $request->validate([
             'type' => ['required', Rule::in(FindingComment::TYPES)],

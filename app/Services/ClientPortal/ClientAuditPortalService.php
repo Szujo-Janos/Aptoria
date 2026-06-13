@@ -100,6 +100,8 @@ class ClientAuditPortalService
         $readinessSummary = $this->readiness->summarize($project);
         $currentSnapshot = $this->currentSnapshot($project, $readinessSummary, $approvedReports, $releaseDecisions, $acceptedRisks);
         $acknowledgements = $access->acknowledgements()->latest('acknowledged_at')->limit(20)->get();
+        $roleCapabilities = $this->roleCapabilities($access);
+        $visibleSectionCount = collect($roleCapabilities)->where('enabled', true)->where('approval', false)->count();
 
         return [
             'project' => $project,
@@ -110,14 +112,44 @@ class ClientAuditPortalService
             'readiness_summary' => $readinessSummary,
             'current_snapshot' => $currentSnapshot,
             'acknowledgements' => $acknowledgements,
+            'role_capabilities' => $roleCapabilities,
             'metrics' => [
                 'approved_reports' => $approvedReports->count(),
                 'release_decisions' => $releaseDecisions->count(),
                 'accepted_risks' => $acceptedRisks->count(),
                 'open_findings' => $findingSummary['open'],
                 'evidence_exports' => $access->allows(ClientPortalAccess::PERMISSION_EVIDENCE_PACKAGE) ? 1 : 0,
+                'visible_sections' => $visibleSectionCount,
             ],
         ];
+    }
+
+    /** @return array<int, array{permission: string, label: string, enabled: bool, approval: bool}> */
+    public function roleCapabilities(ClientPortalAccess $access): array
+    {
+        $approvalPermissions = [
+            ClientPortalAccess::PERMISSION_APPROVE_REPORTS,
+            ClientPortalAccess::PERMISSION_ACKNOWLEDGE_RELEASE,
+            ClientPortalAccess::PERMISSION_APPROVE_RISKS,
+        ];
+
+        return collect(ClientPortalAccess::PERMISSIONS)
+            ->map(fn (string $permission): array => [
+                'permission' => $permission,
+                'label' => __('messages.client_portal.permission_labels.'.$permission),
+                'enabled' => $access->allows($permission),
+                'approval' => in_array($permission, $approvalPermissions, true),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** @return array<string, array<string, bool>> */
+    public function roleDefaultMatrix(): array
+    {
+        return collect(ClientPortalAccess::ROLES)
+            ->mapWithKeys(fn (string $role): array => [$role => $this->permissionsForRole($role)])
+            ->all();
     }
 
     /** @param array<string, mixed> $readinessSummary @param Collection<int, ReportVersion> $approvedReports @param Collection<int, ReleaseDecision> $releaseDecisions @param Collection<int, RiskAcceptance> $acceptedRisks @return array<string, mixed> */

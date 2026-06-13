@@ -29,8 +29,9 @@ class ClientAuditPortalController extends Controller
             ->paginate(25);
 
         $defaults = $portal->permissionsForRole(ClientPortalAccess::ROLE_CLIENT_VIEWER);
+        $roleDefaults = $portal->roleDefaultMatrix();
 
-        return view('client_portal.index', compact('project', 'accesses', 'defaults'));
+        return view('client_portal.index', compact('project', 'accesses', 'defaults', 'roleDefaults'));
     }
 
     public function store(Project $project, Request $request, ClientAuditPortalService $portal): RedirectResponse
@@ -153,7 +154,7 @@ class ClientAuditPortalController extends Controller
 
     public function evidenceSummary(ClientPortalAccess $clientPortalAccess, ClientAuditPortalService $portal): Response
     {
-        $this->ensurePublicAccessIsAvailable($clientPortalAccess);
+        $this->ensureCanDownloadEvidencePackage($clientPortalAccess);
 
         return response($portal->evidenceSummaryJson($clientPortalAccess), 200, [
             'Content-Type' => 'application/json; charset=UTF-8',
@@ -164,7 +165,7 @@ class ClientAuditPortalController extends Controller
 
     public function evidenceZip(ClientPortalAccess $clientPortalAccess, ClientAuditPortalService $portal)
     {
-        $this->ensurePublicAccessIsAvailable($clientPortalAccess);
+        $this->ensureCanDownloadEvidencePackage($clientPortalAccess);
 
         try {
             $zipPath = $portal->evidenceZipPath($clientPortalAccess);
@@ -196,6 +197,8 @@ class ClientAuditPortalController extends Controller
             'note' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $this->ensureCanAcknowledgeType($clientPortalAccess, (string) $validated['acknowledgement_type']);
+
         if (! empty($validated['report_version_id'])) {
             $report = ReportVersion::query()->findOrFail((int) $validated['report_version_id']);
             $this->ensureCanViewReport($clientPortalAccess, $report);
@@ -203,10 +206,12 @@ class ClientAuditPortalController extends Controller
         if (! empty($validated['release_decision_id'])) {
             $decision = ReleaseDecision::query()->findOrFail((int) $validated['release_decision_id']);
             abort_unless($decision->project_id === $clientPortalAccess->project_id, 404);
+            abort_unless($clientPortalAccess->allows(ClientPortalAccess::PERMISSION_RELEASE_DECISIONS), 403);
         }
         if (! empty($validated['risk_acceptance_id'])) {
             $risk = RiskAcceptance::query()->findOrFail((int) $validated['risk_acceptance_id']);
             abort_unless($risk->project_id === $clientPortalAccess->project_id, 404);
+            abort_unless($clientPortalAccess->allows(ClientPortalAccess::PERMISSION_ACCEPTED_RISKS), 403);
         }
 
         $portal->acknowledge($clientPortalAccess, (string) $validated['acknowledgement_type'], $validated);
@@ -214,6 +219,24 @@ class ClientAuditPortalController extends Controller
         return redirect()
             ->route('client-portal.show', $clientPortalAccess)
             ->with('success', __('messages.client_portal.acknowledged'));
+    }
+
+    private function ensureCanDownloadEvidencePackage(ClientPortalAccess $access): void
+    {
+        $this->ensurePublicAccessIsAvailable($access);
+        abort_unless($access->allows(ClientPortalAccess::PERMISSION_EVIDENCE_PACKAGE), 403);
+    }
+
+    private function ensureCanAcknowledgeType(ClientPortalAccess $access, string $type): void
+    {
+        $requiredPermission = match ($type) {
+            ClientPortalAcknowledgement::TYPE_REPORT_APPROVAL => ClientPortalAccess::PERMISSION_APPROVE_REPORTS,
+            ClientPortalAcknowledgement::TYPE_RELEASE_ACKNOWLEDGEMENT => ClientPortalAccess::PERMISSION_ACKNOWLEDGE_RELEASE,
+            ClientPortalAcknowledgement::TYPE_RISK_ACCEPTANCE_ACKNOWLEDGEMENT => ClientPortalAccess::PERMISSION_APPROVE_RISKS,
+            default => null,
+        };
+
+        abort_unless($requiredPermission !== null && $access->allows($requiredPermission), 403);
     }
 
     private function ensureCanViewReport(ClientPortalAccess $access, ReportVersion $reportVersion): void

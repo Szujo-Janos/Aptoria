@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProjectRequest;
 use App\Models\Project;
+use App\Models\ProjectMembership;
 use App\Models\CalendarEvent;
 use Illuminate\Http\RedirectResponse;
+use App\Services\Access\ProjectAccessService;
 use App\Services\ProjectHealthService;
 use App\Services\QaCoverageMatrixService;
 use App\Services\ReleaseReadinessService;
@@ -19,9 +21,9 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
-    public function index(SettingService $settings): View
+    public function index(SettingService $settings, ProjectAccessService $access): View
     {
-        $projects = Project::query()
+        $projects = $access->scopeVisibleProjects(Project::query(), Auth::user())
             ->withCount(['environments', 'authProfiles', 'endpoints', 'scanRuns', 'snapshots'])
             ->latest()
             ->paginate($settings->integer('app.items_per_page', 25));
@@ -29,13 +31,17 @@ class ProjectController extends Controller
         return view('projects.index', compact('projects'));
     }
 
-    public function create(): View
+    public function create(ProjectAccessService $access): View
     {
+        abort_unless($access->isSystemAdmin(Auth::user()), 403);
+
         return view('projects.create', ['project' => new Project(['is_active' => true])]);
     }
 
-    public function store(ProjectRequest $request, ProjectSettingService $projectSettings, SettingsRuntimeService $runtime): RedirectResponse
+    public function store(ProjectRequest $request, ProjectSettingService $projectSettings, SettingsRuntimeService $runtime, ProjectAccessService $access): RedirectResponse
     {
+        abort_unless($access->isSystemAdmin($request->user()), 403);
+
         $project = Project::query()->create([
             ...$this->projectPayload($request),
             'user_id' => Auth::id(),
@@ -43,6 +49,15 @@ class ProjectController extends Controller
         ]);
 
         $this->persistReportLogo($request, $project);
+
+        $project->memberships()->updateOrCreate(
+            ['user_id' => $request->user()?->id],
+            [
+                'role' => ProjectMembership::ROLE_PROJECT_ADMIN,
+                'invited_by_user_id' => $request->user()?->id,
+                'joined_at' => now(),
+            ]
+        );
 
         Model::withoutEvents(function () use ($project, $projectSettings): void {
             $project->environments()->create([
@@ -114,13 +129,17 @@ class ProjectController extends Controller
         return view('projects.show', compact('project', 'projectSettingSummary', 'defaultEnvironmentId', 'defaultAuthProfileId', 'projectNotes', 'projectHealth', 'releaseReadiness', 'qaCoverage', 'projectCalendarEvents', 'projectCalendarSummary', 'showProjectCalendarPreview')); 
     }
 
-    public function edit(Project $project): View
+    public function edit(Project $project, ProjectAccessService $access): View
     {
+        $access->authorize($project, Auth::user(), 'project.manage');
+
         return view('projects.edit', compact('project'));
     }
 
-    public function update(ProjectRequest $request, Project $project): RedirectResponse
+    public function update(ProjectRequest $request, Project $project, ProjectAccessService $access): RedirectResponse
     {
+        $access->authorize($project, $request->user(), 'project.manage');
+
         $project->update([
             ...$this->projectPayload($request),
             'is_active' => $request->boolean('is_active'),
@@ -177,8 +196,10 @@ class ProjectController extends Controller
         ])->saveQuietly();
     }
 
-    public function destroy(Project $project): RedirectResponse
+    public function destroy(Project $project, ProjectAccessService $access): RedirectResponse
     {
+        abort_unless($access->isSystemAdmin(Auth::user()), 403);
+
         $this->deleteReportLogo($project);
 
         $project->delete();

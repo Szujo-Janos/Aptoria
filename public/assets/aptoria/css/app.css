@@ -656,13 +656,15 @@ body {
         min-width: 0;
     }
 }
+/* Page-load fade/appearance animation disabled for QA-stable navigation. */
 body.aptoria-js-loading .animate-panel > .row > div,
-body.aptoria-js-loading .animate-panel > .row > [class*="col-"] {
-    opacity: 0;
-}
+body.aptoria-js-loading .animate-panel > .row > [class*="col-"],
 body.aptoria-js-ready .animate-panel > .row > div,
 body.aptoria-js-ready .animate-panel > .row > [class*="col-"] {
+    opacity: 1;
     visibility: visible;
+    animation: none !important;
+    transition: none !important;
 }
 
 /* 0.7.11 sidebar containment hotfix */

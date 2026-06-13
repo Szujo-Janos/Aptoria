@@ -7,10 +7,12 @@
     <div class="col-lg-12">
         <div class="hpanel">
             <div class="panel-heading hbuilt">
-                <div class="panel-tools">
-                    <a href="{{ route('projects.wizard.create') }}" class="btn btn-xs btn-info">{{ __('messages.wizard.short_title') }}</a>
-                    <a href="{{ route('projects.create') }}" class="btn btn-xs btn-success">{{ __('messages.dashboard.new_project') }}</a>
-                </div>
+                @if(auth()->user()?->isSystemAdmin())
+                    <div class="panel-tools">
+                        <a href="{{ route('projects.wizard.create') }}" class="btn btn-xs btn-info">{{ __('messages.wizard.short_title') }}</a>
+                        <a href="{{ route('projects.create') }}" class="btn btn-xs btn-success">{{ __('messages.dashboard.new_project') }}</a>
+                    </div>
+                @endif
                 {{ __('messages.projects.all') }}
             </div>
             <div class="panel-body">
@@ -18,8 +20,10 @@
                     <div class="text-center p-xl">
                         <h4>{{ __('messages.projects.empty_title') }}</h4>
                         <p class="text-muted">{{ __('messages.projects.empty_help') }}</p>
-                        <a href="{{ route('projects.wizard.create') }}" class="btn btn-info">{{ __('messages.wizard.short_title') }}</a>
-                        <a href="{{ route('projects.create') }}" class="btn btn-success">{{ __('messages.projects.create_title') }}</a>
+                        @if(auth()->user()?->isSystemAdmin())
+                            <a href="{{ route('projects.wizard.create') }}" class="btn btn-info">{{ __('messages.wizard.short_title') }}</a>
+                            <a href="{{ route('projects.create') }}" class="btn btn-success">{{ __('messages.projects.create_title') }}</a>
+                        @endif
                     </div>
                 @else
                     <div class="table-responsive">
@@ -48,7 +52,9 @@
                                         <td>{{ $project->created_at?->format('Y-m-d H:i') }}</td>
                                         <td class="text-right">
                                             <a href="{{ route('projects.show', $project) }}" class="btn btn-xs btn-default">{{ __('messages.common.details') }}</a>
-                                            <a href="{{ route('projects.edit', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.common.edit') }}</a>
+                                            @if(app(\App\Services\Access\ProjectAccessService::class)->can($project, auth()->user(), 'project.manage'))
+                                                <a href="{{ route('projects.edit', $project) }}" class="btn btn-xs btn-primary">{{ __('messages.common.edit') }}</a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

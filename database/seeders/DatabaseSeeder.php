@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Endpoint;
 use App\Models\Project;
+use App\Models\ProjectMembership;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use App\Services\Settings\ProjectSettingService;
@@ -69,6 +70,15 @@ class DatabaseSeeder extends Seeder
                 ]
             );
     
+            $project->memberships()->updateOrCreate(
+                ['user_id' => $admin->id],
+                [
+                    'role' => ProjectMembership::ROLE_PROJECT_ADMIN,
+                    'invited_by_user_id' => $admin->id,
+                    'joined_at' => now(),
+                ]
+            );
+
             $projectSettings->seedDefaults($project);
     
             $staging = $project->environments()->where('name', 'staging')->first();

@@ -26,7 +26,7 @@
                         <div class="col-sm-6"><div class="form-group"><label>{{ __('messages.client_portal.contact_email') }}</label><input type="email" name="contact_email" class="form-control" value="{{ old('contact_email') }}" maxlength="190"></div></div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-6"><div class="form-group"><label>{{ __('messages.client_portal.role') }}</label><select name="role" class="form-control">
+                        <div class="col-sm-6"><div class="form-group"><label>{{ __('messages.client_portal.role') }}</label><select name="role" id="client_portal_role" class="form-control">
                             @foreach(\App\Models\ClientPortalAccess::ROLES as $role)
                                 <option value="{{ $role }}" @selected(old('role', \App\Models\ClientPortalAccess::ROLE_CLIENT_VIEWER) === $role)>{{ __('messages.client_portal.roles.'.$role) }}</option>
                             @endforeach
@@ -39,7 +39,7 @@
                         @foreach(\App\Models\ClientPortalAccess::PERMISSIONS as $permission)
                             <div class="col-sm-6 m-b-xs">
                                 <label class="checkbox-inline">
-                                    <input type="checkbox" name="{{ $permission }}" value="1" @checked(old($permission, $defaults[$permission] ?? false))>
+                                    <input type="checkbox" name="{{ $permission }}" value="1" class="client-portal-permission-checkbox" data-permission="{{ $permission }}" @checked(old($permission, $defaults[$permission] ?? false))>
                                     {{ __('messages.client_portal.permission_labels.'.$permission) }}
                                 </label>
                             </div>
@@ -49,6 +49,49 @@
                     <button type="submit" class="btn btn-primary"><i class="fa fa-link"></i> {{ __('messages.client_portal.create_button') }}</button>
                     <a href="{{ route('projects.show', $project) }}" class="btn btn-default">{{ __('messages.common.back') }}</a>
                 </form>
+            </div>
+        </div>
+
+        <div class="hpanel hgreen">
+            <div class="panel-heading hbuilt">{{ __('messages.client_portal.role_defaults') }}</div>
+            <div class="panel-body p-none">
+                <div class="table-responsive">
+                    <table class="table table-condensed m-b-none">
+                        <thead>
+                        <tr>
+                            <th>{{ __('messages.client_portal.role') }}</th>
+                            <th>{{ __('messages.client_portal.permissions') }}</th>
+                            <th>{{ __('messages.client_portal.approval_permissions') }}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach($roleDefaults as $role => $permissions)
+                            @php
+                                $contentPermissions = collect($permissions)->filter(fn ($enabled, $permission) => $enabled && ! in_array($permission, [\App\Models\ClientPortalAccess::PERMISSION_APPROVE_REPORTS, \App\Models\ClientPortalAccess::PERMISSION_ACKNOWLEDGE_RELEASE, \App\Models\ClientPortalAccess::PERMISSION_APPROVE_RISKS], true));
+                                $approvalPermissions = collect($permissions)->filter(fn ($enabled, $permission) => $enabled && in_array($permission, [\App\Models\ClientPortalAccess::PERMISSION_APPROVE_REPORTS, \App\Models\ClientPortalAccess::PERMISSION_ACKNOWLEDGE_RELEASE, \App\Models\ClientPortalAccess::PERMISSION_APPROVE_RISKS], true));
+                            @endphp
+                            <tr>
+                                <td><strong>{{ __('messages.client_portal.roles.'.$role) }}</strong></td>
+                                <td>
+                                    @forelse($contentPermissions as $permission => $enabled)
+                                        <span class="label label-success m-r-xs">{{ __('messages.client_portal.permission_labels.'.$permission) }}</span>
+                                    @empty
+                                        <span class="text-muted">{{ __('messages.common.none') }}</span>
+                                    @endforelse
+                                </td>
+                                <td>
+                                    @forelse($approvalPermissions as $permission => $enabled)
+                                        <span class="label label-warning m-r-xs">{{ __('messages.client_portal.permission_labels.'.$permission) }}</span>
+                                    @empty
+                                        <span class="text-muted">{{ __('messages.common.none') }}</span>
+                                    @endforelse
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-sm text-muted">{{ __('messages.client_portal.role_defaults_hint') }}</div>
             </div>
         </div>
     </div>
@@ -90,4 +133,24 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var roleSelect = document.getElementById('client_portal_role');
+    var defaults = @json($roleDefaults);
+    var boxes = document.querySelectorAll('.client-portal-permission-checkbox');
+
+    if (!roleSelect || !defaults) {
+        return;
+    }
+
+    roleSelect.addEventListener('change', function () {
+        var roleDefaults = defaults[roleSelect.value] || {};
+        boxes.forEach(function (box) {
+            var permission = box.getAttribute('data-permission');
+            box.checked = !!roleDefaults[permission];
+        });
+    });
+});
+</script>
+
 @endsection

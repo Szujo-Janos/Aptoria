@@ -28,6 +28,8 @@ class QaReleaseGateController extends Controller
 
     public function create(Project $project, QaReleaseGateService $gates): View
     {
+        $this->authorizeProject($project, 'report.generate');
+
         $evaluation = $gates->evaluate($project);
         $releaseGate = new QaReleaseGate([
             'release_name' => $project->name.' '.now()->format('Y-m-d').' release gate',
@@ -41,6 +43,8 @@ class QaReleaseGateController extends Controller
 
     public function store(Project $project, QaReleaseGateRequest $request, QaReleaseGateService $gates): RedirectResponse
     {
+        $this->authorizeProject($project, 'report.generate');
+
         $releaseGate = $gates->createGate($project, $request->validated());
 
         return redirect()
@@ -59,6 +63,7 @@ class QaReleaseGateController extends Controller
     public function updateDecision(Project $project, QaReleaseGate $releaseGate, QaReleaseGateDecisionRequest $request, QaReleaseGateService $gates): RedirectResponse
     {
         $this->ensureGateBelongsToProject($project, $releaseGate);
+        $this->authorizeProject($project, 'release.finalize');
         $gates->updateDecision($releaseGate, $request->validated());
 
         return redirect()
@@ -69,6 +74,7 @@ class QaReleaseGateController extends Controller
     public function markdown(Project $project, QaReleaseGate $releaseGate, QaReleaseGateService $gates): Response
     {
         $this->ensureGateBelongsToProject($project, $releaseGate);
+        $this->authorizeProject($project, 'exports.download');
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.md';
 
         return response($gates->markdown($releaseGate), 200, [
@@ -81,6 +87,7 @@ class QaReleaseGateController extends Controller
     public function html(Project $project, QaReleaseGate $releaseGate, QaReleaseGateService $gates, ReportPresentationService $presentation): Response
     {
         $this->ensureGateBelongsToProject($project, $releaseGate);
+        $this->authorizeProject($project, 'exports.download');
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.html';
         $markdown = $gates->markdown($releaseGate);
 
@@ -94,6 +101,7 @@ class QaReleaseGateController extends Controller
     public function pdf(Project $project, QaReleaseGate $releaseGate, QaReleaseGateService $gates, ReportPresentationService $presentation): Response
     {
         $this->ensureGateBelongsToProject($project, $releaseGate);
+        $this->authorizeProject($project, 'exports.download');
         $filename = Str::slug((string) ($project->slug ?: $project->id)).'-release-gate-'.$releaseGate->id.'-'.now()->format('Ymd-His').'.pdf';
         $markdown = $gates->markdown($releaseGate);
 

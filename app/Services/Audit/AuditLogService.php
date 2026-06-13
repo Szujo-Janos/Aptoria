@@ -10,14 +10,20 @@ use App\Models\ContractValidationRun;
 use App\Models\Endpoint;
 use App\Models\EndpointAssertionRule;
 use App\Models\EndpointPathParameter;
+use App\Models\EndpointBehaviorLink;
 use App\Models\Environment;
 use App\Models\Finding;
 use App\Models\FindingEvidence;
 use App\Models\MonitorAlertEvent;
 use App\Models\Project;
 use App\Models\ProjectSetting;
+use App\Models\ProjectMembership;
 use App\Models\QaReleaseGate;
 use App\Models\QaReleaseGateItem;
+use App\Models\ReleaseDecision;
+use App\Models\ReleaseWorkflow;
+use App\Models\ReleaseWorkflowStep;
+use App\Models\RiskAcceptance;
 use App\Models\ScanResult;
 use App\Models\ScanRun;
 use App\Models\Setting;
@@ -278,6 +284,14 @@ class AuditLogService
             return $model->severity === 'critical' ? AuditLog::SEVERITY_CRITICAL : AuditLog::SEVERITY_WARNING;
         }
 
+        if ($model instanceof RiskAcceptance && ($model->accepted_until === null || $model->is_expired)) {
+            return AuditLog::SEVERITY_WARNING;
+        }
+
+        if ($model instanceof ReleaseDecision && in_array($model->decision_status, [ReleaseDecision::STATUS_NO_GO, ReleaseDecision::STATUS_BLOCKED], true)) {
+            return AuditLog::SEVERITY_WARNING;
+        }
+
         if ($model instanceof ScanRun && in_array($model->status, ['failed', 'warning'], true)) {
             return $model->status === 'failed' ? AuditLog::SEVERITY_WARNING : AuditLog::SEVERITY_NOTICE;
         }
@@ -296,7 +310,7 @@ class AuditLogService
             return (int) $projectId;
         }
 
-        if ($model instanceof Environment || $model instanceof ApiMonitor || $model instanceof Finding || $model instanceof QaReleaseGate || $model instanceof Snapshot || $model instanceof ScanRun || $model instanceof CompareRun || $model instanceof ContractValidationRun || $model instanceof TestSuite || $model instanceof MonitorAlertEvent) {
+        if ($model instanceof Environment || $model instanceof ApiMonitor || $model instanceof Finding || $model instanceof QaReleaseGate || $model instanceof ReleaseDecision || $model instanceof RiskAcceptance || $model instanceof EndpointBehaviorLink || $model instanceof Snapshot || $model instanceof ScanRun || $model instanceof CompareRun || $model instanceof ContractValidationRun || $model instanceof TestSuite || $model instanceof MonitorAlertEvent) {
             return is_numeric($model->project_id) ? (int) $model->project_id : null;
         }
 
@@ -335,7 +349,7 @@ class AuditLogService
             return $gate && is_numeric($gate->project_id) ? (int) $gate->project_id : null;
         }
 
-        if ($model instanceof ProjectSetting) {
+        if ($model instanceof ProjectSetting || $model instanceof ProjectMembership) {
             return is_numeric($model->project_id) ? (int) $model->project_id : null;
         }
 

@@ -12,7 +12,7 @@ class EnsureAdminUser
     {
         $user = $request->user();
 
-        abort_if(! $user || ($user->role ?? null) !== 'admin', 403, 'Administrator access is required.');
+        abort_if(! $user || ($user->role ?? null) !== 'admin', 403, __('messages.auth.admin_required'));
 
         return $next($request);
     }

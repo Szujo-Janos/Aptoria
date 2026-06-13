@@ -8,11 +8,21 @@
         <div class="hpanel hblue aptoria-project-panel">
             <div class="panel-heading hbuilt">
                 <div class="panel-tools">
-                    <a href="{{ route('projects.environments.create', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-plus"></i> {{ __('messages.projects.add_environment') }}</a>
-                    <a href="{{ route('projects.auth-profiles.create', $project) }}" class="btn btn-xs btn-info"><i class="fa fa-plus"></i> {{ __('messages.projects.add_auth_profile') }}</a>
-                    <a href="{{ route('projects.endpoints.create', $project) }}" class="btn btn-xs btn-warning"><i class="fa fa-plus"></i> {{ __('messages.endpoints.new') }}</a>
-                    <a href="{{ route('projects.scans.create', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-plus"></i> {{ __('messages.scans.new') }}</a>
-                    <a href="{{ route('projects.edit', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-pencil"></i> {{ __('messages.projects.edit_project') }}</a>
+                    @php($projectAccess = app(\App\Services\Access\ProjectAccessService::class))
+                    <a href="{{ route('projects.members.index', $project) }}" class="btn btn-xs btn-default"><i class="fa fa-users"></i> {{ __('messages.project_members.short_title') }}</a>
+                    @if($projectAccess->can($project, auth()->user(), 'settings.manage'))
+                        <a href="{{ route('projects.environments.create', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-plus"></i> {{ __('messages.projects.add_environment') }}</a>
+                        <a href="{{ route('projects.auth-profiles.create', $project) }}" class="btn btn-xs btn-info"><i class="fa fa-plus"></i> {{ __('messages.projects.add_auth_profile') }}</a>
+                    @endif
+                    @if($projectAccess->can($project, auth()->user(), 'endpoints.manage'))
+                        <a href="{{ route('projects.endpoints.create', $project) }}" class="btn btn-xs btn-warning"><i class="fa fa-plus"></i> {{ __('messages.endpoints.new') }}</a>
+                    @endif
+                    @if($projectAccess->can($project, auth()->user(), 'scans.run'))
+                        <a href="{{ route('projects.scans.create', $project) }}" class="btn btn-xs btn-success"><i class="fa fa-plus"></i> {{ __('messages.scans.new') }}</a>
+                    @endif
+                    @if($projectAccess->can($project, auth()->user(), 'project.manage'))
+                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-xs btn-primary"><i class="fa fa-pencil"></i> {{ __('messages.projects.edit_project') }}</a>
+                    @endif
                 </div>
                 {{ __('messages.projects.details') }}
             </div>
@@ -166,12 +176,21 @@
                             </a>
                         </div>
                         <div class="col-sm-6 col-md-3">
-                            <a href="{{ route('projects.settings.edit', $project) }}" class="btn btn-default btn-block aptoria-workspace-button">
-                                <span class="aptoria-workspace-icon text-muted"><i class="fa fa-cog"></i></span>
-                                <span class="aptoria-workspace-title">{{ __('messages.project_settings.title') }}</span>
+                            <a href="{{ route('projects.members.index', $project) }}" class="btn btn-default btn-block aptoria-workspace-button">
+                                <span class="aptoria-workspace-icon text-muted"><i class="fa fa-users"></i></span>
+                                <span class="aptoria-workspace-title">{{ __('messages.project_members.short_title') }}</span>
                                 <span class="badge pull-right"><i class="fa fa-angle-right"></i></span>
                             </a>
                         </div>
+                        @if(app(\App\Services\Access\ProjectAccessService::class)->can($project, auth()->user(), 'settings.manage'))
+                            <div class="col-sm-6 col-md-3">
+                                <a href="{{ route('projects.settings.edit', $project) }}" class="btn btn-default btn-block aptoria-workspace-button">
+                                    <span class="aptoria-workspace-icon text-muted"><i class="fa fa-cog"></i></span>
+                                    <span class="aptoria-workspace-title">{{ __('messages.project_settings.title') }}</span>
+                                    <span class="badge pull-right"><i class="fa fa-angle-right"></i></span>
+                                </a>
+                            </div>
+                        @endif
                         <div class="col-sm-6 col-md-3">
                             <a href="{{ route('projects.reports.index', $project) }}" class="btn btn-default btn-block aptoria-workspace-button">
                                 <span class="aptoria-workspace-icon text-info"><i class="fa fa-file-text-o"></i></span>

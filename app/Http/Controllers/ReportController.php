@@ -7,6 +7,7 @@ use App\Models\CompareRun;
 use App\Models\Project;
 use App\Models\ScanRun;
 use App\Models\Snapshot;
+use App\Services\Access\ProjectAccessService;
 use App\Services\Audit\AuditLogService;
 use App\Services\Reports\FullQaReportBuilderService;
 use App\Services\Reports\ReportExportService;
@@ -17,9 +18,9 @@ use Illuminate\View\View;
 
 class ReportController extends Controller
 {
-    public function index(SettingService $settings): View
+    public function index(SettingService $settings, ProjectAccessService $access): View
     {
-        $projects = Project::query()
+        $projects = $access->scopeVisibleProjects(Project::query(), auth()->user())
             ->withCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'testSuites', 'testCases', 'contractValidationRuns', 'qaReleaseGates', 'reportVersions'])
             ->latest()
             ->paginate($settings->integer('app.items_per_page', 25));

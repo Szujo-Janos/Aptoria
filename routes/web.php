@@ -26,6 +26,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NewmanImportController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectMembershipController;
 use App\Http\Controllers\ProjectWizardController;
 use App\Http\Controllers\ProjectSettingsController;
 use App\Http\Controllers\QaEvidencePackController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\ReportVersionController;
 use App\Http\Controllers\RiskAcceptanceController;
 use App\Http\Controllers\ReleaseDecisionController;
 use App\Http\Controllers\ReleaseReadinessController;
+use App\Http\Controllers\ReleaseWorkflowController;
 use App\Http\Controllers\RegressionSuiteBuilderController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\SettingsController;
@@ -112,6 +114,10 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::post('projects/wizard', [ProjectWizardController::class, 'store'])->name('projects.wizard.store');
     Route::get('projects/{project}/wizard/complete', [ProjectWizardController::class, 'complete'])->name('projects.wizard.complete');
     Route::resource('projects', ProjectController::class);
+    Route::get('projects/{project}/members', [ProjectMembershipController::class, 'index'])->name('projects.members.index');
+    Route::post('projects/{project}/members', [ProjectMembershipController::class, 'store'])->name('projects.members.store');
+    Route::patch('projects/{project}/members/{membership}', [ProjectMembershipController::class, 'update'])->name('projects.members.update');
+    Route::delete('projects/{project}/members/{membership}', [ProjectMembershipController::class, 'destroy'])->name('projects.members.destroy');
     Route::patch('projects/{project}/environments/{environment}/default', [EnvironmentController::class, 'setDefault'])->name('projects.environments.default');
     Route::resource('projects.environments', EnvironmentController::class)
         ->except(['show'])
@@ -131,6 +137,9 @@ Route::middleware(['auth', 'admin'])->group(function (): void {
     Route::delete('projects/{project}/assertion-rules/{assertionRule}', [AssertionRuleController::class, 'destroy'])->name('projects.assertion-rules.destroy');
     Route::get('projects/{project}/calendar', [CalendarController::class, 'project'])->name('projects.calendar.index');
     Route::get('projects/{project}/qa-cockpit', QaCockpitController::class)->name('projects.qa-cockpit.index');
+    Route::get('projects/{project}/release-workflow', ReleaseWorkflowController::class)->name('projects.release-workflow.index');
+    Route::patch('projects/{project}/release-workflow/steps/{stepKey}/skip', [ReleaseWorkflowController::class, 'skip'])->name('projects.release-workflow.steps.skip');
+    Route::patch('projects/{project}/release-workflow/steps/{stepKey}/reopen', [ReleaseWorkflowController::class, 'reopen'])->name('projects.release-workflow.steps.reopen');
     Route::get('projects/{project}/audit-log', [AuditLogController::class, 'project'])->name('projects.audit-log.index');
     Route::get('projects/{project}/audit-log.json', [AuditLogController::class, 'json'])->name('projects.audit-log.json');
     Route::get('projects/{project}/monitors', [ApiMonitorController::class, 'index'])->name('projects.monitors.index');

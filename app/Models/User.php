@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -32,6 +33,24 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+
+    public function projectMemberships(): HasMany
+    {
+        return $this->hasMany(ProjectMembership::class);
+    }
+
+    public function memberProjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_memberships')
+            ->withPivot(['role', 'notes', 'invited_by_user_id', 'joined_at'])
+            ->withTimestamps();
+    }
+
+    public function isSystemAdmin(): bool
+    {
+        return ($this->role ?? null) === 'admin';
+    }
 
     public function clientPortalAccesses(): HasMany
     {

@@ -16,6 +16,7 @@ class FindingEvidenceController extends Controller
     public function store(FindingEvidenceRequest $request, Project $project, Finding $finding): RedirectResponse
     {
         $this->ensureFindingBelongsToProject($project, $finding);
+        $this->authorizeProject($project, 'evidence.manage');
 
         $validated = $request->validated();
         $attachment = $request->file('attachment');
@@ -55,6 +56,7 @@ class FindingEvidenceController extends Controller
     public function download(Project $project, Finding $finding, FindingEvidence $evidence): StreamedResponse
     {
         $this->ensureEvidenceBelongsToFinding($project, $finding, $evidence);
+        $this->authorizeProject($project, 'exports.download');
         abort_unless($evidence->attachment_path, 404);
         abort_unless(Storage::disk($evidence->attachment_disk ?: 'local')->exists($evidence->attachment_path), 404);
 
@@ -67,6 +69,7 @@ class FindingEvidenceController extends Controller
     public function destroy(Project $project, Finding $finding, FindingEvidence $evidence): RedirectResponse
     {
         $this->ensureEvidenceBelongsToFinding($project, $finding, $evidence);
+        $this->authorizeProject($project, 'evidence.manage');
         $evidence->deleteAttachmentFile();
         $evidence->delete();
 

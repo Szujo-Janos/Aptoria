@@ -80,10 +80,11 @@
     $aptoriaCurrentProject = $aptoriaCurrentProject ?? request()->route('project');
     $aptoriaCurrentProject = $aptoriaCurrentProject instanceof \App\Models\Project ? $aptoriaCurrentProject : null;
     $aptoriaPageTitle = $aptoriaPageTitle ?? trim((string) $__env->yieldContent('title', __('messages.dashboard.title')));
+    $aptoriaIsSystemAdmin = auth()->check() && method_exists(auth()->user(), 'isSystemAdmin') && auth()->user()->isSystemAdmin();
     $aptoriaRouteName = $aptoriaRouteName ?? (request()->route()?->getName() ?? 'dashboard');
     $aptoriaRouteLabel = $aptoriaRouteLabel ?? \Illuminate\Support\Str::headline(str_replace(['projects.', '.', '-'], ['', ' ', ' '], $aptoriaRouteName));
 @endphp
-<body class="fixed-navbar fixed-sidebar sidebar-scroll aptoria-pro-ui aptoria-js-loading aptoria-sidebar-{{ $aptoriaSidebarState ?? 'expanded' }} aptoria-dashboard-{{ $aptoriaDashboardDensity ?? 'comfortable' }} aptoria-table-{{ $aptoriaTableDensity ?? 'comfortable' }} {{ ($aptoriaCompactDashboard ?? false) ? 'aptoria-compact-dashboard' : '' }} aptoria-theme-{{ $aptoriaTheme ?? 'light' }}" data-aptoria-sweetalert="{{ ($aptoriaEnableSweetalert ?? true) ? 'enabled' : 'disabled' }}">
+<body class="fixed-navbar fixed-sidebar sidebar-scroll aptoria-pro-ui aptoria-sidebar-{{ $aptoriaSidebarState ?? 'expanded' }} aptoria-dashboard-{{ $aptoriaDashboardDensity ?? 'comfortable' }} aptoria-table-{{ $aptoriaTableDensity ?? 'comfortable' }} {{ ($aptoriaCompactDashboard ?? false) ? 'aptoria-compact-dashboard' : '' }} aptoria-theme-{{ $aptoriaTheme ?? 'light' }}" data-aptoria-sweetalert="{{ ($aptoriaEnableSweetalert ?? true) ? 'enabled' : 'disabled' }}">
 
 <div id="header" class="aptoria-header aptoria-ui-header-polish">
     <div class="color-line"></div>
@@ -131,18 +132,22 @@
                                     <span>{{ __('messages.nav.projects') }}</span>
                                 </a>
                             </div>
-                            <div class="col-xs-4">
-                                <a href="{{ route('projects.wizard.create') }}">
-                                    <i class="fa fa-magic text-success"></i>
-                                    <span>{{ __('messages.nav.guided_project') }}</span>
-                                </a>
-                            </div>
-                            <div class="col-xs-4">
-                                <a href="{{ route('monitors.index') }}">
-                                    <i class="fa fa-clock-o text-warning"></i>
-                                    <span>{{ __('messages.nav.monitors') }}</span>
-                                </a>
-                            </div>
+                            @if($aptoriaIsSystemAdmin)
+                                <div class="col-xs-4">
+                                    <a href="{{ route('projects.wizard.create') }}">
+                                        <i class="fa fa-magic text-success"></i>
+                                        <span>{{ __('messages.nav.guided_project') }}</span>
+                                    </a>
+                                </div>
+                            @endif
+                            @if($aptoriaIsSystemAdmin)
+                                <div class="col-xs-4">
+                                    <a href="{{ route('monitors.index') }}">
+                                        <i class="fa fa-clock-o text-warning"></i>
+                                        <span>{{ __('messages.nav.monitors') }}</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                         <div class="row m-t-sm">
                             <div class="col-xs-4">
@@ -261,13 +266,18 @@
                 <a href="#"><i class="fa fa-briefcase"></i> <span class="nav-label">{{ __('messages.nav.projects') }}</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level aptoria-nav-grouped">
                     <li class="{{ $aptoriaProjectMenuActive('projects.index') }}"><a href="{{ route('projects.index') }}"><i class="fa fa-list-ul"></i> {{ __('messages.nav.all_projects') }}</a></li>
-                    <li class="{{ $aptoriaProjectMenuActive('projects.create') }}"><a href="{{ route('projects.create') }}"><i class="fa fa-plus-circle"></i> {{ __('messages.nav.create_project') }}</a></li>
-                    <li class="{{ $aptoriaProjectMenuActive('projects.wizard.*') }}"><a href="{{ route('projects.wizard.create') }}"><i class="fa fa-magic"></i> {{ __('messages.nav.guided_project') }}</a></li>
+                    @if($aptoriaIsSystemAdmin)
+                        <li class="{{ $aptoriaProjectMenuActive('projects.create') }}"><a href="{{ route('projects.create') }}"><i class="fa fa-plus-circle"></i> {{ __('messages.nav.create_project') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.wizard.*') }}"><a href="{{ route('projects.wizard.create') }}"><i class="fa fa-magic"></i> {{ __('messages.nav.guided_project') }}</a></li>
+                    @endif
 
                     @if($aptoriaCurrentProject)
                         <li class="nav-header"><span>{{ __('messages.nav.current_project') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.show', 'projects.edit') }}"><a href="{{ route('projects.show', $aptoriaCurrentProject) }}"><i class="fa fa-info-circle"></i> {{ __('messages.projects.details') }}</a></li>
-                        <li class="{{ $aptoriaProjectMenuActive('projects.settings.*') }}"><a href="{{ route('projects.settings.edit', $aptoriaCurrentProject) }}"><i class="fa fa-sliders"></i> {{ __('messages.nav.project_settings') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.members.*') }}"><a href="{{ route('projects.members.index', $aptoriaCurrentProject) }}"><i class="fa fa-users"></i> {{ __('messages.project_members.short_title') }}</a></li>
+                        @if(($aptoriaCurrentProjectPermissions['settings.manage'] ?? false))
+                            <li class="{{ $aptoriaProjectMenuActive('projects.settings.*') }}"><a href="{{ route('projects.settings.edit', $aptoriaCurrentProject) }}"><i class="fa fa-sliders"></i> {{ __('messages.nav.project_settings') }}</a></li>
+                        @endif
                         <li class="{{ $aptoriaProjectMenuActive('projects.environments.*', 'projects.auth-profiles.*') }}"><a href="{{ route('projects.environments.index', $aptoriaCurrentProject) }}"><i class="fa fa-server"></i> {{ __('messages.nav.environments_auth_profiles') }}</a></li>
 
                         <li class="nav-header"><span>{{ __('messages.nav.api_inventory') }}</span></li>
@@ -279,6 +289,7 @@
 
                         <li class="nav-header"><span>{{ __('messages.nav.quality_workflow') }}</span></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.qa-cockpit.*') }}"><a href="{{ route('projects.qa-cockpit.index', $aptoriaCurrentProject) }}"><i class="fa fa-tasks"></i> {{ __('messages.qa_cockpit.short_title') }}</a></li>
+                        <li class="{{ $aptoriaProjectMenuActive('projects.release-workflow.*') }}"><a href="{{ route('projects.release-workflow.index', $aptoriaCurrentProject) }}"><i class="fa fa-road"></i> {{ __('messages.release_workflow.short_title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.scans.*', 'projects.snapshots.*') }}"><a href="{{ route('projects.scans.index', $aptoriaCurrentProject) }}"><i class="fa fa-crosshairs"></i> {{ __('messages.nav.scans_snapshots') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-suites.*') }}"><a href="{{ route('projects.test-suites.index', $aptoriaCurrentProject) }}"><i class="fa fa-folder-open"></i> {{ __('messages.test_suites.title') }}</a></li>
                         <li class="{{ $aptoriaProjectMenuActive('projects.test-cases.*') }}"><a href="{{ route('projects.test-cases.index', $aptoriaCurrentProject) }}"><i class="fa fa-check-square-o"></i> {{ __('messages.test_cases.title') }}</a></li>
@@ -317,6 +328,7 @@
                 </ul>
             </li>
 
+            @if($aptoriaIsSystemAdmin)
             <li class="{{ $aptoriaOperationsNavActive ? 'active' : '' }}">
                 <a href="#"><i class="fa fa-tasks"></i> <span class="nav-label">{{ __('messages.nav.operations') }}</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
@@ -325,7 +337,9 @@
                     <li class="{{ request()->routeIs('calendar.*') ? 'active' : '' }}"><a href="{{ route('calendar.index') }}"><i class="fa fa-calendar"></i> {{ __('messages.nav.calendar') }}</a></li>
                 </ul>
             </li>
+            @endif
 
+            @if($aptoriaIsSystemAdmin)
             <li class="{{ $aptoriaAdminNavActive ? 'active' : '' }}">
                 <a href="#"><i class="fa fa-shield"></i> <span class="nav-label">{{ __('messages.nav.audit_admin') }}</span><span class="fa arrow"></span></a>
                 <ul class="nav nav-second-level">
@@ -335,6 +349,7 @@
                     <li class="{{ request()->routeIs('demo-project.*') ? 'active' : '' }}"><a href="{{ route('demo-project.index') }}"><i class="fa fa-flask"></i> {{ __('messages.nav.demo_project') }}</a></li>
                 </ul>
             </li>
+            @endif
 
             <li class="{{ $aptoriaSupportNavActive ? 'active' : '' }}">
                 <a href="#"><i class="fa fa-life-ring"></i> <span class="nav-label">{{ __('messages.nav.learning_support') }}</span><span class="fa arrow"></span></a>
@@ -348,7 +363,7 @@
 </aside>
 
 <div id="wrapper">
-    <div class="content animate-panel aptoria-content">
+    <div class="content aptoria-content">
         <div class="normalheader aptoria-page-titlebar">
             <div class="hpanel hblue">
                 <div class="panel-body">
@@ -367,6 +382,9 @@
                             @if($aptoriaCurrentProject)
                                 <small class="aptoria-page-context">
                                     <span class="label label-info"><i class="fa fa-briefcase"></i> {{ $aptoriaCurrentProject->name }}</span>
+                                    @if($aptoriaCurrentProjectRoleLabel ?? null)
+                                        <span class="label label-default"><i class="fa fa-users"></i> {{ $aptoriaCurrentProjectRoleLabel }}</span>
+                                    @endif
                                     @if($aptoriaCurrentProject->base_url)
                                         <span class="text-muted"><i class="fa fa-link"></i> {{ $aptoriaCurrentProject->base_url }}</span>
                                     @endif
@@ -380,14 +398,25 @@
                                 <div class="aptoria-mode-chip-title"><i class="fa fa-shield"></i> {{ __('messages.app.safe_qa_mode') }}</div>
                                 <small>{{ __('messages.app.safe_qa_subtitle') }}</small>
                             </div>
-                            <div class="aptoria-page-action-row">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @hasSection('page_actions')
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="hpanel">
+                        <div class="panel-body">
+                            <div class="text-right aptoria-page-action-row">
                                 @yield('page_actions')
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         @if(session('success'))
             <div id="aptoria-flash-message" class="hidden" data-title="{{ __('messages.common.success_title') }}" data-message="{{ session('success') }}" data-type="success"></div>
