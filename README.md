@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/assets/aptoria/img/aptoria-github-1.png" alt="Aptoria logo" width="360">
+  <img src="public/assets/aptoria/img/aptoria-logo-horizontal.png" alt="Aptoria logo" width="360">
 </p>
 
 
