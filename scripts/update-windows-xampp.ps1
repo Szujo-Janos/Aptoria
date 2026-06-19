@@ -4,6 +4,11 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
     Copy-Item ".env.example" ".env"
 }
 
+
+if (-not (Test-Path "bootstrap\cache")) {
+    New-Item -ItemType Directory -Path "bootstrap\cache" -Force | Out-Null
+}
+
 if (-not (Test-Path "database")) {
     New-Item -ItemType Directory -Path "database" | Out-Null
 }
