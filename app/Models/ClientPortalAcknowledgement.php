@@ -10,43 +10,30 @@ class ClientPortalAcknowledgement extends Model
 {
     use HasFactory;
 
-    public const TYPE_REPORT_APPROVAL = 'report_approval';
-    public const TYPE_RELEASE_ACKNOWLEDGEMENT = 'release_acknowledgement';
-    public const TYPE_RISK_ACCEPTANCE_ACKNOWLEDGEMENT = 'risk_acceptance_acknowledgement';
-
-    public const TYPES = [
-        self::TYPE_REPORT_APPROVAL,
-        self::TYPE_RELEASE_ACKNOWLEDGEMENT,
-        self::TYPE_RISK_ACCEPTANCE_ACKNOWLEDGEMENT,
-    ];
+    public const DECISIONS = ['reviewed', 'approved', 'needs_changes', 'rejected'];
 
     protected $fillable = [
         'project_id',
         'client_portal_access_id',
         'report_version_id',
-        'release_decision_id',
-        'risk_acceptance_id',
-        'acknowledgement_type',
-        'actor_name',
-        'actor_email',
-        'note',
+        'decision_status',
+        'acknowledged_by_name',
+        'acknowledged_by_email',
+        'comment',
+        'acknowledge_terms',
+        'evidence_summary_json',
         'acknowledged_at',
+        'ip_address',
+        'user_agent',
     ];
 
     protected function casts(): array
     {
         return [
+            'acknowledge_terms' => 'boolean',
+            'evidence_summary_json' => 'array',
             'acknowledged_at' => 'datetime',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (ClientPortalAcknowledgement $acknowledgement): void {
-            if (! $acknowledgement->acknowledged_at) {
-                $acknowledgement->acknowledged_at = now();
-            }
-        });
     }
 
     public function project(): BelongsTo
@@ -64,18 +51,18 @@ class ClientPortalAcknowledgement extends Model
         return $this->belongsTo(ReportVersion::class);
     }
 
-    public function releaseDecision(): BelongsTo
+    public function getDecisionLabelAttribute(): string
     {
-        return $this->belongsTo(ReleaseDecision::class);
+        return __('messages.client_portal.ack_decisions.'.($this->decision_status ?: 'reviewed'));
     }
 
-    public function riskAcceptance(): BelongsTo
+    public function getDecisionToneAttribute(): string
     {
-        return $this->belongsTo(RiskAcceptance::class);
-    }
-
-    public function getTypeLabelAttribute(): string
-    {
-        return __('messages.client_portal.acknowledgement_types.'.($this->acknowledgement_type ?: self::TYPE_REPORT_APPROVAL));
+        return match ($this->decision_status) {
+            'approved' => 'success',
+            'needs_changes' => 'warning',
+            'rejected' => 'danger',
+            default => 'primary',
+        };
     }
 }

@@ -10,9 +10,7 @@ class EnsureAdminUser
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
-
-        abort_if(! $user || ($user->role ?? null) !== 'admin', 403, __('messages.auth.admin_required'));
+        abort_unless($request->user()?->isAdmin(), 403);
 
         return $next($request);
     }

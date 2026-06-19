@@ -1,0 +1,1651 @@
+:root { --aptoria-soft: #f6f8fb; }
+body.auth-bg { background: linear-gradient(135deg, #f6f8fb 0%, #e9eef8 100%); }
+.fw-bold, .fw-semibold, .badge, .btn { font-weight: 400 !important; }
+.aptoria-flow { display:flex; gap:.65rem; align-items:center; flex-wrap:wrap; }
+.aptoria-flow span { border:1px solid rgba(0,0,0,.08); background: var(--aptoria-soft); border-radius:999px; padding:.5rem .8rem; font-size:.875rem; }
+.side-nav-title { padding: 14px 20px 6px; font-size: .72rem; text-transform: uppercase; color: #8a94a6; letter-spacing: .04em; }
+.side-nav-link.active { background: rgba(45, 99, 255, .08); }
+.card { border: 1px solid rgba(0,0,0,.06); }
+.btn i, .side-nav-link i { width: 16px; height: 16px; }
+.aptoria-topbar-context .topbar-search { width: 245px; padding-left: 2.35rem; pointer-events: none; }
+.sidenav-user { margin-top: .625rem; }
+.sidenav-user .sidenav-user-name img { border-radius: 0; }
+.footer { margin-top: auto; }
+
+/* Aptoria official logo standard - single SVG source */
+.aptoria-brand-logo { display: block; width: auto; max-width: 100%; object-fit: contain; }
+.logo-topbar img.aptoria-brand-logo-topbar { height: 42px; max-width: 210px; }
+.aptoria-brand-logo-sidebar { width: 150px; height: auto; max-height: 52px; }
+.aptoria-auth-logo { height: 42px; max-width: 260px; }
+.aptoria-client-portal-logo { width: 170px; height: auto; max-height: 54px; }
+.aptoria-brand-logo-on-dark { background: #fff; border-radius: .45rem; padding: .35rem .55rem; box-shadow: 0 .35rem 1rem rgba(15, 23, 42, .10); }
+html[data-bs-theme="dark"] .aptoria-brand-logo { filter: brightness(1.04); }
+html[data-bs-theme="dark"] .aptoria-brand-logo-on-dark { filter: none; }
+
+
+.logo-topbar img { max-width: 210px; object-fit: contain; }
+.dropdown-menu-xxl { min-width: min(860px, calc(100vw - 2rem)); }
+.dropdown-menu-xxl .dropdown-item { border-radius: .35rem; display: flex; align-items: center; }
+.topbar-link .mode-light-sun { display: none; }
+html[data-bs-theme="dark"] .topbar-link .mode-light-moon { display: none; }
+html[data-bs-theme="dark"] .topbar-link .mode-light-sun { display: inline-block; }
+html[data-bs-theme="dark"] .logo-topbar img { filter: brightness(1.04); }
+.aptoria-metric-card .avatar-title { width: 3rem; height: 3rem; }
+.aptoria-dashboard-table td, .aptoria-dashboard-table th { vertical-align: middle; }
+
+
+
+
+/* Aptoria setup shell - old setup flow on the new aptoria-ui template */
+.aptoria-setup-page { background: #ffffff; min-height: 100vh; overflow-x: hidden; }
+.aptoria-setup-page > .container { max-width: none; width: 100%; padding: 0; position: relative; z-index: 1; }
+.aptoria-setup-background { position: fixed; inset: 0; background: radial-gradient(circle at 14% 12%, rgba(var(--ins-primary-rgb), .12), transparent 28%), radial-gradient(circle at 84% 0%, rgba(var(--ins-info-rgb), .12), transparent 24%), linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%); pointer-events: none; z-index: 0; }
+.aptoria-setup-shell { min-height: 100vh; position: relative; z-index: 1; padding-top: 72px; }
+.aptoria-setup-app-topbar { position: fixed; top: 0; right: 0; left: 0; z-index: 1002; min-height: 72px; background: var(--ins-secondary-bg); border-bottom: 1px solid var(--ins-border-color); box-shadow: 0 .25rem 1rem rgba(15,23,42,.04); }
+.aptoria-setup-app-topbar .topbar-menu { min-height: 72px; }
+.aptoria-setup-topbar-grid { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 18px; }
+.aptoria-setup-topbar-left, .aptoria-setup-topbar-actions { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.aptoria-setup-topbar-left { justify-content: flex-start; }
+.aptoria-setup-topbar-actions { justify-content: flex-end; }
+.aptoria-setup-logo-link { display: inline-flex; align-items: center; justify-content: center; min-width: 320px; }
+.aptoria-setup-logo { height: 50px; width: auto; max-width: 320px; object-fit: contain; display: block; }
+.aptoria-setup-topbar-copy { color: var(--ins-secondary-color); font-size: .85rem; white-space: nowrap; }
+.aptoria-lang-pill { border: 1px solid var(--ins-border-color); border-radius: .35rem; background: var(--ins-secondary-bg); }
+.aptoria-setup-viewport { max-width: 1180px; margin: 0 auto; padding: 28px 18px 46px; }
+.aptoria-setup-alert { margin-bottom: 18px; }
+.aptoria-setup-card { overflow: hidden; border-radius: .55rem; }
+.aptoria-setup-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 640px; }
+.aptoria-setup-stepper { background: linear-gradient(180deg, rgba(var(--ins-light-rgb), .8), rgba(var(--ins-light-rgb), .35)); border-right: 1px solid var(--ins-border-color); padding: 24px; }
+.aptoria-stepper-item { width: 100%; display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--ins-border-color); border-radius: .55rem; padding: 14px; margin-bottom: 12px; background: var(--ins-secondary-bg); color: var(--ins-body-color); text-align: left; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.aptoria-stepper-item:hover, .aptoria-stepper-item.is-active { transform: translateY(-1px); border-color: rgba(var(--ins-primary-rgb), .55); box-shadow: 0 .5rem 1.2rem rgba(var(--ins-primary-rgb), .08); }
+.aptoria-stepper-number { width: 30px; height: 30px; border-radius: .4rem; display: inline-flex; align-items: center; justify-content: center; color: #fff; background: var(--ins-primary); flex: 0 0 30px; }
+.aptoria-stepper-item small { display: block; color: var(--ins-secondary-color); margin-top: 2px; }
+.aptoria-setup-status-box { margin-top: 22px; border: 1px solid var(--ins-border-color); border-radius: .55rem; padding: 16px; background: var(--ins-secondary-bg); }
+.aptoria-setup-summary-row strong { display: block; font-size: 1.15rem; }
+.aptoria-setup-summary-row small { display: block; font-size: .68rem; color: var(--ins-secondary-color); }
+.aptoria-setup-main { padding: 28px; min-width: 0; }
+.aptoria-setup-panel { display: none; animation: aptoria-step-in .28s ease-out both; }
+.aptoria-setup-panel.is-active { display: block; }
+.aptoria-setup-hero h1 { font-size: clamp(1.9rem, 3vw, 3rem); margin-top: 12px; }
+.aptoria-setup-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.aptoria-env-checks { display: grid; gap: 10px; }
+.aptoria-env-check-row { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--ins-border-color); border-radius: .55rem; background: var(--ins-secondary-bg); opacity: .72; transform: translateY(2px); transition: opacity .2s ease, transform .2s ease, border-color .2s ease; }
+.aptoria-env-check-row.is-visible, .aptoria-env-check-row.is-complete { opacity: 1; transform: translateY(0); }
+.aptoria-env-check-row.is-current { border-color: rgba(var(--ins-primary-rgb), .55); box-shadow: 0 .35rem .9rem rgba(var(--ins-primary-rgb), .08); }
+.aptoria-env-check-icon { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: .4rem; background: rgba(var(--ins-light-rgb), .75); }
+.aptoria-env-check-title { font-weight: 500; color: var(--ins-heading-color); }
+.aptoria-env-check-detail, .aptoria-env-check-fix { color: var(--ins-secondary-color); font-size: .78rem; word-break: break-word; }
+.aptoria-env-check-fix { margin-top: 3px; color: var(--ins-warning); }
+.aptoria-setup-actions { margin-top: 24px; }
+.aptoria-auto-action-row { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; gap: 12px; align-items: center; }
+.aptoria-auto-action-icon { width: 34px; height: 34px; border-radius: .4rem; display:flex; align-items:center; justify-content:center; background: rgba(var(--ins-primary-rgb), .1); color: var(--ins-primary); }
+.aptoria-auto-action-body strong { display: block; color: var(--ins-heading-color); }
+.aptoria-auto-action-body span { display:block; color: var(--ins-secondary-color); font-size: .78rem; }
+.aptoria-install-stack { display: grid; gap: 16px; }
+.aptoria-install-flow-card { border-color: rgba(var(--ins-primary-rgb), .22); }
+.aptoria-install-steps { display: grid; gap: 10px; padding-left: 1.2rem; }
+.aptoria-install-lock-layout { align-items: stretch; }
+.aptoria-default-admin-card, .aptoria-install-action-card { border-radius: .55rem; }
+.aptoria-admin-credential-list { display: grid; gap: 10px; margin-top: 18px; }
+.aptoria-admin-credential-row { display: flex; justify-content: space-between; gap: 12px; align-items:center; border: 1px solid var(--ins-border-color); border-radius: .45rem; padding: 11px 13px; background: rgba(var(--ins-light-rgb), .45); }
+.aptoria-admin-credential-row span { color: var(--ins-secondary-color); }
+.aptoria-default-admin-warning { margin: 16px 0 0; color: var(--ins-warning); display:flex; gap:6px; align-items:center; }
+.aptoria-install-action-icon { width: 58px; height: 58px; border-radius: .65rem; display:flex; align-items:center; justify-content:center; background: rgba(var(--ins-primary-rgb), .13); color: var(--ins-primary); margin-bottom: 16px; }
+.aptoria-install-action-icon i { width: 30px; height: 30px; }
+.aptoria-install-confirm { display:flex; gap: 10px; align-items:flex-start; padding: 12px; border:1px solid var(--ins-border-color); border-radius:.45rem; background: rgba(var(--ins-warning-rgb), .08); margin: 8px 0 16px; }
+.aptoria-setup-lock-button { width: 100%; min-height: 56px; border-radius: .2rem; display:flex; align-items:center; justify-content:center; gap: 8px; font-size: .95rem; }
+.aptoria-setup-back-button { width: 100%; margin-top: 10px; display:flex; align-items:center; justify-content:center; gap: 6px; }
+.aptoria-setup-page-loader, .aptoria-install-progress-overlay { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; background: #fff; transition: opacity .25s ease, visibility .25s ease; }
+.aptoria-setup-page-loader.is-hidden { opacity: 0; visibility: hidden; }
+.aptoria-setup-loader-card, .aptoria-install-progress-card { width: min(440px, calc(100vw - 48px)); padding: 32px; border: 1px solid #e4e9ee; border-radius: .65rem; background: #fff; box-shadow: 0 18px 46px rgba(31,45,61,.10); text-align: center; }
+.aptoria-loader-logo, .aptoria-progress-logo { width: min(280px, 100%); max-height: 92px; object-fit: contain; display:block; margin: 0 auto 18px; }
+.aptoria-setup-loader-mark { width: 48px; height: 48px; margin: 0 auto 14px; display:flex; align-items:center; justify-content:center; border-radius:.55rem; background: rgba(var(--ins-primary-rgb), .1); }
+.aptoria-install-progress-overlay { opacity: 0; visibility: hidden; background: rgba(255,255,255,.96); }
+.aptoria-install-progress-overlay.is-visible { opacity: 1; visibility: visible; }
+.aptoria-install-progress-card h3 { margin-top: 10px; }
+.aptoria-install-progress-card p { opacity: 0; transform: translateY(4px); transition: opacity .18s ease, transform .18s ease; }
+.aptoria-install-progress-card p.is-visible { opacity: 1; transform: translateY(0); }
+.aptoria-install-progress-bar { height: 8px; margin: 18px 0; border-radius: 999px; overflow:hidden; }
+.mode-light-sun { display:none; }
+html[data-bs-theme="dark"] .mode-light-moon { display:none; }
+html[data-bs-theme="dark"] .mode-light-sun { display:inline-block; }
+
+.aptoria-setup-page .swal2-container { z-index: 2147483500; }
+.aptoria-swal-popup { border-radius: .75rem !important; border: 1px solid #e4e9ee !important; box-shadow: 0 20px 58px rgba(15, 23, 42, .16) !important; padding: 1.75rem !important; }
+.aptoria-swal-popup .swal2-title { color: var(--ins-heading-color); font-size: 1.35rem; font-weight: 600; }
+.aptoria-swal-popup .swal2-html-container { color: var(--ins-secondary-color); font-size: .94rem; line-height: 1.55; }
+.aptoria-swal-actions { gap: .65rem; margin-top: 1.35rem !important; }
+.aptoria-swal-confirm, .aptoria-swal-cancel { min-width: 132px; min-height: 42px; border-radius: .35rem; display: inline-flex !important; align-items: center; justify-content: center; }
+.aptoria-setup-swal-popup .swal2-icon { margin-top: .4rem; }
+.aptoria-setup-page .aptoria-install-action-card { border-color: rgba(var(--ins-success-rgb), .24); box-shadow: 0 .5rem 1.25rem rgba(20, 83, 45, .08); }
+.aptoria-setup-page .aptoria-install-action-card .card-body { text-align: center; }
+.aptoria-setup-page .aptoria-install-action-icon { margin-left: auto; margin-right: auto; }
+.aptoria-setup-page .aptoria-stepper-item, .aptoria-setup-page .aptoria-env-check-row, .aptoria-setup-page .aptoria-auto-action-row, .aptoria-setup-page .aptoria-install-action-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease; }
+.aptoria-setup-page .aptoria-stepper-item:hover, .aptoria-setup-page .aptoria-auto-action-row:hover, .aptoria-setup-page .aptoria-install-action-card:hover { transform: translateY(-1px); }
+.aptoria-setup-page .aptoria-env-check-row.is-complete { transform: translateY(0); }
+
+@keyframes aptoria-step-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+@media (max-width: 991.98px) { .aptoria-setup-grid { grid-template-columns: 1fr; } .aptoria-setup-stepper { border-right: 0; border-bottom: 1px solid var(--ins-border-color); } .aptoria-setup-section-header { flex-direction: column; } .aptoria-auto-action-row, .aptoria-env-check-row { grid-template-columns: 38px minmax(0,1fr); } .aptoria-auto-action-status, .aptoria-env-check-result { grid-column: 2; justify-self: start; } }
+@media (max-width: 575.98px) { .aptoria-setup-viewport { padding: 18px 10px 32px; } .aptoria-setup-main, .aptoria-setup-stepper { padding: 18px; } .aptoria-admin-credential-row { flex-direction: column; align-items: flex-start; } }
+
+/* Aptoria v0.0.2 project workspace UI */
+.aptoria-project-switcher { min-width: 250px; justify-content: flex-start; }
+.aptoria-project-switch-list { max-height: 320px; overflow: auto; }
+.aptoria-sidebar-project { border: 1px solid var(--ins-border-color); border-radius: .55rem; padding: .85rem; background: rgba(var(--ins-light-rgb), .48); }
+.aptoria-sidebar-project .min-w-0, .min-w-0 { min-width: 0; }
+.aptoria-empty-state .avatar-xl, .aptoria-placeholder-card .avatar-xl { width: 4.4rem; height: 4.4rem; }
+.aptoria-check-item { display: flex; gap: .75rem; align-items: flex-start; border: 1px solid var(--ins-border-color); border-radius: .55rem; padding: .85rem; height: 100%; background: var(--ins-secondary-bg); }
+.aptoria-check-item.is-ready { border-color: rgba(var(--ins-success-rgb), .35); background: rgba(var(--ins-success-rgb), .055); }
+.aptoria-timeline-list { min-height: 120px; }
+.aptoria-timeline-item { display: flex; gap: .75rem; padding: .9rem 1rem; border-bottom: 1px solid var(--ins-border-color); }
+.aptoria-timeline-item:last-child { border-bottom: 0; }
+.aptoria-project-hero { background: radial-gradient(circle at top right, rgba(var(--ins-primary-rgb), .10), transparent 34%), var(--ins-secondary-bg); }
+.aptoria-project-score { min-width: 96px; }
+.aptoria-score-ring { width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; margin-inline: auto; background: conic-gradient(var(--ins-primary) var(--aptoria-score, 0%), rgba(var(--ins-light-rgb), .8) 0); color: #fff; font-size: 1.12rem; font-weight: 500; letter-spacing: -.02em; border: 6px solid rgba(var(--ins-light-rgb), .7); box-shadow: inset 0 0 0 8px var(--ins-secondary-bg); text-shadow: 0 1px 2px rgba(0,0,0,.22); }
+.aptoria-context-row { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--ins-border-color); }
+.aptoria-context-row:last-child { border-bottom: 0; }
+.aptoria-context-row span { color: var(--ins-secondary-color); }
+.aptoria-module-card { display: flex; gap: .85rem; border: 1px solid var(--ins-border-color); border-radius: .65rem; padding: 1rem; min-height: 116px; background: var(--ins-secondary-bg); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+.aptoria-module-card:hover { transform: translateY(-2px); border-color: rgba(var(--ins-primary-rgb), .38); box-shadow: 0 .55rem 1.25rem rgba(15, 23, 42, .07); }
+.aptoria-preview-step { display: flex; gap: .75rem; align-items: flex-start; padding: .8rem 0; border-bottom: 1px solid var(--ins-border-color); }
+.aptoria-preview-step:last-of-type { border-bottom: 0; }
+.aptoria-preview-step strong, .aptoria-preview-step small { display: block; }
+.aptoria-preview-step small { color: var(--ins-secondary-color); }
+.table-centered td, .table-centered th { vertical-align: middle; }
+.aptoria-datatable tbody tr:hover { background: rgba(var(--ins-primary-rgb), .035); }
+html[data-bs-theme="dark"] .aptoria-sidebar-project,
+html[data-bs-theme="dark"] .aptoria-check-item,
+html[data-bs-theme="dark"] .aptoria-module-card { background: rgba(255,255,255,.025); }
+@media (max-width: 1199.98px) { .aptoria-project-switcher { min-width: 190px; } }
+
+
+/* v0.0.2 UI polish: stronger template components */
+.aptoria-project-dashboard-hero { background: linear-gradient(135deg, rgba(var(--ins-primary-rgb), .12), rgba(var(--ins-info-rgb), .06)), var(--ins-secondary-bg); border: 1px solid rgba(var(--ins-primary-rgb), .12); }
+.aptoria-status-filter .nav-link { border-radius: 999px; }
+.aptoria-status-filter .nav-link.active { box-shadow: 0 .35rem 1rem rgba(var(--ins-primary-rgb), .18); }
+.aptoria-readiness-mini { height: 6px; }
+.aptoria-table-action-btn { width: 34px; height: 34px; display: inline-grid; place-items: center; }
+.aptoria-ui-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .35rem .6rem; border-radius: 999px; background: rgba(var(--ins-light-rgb), .65); color: var(--ins-body-color); font-size: .78rem; }
+.aptoria-workflow-step { position: relative; padding-left: 1.65rem; }
+.aptoria-workflow-step::before { content: ''; position: absolute; left: .35rem; top: .35rem; width: .55rem; height: .55rem; border-radius: 50%; background: var(--ins-primary); box-shadow: 0 0 0 .25rem rgba(var(--ins-primary-rgb), .12); }
+.aptoria-workflow-step + .aptoria-workflow-step { margin-top: .85rem; }
+.aptoria-toast-container { z-index: 1095; }
+html[data-bs-theme="dark"] .aptoria-project-dashboard-hero { background: linear-gradient(135deg, rgba(var(--ins-primary-rgb), .18), rgba(var(--ins-info-rgb), .08)), var(--ins-secondary-bg); }
+
+
+.aptoria-table-card .card-body { min-width: 0; }
+.aptoria-table-card table,
+.aptoria-dashboard-table,
+.aptoria-projects-table,
+.aptoria-module-table { width: 100% !important; }
+.aptoria-project-cell { min-width: 220px; }
+.aptoria-project-name-cell { max-width: 260px; }
+.aptoria-url-cell { max-width: 340px; }
+.aptoria-dashboard-table .aptoria-url-cell { max-width: 300px; }
+.aptoria-module-table small { max-width: 520px; }
+.aptoria-table-card .dt-container { width: 100%; }
+.aptoria-table-card .dt-layout-row { margin: .75rem 0; }
+.aptoria-table-card .dt-layout-row:first-child { margin-top: 0; }
+.aptoria-table-card .dt-search input { margin-left: .5rem; }
+.aptoria-table-card .dt-length select { margin-right: .35rem; }
+.aptoria-table-card .pagination { margin-bottom: 0; }
+.aptoria-ui-chip { border: 1px solid var(--ins-border-color); }
+.aptoria-score-ring { font-size: 1.03rem; }
+.aptoria-timeline-item .avatar { flex: 0 0 auto; }
+@media (max-width: 767.98px) {
+    .aptoria-url-cell { max-width: 220px; }
+    .aptoria-project-name-cell { max-width: 210px; }
+}
+
+
+/* v0.0.2 card/panel review - align closer to aptoria-ui/index.html */
+.content-page .card {
+    border: 0;
+    border-radius: var(--ins-border-radius);
+    box-shadow: var(--ins-box-shadow);
+    overflow: visible;
+}
+.content-page .card-header {
+    display: flex;
+    align-items: center;
+    min-height: 58px;
+    padding: .95rem 1rem;
+    background: var(--ins-secondary-bg);
+    border-bottom: 1px solid var(--ins-border-color);
+}
+.content-page .card-header.border-light { border-bottom-color: var(--ins-border-color) !important; }
+.content-page .card-header .card-title { margin-bottom: 0; font-weight: 500; }
+.content-page .card-header p.small { line-height: 1.35; }
+.content-page .card-footer,
+.content-page .aptoria-card-footer-subtle {
+    background: var(--ins-tertiary-bg) !important;
+    border-top: 1px solid var(--ins-border-color);
+    padding: .85rem 1rem;
+}
+.content-page .card-footer .pagination { margin-bottom: 0; }
+.content-page .card-action { display: inline-flex; align-items: center; gap: .35rem; }
+.content-page .card-action .card-action-item {
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--ins-secondary-color);
+    background: rgba(var(--ins-light-rgb), .65);
+}
+.content-page .card-action .card-action-item:hover {
+    color: var(--ins-body-color);
+    background: var(--ins-tertiary-bg);
+}
+.aptoria-widget-card .card-body { min-height: 142px; }
+.aptoria-widget-card .card-footer { min-height: 46px; display: flex; align-items: center; justify-content: center; font-size: .79rem; }
+.aptoria-dashboard-table-card .card-body,
+.aptoria-table-card .card-body { min-width: 0; }
+.aptoria-guide-card .card-body { padding: 0; }
+.aptoria-guide-list .list-group-item { padding: .95rem 1.05rem; background: transparent; }
+.aptoria-guide-list .avatar { flex: 0 0 auto; }
+.aptoria-guide-list small { line-height: 1.35; }
+.aptoria-panel-card .list-group-item { background: transparent; }
+.aptoria-panel-card .table { --ins-table-bg: transparent; }
+html[data-bs-theme="dark"] .content-page .card-action .card-action-item { background: rgba(255,255,255,.045); }
+html[data-bs-theme="dark"] .content-page .card-footer,
+html[data-bs-theme="dark"] .content-page .aptoria-card-footer-subtle { background: var(--ins-tertiary-bg) !important; }
+
+
+
+/* v0.0.2 table/dropdown clipping fix */
+.aptoria-table-card,
+.aptoria-dashboard-table-card,
+.aptoria-table-card .card-body,
+.aptoria-dashboard-table-card .card-body,
+.aptoria-table-card .dt-container,
+.aptoria-dashboard-table-card .dt-container {
+    overflow: visible !important;
+}
+.aptoria-table-card .dropdown,
+.aptoria-dashboard-table-card .dropdown {
+    position: static;
+}
+.aptoria-table-card .dropdown-menu,
+.aptoria-dashboard-table-card .dropdown-menu {
+    z-index: 1090;
+    box-shadow: var(--ins-box-shadow-lg);
+}
+.aptoria-table-card .dt-layout-row,
+.aptoria-dashboard-table-card .dt-layout-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+.aptoria-table-card .dt-layout-cell,
+.aptoria-dashboard-table-card .dt-layout-cell {
+    min-width: 0;
+}
+.aptoria-table-card .dt-search,
+.aptoria-dashboard-table-card .dt-search {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .5rem;
+}
+.aptoria-table-card .dt-search label,
+.aptoria-dashboard-table-card .dt-search label {
+    margin: 0;
+    color: var(--ins-secondary-color);
+}
+.aptoria-table-card .dt-search input,
+.aptoria-dashboard-table-card .dt-search input {
+    max-width: min(260px, 50vw);
+}
+@media (max-width: 575.98px) {
+    .aptoria-table-card .dt-search,
+    .aptoria-dashboard-table-card .dt-search,
+    .aptoria-table-card .dt-search input,
+    .aptoria-dashboard-table-card .dt-search input {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* v0.0.2 profile vertical wizard */
+.aptoria-profile-summary-card .avatar-xl {
+    width: 4.5rem;
+    height: 4.5rem;
+}
+.aptoria-profile-wizard-card .wizard-tabs .nav-link {
+    margin-bottom: .65rem;
+}
+.aptoria-profile-wizard-card .tab-content {
+    min-height: 420px;
+    background: var(--ins-body-bg);
+}
+.aptoria-profile-wizard-card .list-group-item {
+    background: transparent;
+}
+.aptoria-profile-wizard-card .progress-sm,
+.aptoria-profile-summary-card .progress-sm {
+    height: .45rem;
+}
+html[data-bs-theme="dark"] .aptoria-profile-wizard-card .tab-content {
+    background: var(--ins-secondary-bg);
+}
+
+/* Aptoria icon compatibility layer: keeps Lucide and Tabler-class icons visible without relying on missing glyphs. */
+.aptoria-icon-svg {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    stroke: currentColor;
+}
+.ti.aptoria-tabler-rendered,
+[data-lucide].aptoria-lucide-rendered {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.ti.aptoria-tabler-rendered::before {
+    content: '' !important;
+    display: none !important;
+}
+.menu-icon .aptoria-icon-svg,
+.avatar-title .aptoria-icon-svg,
+.btn .aptoria-icon-svg,
+.dropdown-item .aptoria-icon-svg {
+    flex-shrink: 0;
+}
+
+
+/* v0.0.3 canonical resource table layer
+   All new module tables must use: .aptoria-table-card + table[data-tables].aptoria-resource-table. */
+.aptoria-table-card .card-body {
+    min-width: 0;
+}
+.aptoria-table-card .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+}
+.aptoria-table-card .dt-container,
+.aptoria-table-card .dt-layout-table,
+.aptoria-table-card .dt-layout-full,
+.aptoria-table-card .dt-scroll,
+.aptoria-table-card .dt-scroll-body {
+    width: 100% !important;
+}
+.aptoria-resource-table,
+.aptoria-table-card table[data-tables] {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}
+.aptoria-resource-table thead th,
+.aptoria-table-card table[data-tables] thead th {
+    color: var(--ins-secondary-color);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.aptoria-resource-table td,
+.aptoria-resource-table th,
+.aptoria-table-card table[data-tables] td,
+.aptoria-table-card table[data-tables] th {
+    vertical-align: middle;
+}
+.aptoria-table-card .dt-layout-row {
+    padding-inline: 0;
+}
+.aptoria-table-card .dt-layout-row:first-child {
+    margin-top: 0;
+}
+.aptoria-table-card .dt-layout-row:last-child {
+    margin-bottom: 0;
+}
+.aptoria-table-card .dt-info {
+    color: var(--ins-secondary-color);
+}
+.aptoria-table-card .dt-search input,
+.aptoria-table-card .dt-length select {
+    border-radius: var(--ins-border-radius);
+}
+.aptoria-environments-table .aptoria-url-cell,
+.aptoria-projects-table .aptoria-url-cell,
+.aptoria-dashboard-table .aptoria-url-cell {
+    display: inline-block;
+    max-width: min(360px, 34vw);
+}
+.aptoria-auth-profiles-table code {
+    display: inline-block;
+    max-width: min(360px, 34vw);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (max-width: 991.98px) {
+    .aptoria-environments-table .aptoria-url-cell,
+    .aptoria-projects-table .aptoria-url-cell,
+    .aptoria-dashboard-table .aptoria-url-cell,
+    .aptoria-auth-profiles-table code {
+        max-width: 220px;
+    }
+}
+
+/* v0.0.4 table contract: every Aptoria data table must stay inside its panel. */
+.aptoria-table-card,
+.aptoria-table-card .card-body,
+.aptoria-table-card .table-responsive,
+.aptoria-table-card .dt-container,
+.aptoria-table-card .dt-layout-table,
+.aptoria-table-card .dt-layout-full,
+.aptoria-table-card .dt-scroll,
+.aptoria-table-card .dt-scroll-body {
+    max-width: 100%;
+}
+.aptoria-table-card .table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+.aptoria-resource-table {
+    table-layout: auto;
+}
+.aptoria-resource-table .text-truncate,
+.aptoria-resource-table code,
+.aptoria-resource-table .aptoria-url-cell,
+.aptoria-resource-table .aptoria-endpoint-path-cell,
+.aptoria-resource-table .aptoria-endpoint-name-cell {
+    max-width: min(360px, 34vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.aptoria-endpoints-table .aptoria-endpoint-path-cell {
+    display: inline-block;
+    color: var(--ins-primary);
+}
+@media (max-width: 991.98px) {
+    .aptoria-resource-table .text-truncate,
+    .aptoria-resource-table code,
+    .aptoria-resource-table .aptoria-url-cell,
+    .aptoria-resource-table .aptoria-endpoint-path-cell,
+    .aptoria-resource-table .aptoria-endpoint-name-cell {
+        max-width: 220px;
+    }
+}
+
+/* v0.0.4 hotfix: hard table and icon contract.
+   This is intentionally last in the stylesheet so every current/future resource table follows it. */
+.content-page .aptoria-table-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible !important;
+}
+.content-page .aptoria-table-card .card-body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible !important;
+}
+.content-page .aptoria-table-card .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible !important;
+}
+.content-page .aptoria-table-card .dt-container,
+.content-page .aptoria-table-card .dt-layout-table,
+.content-page .aptoria-table-card .dt-layout-full,
+.content-page .aptoria-table-card .dt-scroll,
+.content-page .aptoria-table-card .dt-scroll-head,
+.content-page .aptoria-table-card .dt-scroll-body,
+.content-page .aptoria-table-card .dt-scroll-foot {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+}
+.content-page .aptoria-table-card table[data-tables],
+.content-page .aptoria-table-card .aptoria-resource-table,
+.content-page table.aptoria-resource-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+}
+.content-page .aptoria-resource-table th,
+.content-page .aptoria-resource-table td {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+.content-page .aptoria-resource-table .aptoria-actions-cell {
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+}
+.content-page .aptoria-resource-table .dropdown {
+    position: relative;
+}
+.content-page .aptoria-resource-table .dropdown-menu {
+    z-index: 2000;
+}
+.content-page .aptoria-resource-table .text-truncate,
+.content-page .aptoria-resource-table code,
+.content-page .aptoria-resource-table .aptoria-url-cell,
+.content-page .aptoria-resource-table .aptoria-endpoint-path-cell,
+.content-page .aptoria-resource-table .aptoria-endpoint-name-cell {
+    display: block;
+    width: 100%;
+    max-width: 100% !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.content-page .aptoria-resource-table .badge {
+    max-width: 100%;
+}
+.content-page .aptoria-resource-table .d-flex.min-w-0,
+.content-page .aptoria-resource-table .min-w-0 {
+    min-width: 0 !important;
+}
+.content-page .aptoria-table-card .dt-layout-row {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+.content-page .aptoria-table-card .dt-layout-cell {
+    min-width: 0;
+}
+.content-page .aptoria-table-card .dt-search input {
+    max-width: min(260px, 100%);
+}
+.content-page .aptoria-icon-svg {
+    flex: 0 0 auto;
+}
+@media (max-width: 767.98px) {
+    .content-page .aptoria-table-card .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+    }
+    .content-page .aptoria-resource-table .aptoria-actions-cell {
+        width: 58px !important;
+        min-width: 58px !important;
+        max-width: 58px !important;
+    }
+}
+
+
+/* v0.0.4 console/icon hardening: Aptoria uses inline SVG fallbacks, not Tabler font files. */
+.aptoria-tabler-fonts-disabled .ti::before { content: none !important; }
+.aptoria-icon-ready,
+[data-aptoria-icon] { display: inline-flex; align-items: center; justify-content: center; line-height: 1; vertical-align: -0.125em; }
+.aptoria-icon-svg { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; }
+.menu-icon .aptoria-icon-svg { width: 1rem; height: 1rem; }
+.avatar-title .aptoria-icon-svg { width: 1rem; height: 1rem; }
+.btn .aptoria-icon-svg, .dropdown-item .aptoria-icon-svg { margin-top: -1px; }
+
+
+/* Release readiness check tables are not action tables: keep impact column readable inside the panel. */
+.content-page .aptoria-checks-table th:nth-child(1),
+.content-page .aptoria-checks-table td:nth-child(1) { width: 56%; }
+.content-page .aptoria-checks-table th:nth-child(2),
+.content-page .aptoria-checks-table td:nth-child(2) { width: 18%; }
+.content-page .aptoria-checks-table th:nth-child(3),
+.content-page .aptoria-checks-table td:nth-child(3) { width: 26%; }
+.content-page .aptoria-checks-table .aptoria-impact-cell {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Aptoria form enhancement layer */
+.aptoria-enhanced-form .form-label {
+    font-weight: 500;
+}
+.aptoria-enhanced-form .input-group-text {
+    min-width: 2.65rem;
+    justify-content: center;
+}
+.aptoria-enhanced-form .aptoria-form-help-text {
+    font-size: .78rem;
+    line-height: 1.35;
+}
+.aptoria-enhanced-form .aptoria-input-group + .form-text,
+.aptoria-enhanced-form .form-control + .form-text,
+.aptoria-enhanced-form .form-select + .form-text,
+.aptoria-enhanced-form textarea + .form-text {
+    margin-top: .35rem;
+}
+.aptoria-enhanced-form.was-validated .input-group:has(.form-control:invalid) .input-group-text,
+.aptoria-enhanced-form.was-validated .input-group:has(.form-select:invalid) .input-group-text {
+    border-color: var(--bs-form-invalid-border-color);
+    color: var(--bs-form-invalid-color);
+}
+.aptoria-enhanced-form.was-validated .input-group:has(.form-control:valid) .input-group-text,
+.aptoria-enhanced-form.was-validated .input-group:has(.form-select:valid) .input-group-text {
+    border-color: var(--bs-form-valid-border-color);
+    color: var(--bs-form-valid-color);
+}
+.aptoria-password-strength .progress {
+    height: .38rem;
+}
+.aptoria-required-marker {
+    font-weight: 700;
+}
+
+/* v0.0.6 hotfix: long finding forms must scroll inside the modal, not below the viewport. */
+.aptoria-finding-dialog {
+    --aptoria-finding-modal-max-height: calc(100vh - 3.5rem);
+}
+.aptoria-finding-dialog .aptoria-finding-modal-content {
+    max-height: var(--aptoria-finding-modal-max-height);
+    overflow: hidden;
+}
+.aptoria-finding-dialog .aptoria-finding-modal-header,
+.aptoria-finding-dialog .aptoria-finding-modal-footer {
+    flex: 0 0 auto;
+    position: sticky;
+    z-index: 2;
+    background: var(--bs-modal-bg);
+}
+.aptoria-finding-dialog .aptoria-finding-modal-header {
+    top: 0;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.aptoria-finding-dialog .aptoria-finding-modal-footer {
+    bottom: 0;
+    border-top: 1px solid var(--bs-border-color);
+}
+.aptoria-finding-dialog .aptoria-finding-modal-body {
+    overflow-y: auto !important;
+    max-height: calc(var(--aptoria-finding-modal-max-height) - 9.25rem);
+    min-height: 0;
+    overscroll-behavior: contain;
+}
+.aptoria-finding-dialog textarea.form-control {
+    min-height: 5.25rem;
+    resize: vertical;
+}
+@media (max-width: 767.98px) {
+    .aptoria-finding-dialog {
+        --aptoria-finding-modal-max-height: calc(100vh - 1rem);
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+    .aptoria-finding-dialog .aptoria-finding-modal-body {
+        max-height: calc(var(--aptoria-finding-modal-max-height) - 8.75rem);
+    }
+}
+.aptoria-finding-dialog .aptoria-finding-modal-content > form {
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+    min-height: 0;
+}
+
+
+/* v0.0.7 table polish: readiness snapshots and audit log must fit their panels. */
+/* Snapshot table sits in a narrow side card, so it intentionally does NOT use DataTables controls. */
+.aptoria-snapshots-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+.aptoria-snapshots-table .aptoria-col-snapshot { width: 47%; }
+.aptoria-snapshots-table .aptoria-col-score { width: 35%; }
+.aptoria-snapshots-table .aptoria-col-actions { width: 18%; }
+.aptoria-snapshots-table th,
+.aptoria-snapshots-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.aptoria-snapshots-table .aptoria-snapshot-cell,
+.aptoria-snapshots-table .aptoria-score-cell {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+.aptoria-snapshots-table .progress {
+    width: 100%;
+    min-width: 0 !important;
+    max-width: 100%;
+}
+.aptoria-snapshots-table .badge {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.aptoria-snapshots-table .aptoria-actions-cell {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+}
+
+/* Audit log is a wide page table. Percent columns force it to consume the full card width. */
+.aptoria-audit-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+.aptoria-audit-table .aptoria-col-time { width: 14%; }
+.aptoria-audit-table .aptoria-col-severity { width: 8%; }
+.aptoria-audit-table .aptoria-col-action { width: 13%; }
+.aptoria-audit-table .aptoria-col-summary { width: 35%; }
+.aptoria-audit-table .aptoria-col-user { width: 16%; }
+.aptoria-audit-table .aptoria-col-project { width: 14%; }
+.aptoria-audit-table .aptoria-audit-time,
+.aptoria-audit-table .aptoria-audit-action,
+.aptoria-audit-table .aptoria-audit-summary,
+.aptoria-audit-table .aptoria-audit-user,
+.aptoria-audit-table .aptoria-audit-project {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.aptoria-audit-table .badge {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.aptoria-audit-table th,
+.aptoria-audit-table td {
+    overflow: hidden;
+}
+
+@media (max-width: 1199.98px) {
+    .aptoria-audit-table .aptoria-col-time { width: 16%; }
+    .aptoria-audit-table .aptoria-col-severity { width: 9%; }
+    .aptoria-audit-table .aptoria-col-action { width: 13%; }
+    .aptoria-audit-table .aptoria-col-summary { width: 32%; }
+    .aptoria-audit-table .aptoria-col-user { width: 16%; }
+    .aptoria-audit-table .aptoria-col-project { width: 14%; }
+}
+
+/* v0.0.7 Audit Log page review: keep the menu page readable without DataTables layout drift. */
+.aptoria-audit-log-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+.aptoria-audit-log-table .aptoria-col-time { width: 13%; }
+.aptoria-audit-log-table .aptoria-col-severity { width: 8%; }
+.aptoria-audit-log-table .aptoria-col-event { width: 10%; }
+.aptoria-audit-log-table .aptoria-col-action { width: 13%; }
+.aptoria-audit-log-table .aptoria-col-summary { width: 34%; }
+.aptoria-audit-log-table .aptoria-col-user { width: 11%; }
+.aptoria-audit-log-table .aptoria-col-project { width: 11%; }
+.aptoria-audit-log-table th,
+.aptoria-audit-log-table td {
+    overflow: hidden;
+    vertical-align: middle;
+}
+.aptoria-audit-log-table .aptoria-audit-time,
+.aptoria-audit-log-table .aptoria-audit-severity,
+.aptoria-audit-log-table .aptoria-audit-event,
+.aptoria-audit-log-table .aptoria-audit-action,
+.aptoria-audit-log-table .aptoria-audit-summary,
+.aptoria-audit-log-table .aptoria-audit-subject,
+.aptoria-audit-log-table .aptoria-audit-user,
+.aptoria-audit-log-table .aptoria-audit-project {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.aptoria-audit-log-table .aptoria-audit-summary {
+    font-weight: 500;
+}
+.aptoria-audit-log-table .badge {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.aptoria-pagination-wrap .pagination {
+    margin-bottom: 0;
+}
+@media (max-width: 1199.98px) {
+    .aptoria-audit-log-table .aptoria-col-time { width: 15%; }
+    .aptoria-audit-log-table .aptoria-col-severity { width: 9%; }
+    .aptoria-audit-log-table .aptoria-col-event { width: 10%; }
+    .aptoria-audit-log-table .aptoria-col-action { width: 12%; }
+    .aptoria-audit-log-table .aptoria-col-summary { width: 32%; }
+    .aptoria-audit-log-table .aptoria-col-user { width: 11%; }
+    .aptoria-audit-log-table .aptoria-col-project { width: 11%; }
+}
+
+/* v0.0.10 QA Calendar */
+.aptoria-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border: 1px solid var(--ins-border-color);
+    border-radius: var(--ins-border-radius);
+    overflow: hidden;
+    background: var(--ins-body-bg);
+}
+.aptoria-calendar-weekday {
+    padding: .6rem .65rem;
+    background: var(--ins-tertiary-bg);
+    border-bottom: 1px solid var(--ins-border-color);
+    font-size: .73rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--ins-secondary-color);
+}
+.aptoria-calendar-day {
+    min-height: 112px;
+    padding: .65rem;
+    border-right: 1px solid var(--ins-border-color);
+    border-bottom: 1px solid var(--ins-border-color);
+    min-width: 0;
+}
+.aptoria-calendar-day:nth-child(7n + 7) { border-right: 0; }
+.aptoria-calendar-day.is-muted { color: var(--ins-secondary-color); background: rgba(var(--ins-light-rgb), .25); }
+.aptoria-calendar-day.is-today { outline: 2px solid rgba(var(--ins-primary-rgb), .35); outline-offset: -2px; }
+.aptoria-calendar-chip {
+    display: block;
+    padding: .22rem .35rem;
+    border-radius: .35rem;
+    font-size: .72rem;
+    margin-bottom: .25rem;
+    max-width: 100%;
+}
+.aptoria-calendar-title-cell { max-width: 280px; }
+.aptoria-calendar-table { table-layout: fixed; }
+.aptoria-calendar-table th:nth-child(1), .aptoria-calendar-table td:nth-child(1) { width: 34%; }
+.aptoria-calendar-table th:nth-child(2), .aptoria-calendar-table td:nth-child(2) { width: 19%; }
+.aptoria-calendar-table th:nth-child(3), .aptoria-calendar-table td:nth-child(3) { width: 16%; }
+.aptoria-calendar-table th:nth-child(4), .aptoria-calendar-table td:nth-child(4) { width: 12%; }
+.aptoria-calendar-table th:nth-child(5), .aptoria-calendar-table td:nth-child(5) { width: 11%; }
+.aptoria-calendar-table th:nth-child(6), .aptoria-calendar-table td:nth-child(6) { width: 8%; }
+@media (max-width: 991.98px) {
+    .aptoria-calendar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .aptoria-calendar-weekday { display: none; }
+    .aptoria-calendar-day { min-height: 96px; }
+}
+
+/* Aptoria v0.0.11 - no active project UX guard */
+.aptoria-sidebar-project-empty {
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: 14px;
+    padding: .75rem;
+    background: rgba(248, 250, 252, .72);
+}
+.aptoria-no-project-card {
+    border: 1px solid rgba(148, 163, 184, .24);
+    background:
+        radial-gradient(circle at top right, rgba(13, 110, 253, .08), transparent 28%),
+        var(--ins-card-bg, #fff);
+}
+.aptoria-no-project-card .badge,
+.aptoria-no-project-steps .fw-medium,
+.aptoria-project-required-ribbon strong {
+    font-weight: 400;
+}
+.aptoria-no-project-steps .border {
+    border-color: rgba(148, 163, 184, .28) !important;
+}
+.aptoria-project-required-ribbon {
+    border-radius: 14px;
+}
+
+
+/* v0.0.22 table consistency hotfix: Report versions must use the same Aptoria data table contract as other modules. */
+.content-page .aptoria-report-versions-table .aptoria-report-type-cell,
+.content-page .aptoria-report-versions-table .aptoria-report-source-cell,
+.content-page .aptoria-report-versions-table .aptoria-report-checksum-cell {
+    max-width: 100%;
+    min-width: 0;
+}
+.content-page .aptoria-report-versions-table .aptoria-report-source-cell,
+.content-page .aptoria-report-versions-table .aptoria-report-checksum-cell {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.content-page .aptoria-report-versions-table .dropdown-menu {
+    min-width: 13rem;
+}
+
+/* v0.0.29 hotfix: content-fit cards and panels.
+   Cards/panels should not stretch just because they share a row. They should only take the height their own content needs. */
+.content-page .card.h-100,
+.content-page .card.card-h-100,
+.content-page .aptoria-panel-card.h-100,
+.content-page .aptoria-widget-card.card-h-100,
+.content-page .aptoria-metric-card.h-100,
+.content-page .aptoria-project-dashboard-hero.card-h-100,
+.content-page .aptoria-table-card.h-100,
+.content-page .border.h-100,
+.content-page .rounded.h-100,
+.modal .card.h-100,
+.modal .border.h-100,
+.aptoria-setup-page .card.h-100,
+.aptoria-setup-page .border.h-100 {
+    height: auto !important;
+    min-height: 0 !important;
+}
+.content-page .row.align-items-stretch,
+.modal .row.align-items-stretch,
+.aptoria-setup-page .row.align-items-stretch,
+.aptoria-install-lock-layout {
+    align-items: flex-start !important;
+}
+.content-page .aptoria-widget-card .card-body,
+.content-page .aptoria-widget-card .card-footer,
+.content-page .aptoria-module-card,
+.content-page .aptoria-check-item,
+.content-page .aptoria-panel-card,
+.content-page .aptoria-metric-card,
+.content-page .aptoria-project-dashboard-hero,
+.modal .aptoria-widget-card .card-body,
+.aptoria-setup-page .aptoria-widget-card .card-body {
+    min-height: 0 !important;
+}
+.content-page .aptoria-check-item,
+.content-page .aptoria-module-card {
+    height: auto !important;
+}
+.content-page .card > .card-body.d-flex.flex-column,
+.modal .card > .card-body.d-flex.flex-column,
+.aptoria-setup-page .card > .card-body.d-flex.flex-column {
+    justify-content: flex-start !important;
+}
+.content-page .outlook-box,
+.content-page .aptoria-calendar-shell .outlook-box,
+.content-page .aptoria-calendar-shell #aptoriaFullCalendar {
+    min-height: 0 !important;
+}
+.content-page .aptoria-calendar-shell .card.flex-grow-1 {
+    flex-grow: 0 !important;
+    width: 100%;
+}
+@media (min-width: 992px) {
+    .content-page .aptoria-calendar-shell .card.flex-grow-1 {
+        flex: 1 1 auto !important;
+    }
+}
+
+
+/* Aptoria v0.0.43 setup wizard full redesign */
+.aptoria-setup-page {
+    --aptoria-setup-blue: #1769f5;
+    --aptoria-setup-ink: #0b1f44;
+    --aptoria-setup-soft: #f5f8fc;
+    --aptoria-setup-line: #dbe5f0;
+    background: #f6f9fd;
+    min-width: 1400px;
+}
+.aptoria-setup-page > .container { max-width: none; width: 100%; padding: 0; }
+.aptoria-setup-background {
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 8% 6%, rgba(23,105,245,.10), transparent 24%),
+        radial-gradient(circle at 88% 3%, rgba(20,184,166,.10), transparent 22%),
+        linear-gradient(160deg, #ffffff 0%, #f8fbff 38%, #eef5ff 100%);
+    pointer-events: none;
+    overflow: hidden;
+}
+.aptoria-setup-background::before,
+.aptoria-setup-background::after {
+    content: "";
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    background-image: radial-gradient(#c7d4e5 1.2px, transparent 1.2px);
+    background-size: 12px 12px;
+    opacity: .65;
+}
+.aptoria-setup-background::before { left: 0; top: 0; transform: translate(-22px, -18px); }
+.aptoria-setup-background::after { right: 0; top: 165px; transform: translate(46px, 0); }
+.aptoria-setup-shell { min-height: 100vh; position: relative; z-index: 1; padding: 28px 36px 42px; }
+.aptoria-setup-brandbar { position: relative; min-height: 112px; display: grid; place-items: center; margin-bottom: 8px; }
+.aptoria-setup-brand { display: inline-flex; align-items: center; justify-content: center; }
+.aptoria-setup-brand-logo { width: 290px; height: auto; max-height: 76px; object-fit: contain; filter: drop-shadow(0 12px 24px rgba(15, 35, 70, .08)); }
+.aptoria-setup-brand-subtitle { margin-top: -8px; color: #64748b; font-weight: 500; letter-spacing: .01em; }
+.aptoria-setup-brand-actions { position: absolute; right: 0; top: 10px; display: inline-flex; gap: 12px; align-items: center; }
+.aptoria-setup-control-pill { min-height: 42px; border: 1px solid #d9e4f1 !important; background: rgba(255,255,255,.86) !important; border-radius: 9px !important; padding: 0 14px !important; box-shadow: 0 8px 20px rgba(15, 35, 70, .04); color: #0f2448 !important; }
+.aptoria-setup-viewport { max-width: 1340px; margin: 0 auto; padding: 0 0 34px; }
+.aptoria-setup-alert { max-width: 1340px; margin: 0 auto 18px; border-radius: 12px; }
+.aptoria-setup-card { overflow: hidden; border-radius: 12px !important; border: 1px solid rgba(196, 210, 228, .92) !important; box-shadow: 0 20px 44px rgba(15, 35, 70, .12) !important; background: rgba(255,255,255,.96) !important; }
+.aptoria-setup-grid { display: grid; grid-template-columns: 318px minmax(0, 1fr); min-height: 650px; }
+.aptoria-setup-stepper { display: flex; flex-direction: column; gap: 22px; padding: 34px 28px; border-right: 1px solid #dbe5f0; background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(248,251,255,.72)); }
+.aptoria-setup-stepper-list { position: relative; display: grid; gap: 10px; }
+.aptoria-stepper-item { position: relative; display: grid; grid-template-columns: 46px minmax(0,1fr); gap: 14px; align-items: center; width: 100%; min-height: 78px; border: 0; border-radius: 12px; padding: 10px 14px; background: transparent; text-align: left; color: #243856; box-shadow: none; }
+.aptoria-stepper-item:hover { background: rgba(23,105,245,.05); transform: none; border-color: transparent; box-shadow: none; }
+.aptoria-stepper-item.is-active { background: #eef5ff; color: #0f3f91; box-shadow: inset 0 0 0 1px rgba(23,105,245,.08); }
+.aptoria-stepper-line { position: absolute; left: 36px; top: -21px; bottom: 56px; width: 2px; background: #d2ddea; z-index: 0; }
+.aptoria-stepper-item:first-child .aptoria-stepper-line { display: none; }
+.aptoria-stepper-number { position: relative; z-index: 1; width: 38px; height: 38px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 38px; background: #fff; border: 2px solid #aebdd1; color: #66758c; font-weight: 700; box-shadow: 0 3px 10px rgba(15, 35, 70, .06); }
+.aptoria-stepper-item.is-active .aptoria-stepper-number { background: var(--aptoria-setup-blue); border-color: var(--aptoria-setup-blue); color: #fff; box-shadow: 0 10px 20px rgba(23,105,245,.28); }
+.aptoria-stepper-item.is-complete .aptoria-stepper-number { background: #fff; border-color: #22b378; color: #22b378; }
+.aptoria-stepper-check { display: none; width: 19px; height: 19px; }
+.aptoria-stepper-item.is-complete .aptoria-stepper-check { display: inline-block; }
+.aptoria-stepper-item.is-complete .aptoria-stepper-number > span { display: none; }
+.aptoria-stepper-copy strong { display: block; color: #10244a; font-weight: 600; }
+.aptoria-stepper-copy small { display: block; margin-top: 3px; color: #60718a; line-height: 1.35; }
+.aptoria-stepper-item.is-active .aptoria-stepper-copy strong { color: #0f3f91; }
+.aptoria-setup-help-box { margin-top: auto; display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 10px; padding: 16px; border: 1px solid #dbe5f0; border-radius: 9px; background: rgba(255,255,255,.74); box-shadow: 0 10px 24px rgba(15, 35, 70, .04); }
+.aptoria-setup-help-icon { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; color: var(--aptoria-setup-blue); background: #eff6ff; }
+.aptoria-setup-help-box strong { display: block; color: #10244a; margin-bottom: 5px; }
+.aptoria-setup-help-box p { margin: 0 0 10px; color: #64748b; font-size: .84rem; line-height: 1.45; }
+.aptoria-setup-help-link { color: var(--aptoria-setup-blue); font-weight: 600; font-size: .86rem; display: inline-flex; gap: 4px; align-items: center; }
+.aptoria-setup-help-link i { width: 14px; height: 14px; }
+.aptoria-setup-status-box { margin-top: 0; border: 1px solid #dbe5f0; border-radius: 9px; padding: 14px; background: rgba(255,255,255,.74); }
+.aptoria-setup-main { padding: 32px 36px 26px; min-width: 0; }
+.aptoria-setup-panel { display: none; min-height: 586px; animation: aptoria-step-in .28s ease-out both; }
+.aptoria-setup-panel.is-active { display: flex; flex-direction: column; }
+.aptoria-setup-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+.aptoria-setup-section-header-lg { margin-bottom: 26px; }
+.aptoria-setup-title-group { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+.aptoria-setup-icon-bubble { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: #eef5ff; color: var(--aptoria-setup-blue); flex: 0 0 54px; box-shadow: inset 0 0 0 1px rgba(23,105,245,.06); }
+.aptoria-setup-icon-bubble i { width: 27px; height: 27px; }
+.aptoria-setup-section-header h1,
+.aptoria-setup-section-header h2 { margin: 0 0 6px; color: #0b1f44; font-size: 1.38rem; line-height: 1.2; font-weight: 700; }
+.aptoria-setup-section-header p { margin: 0; max-width: 720px; color: #60718a !important; }
+.aptoria-setup-step-pill { display: inline-flex; align-items: center; margin-bottom: 8px; padding: 5px 10px; border-radius: 999px; background: #eef5ff; color: var(--aptoria-setup-blue); font-size: .75rem; font-weight: 700; }
+.aptoria-setup-feature-card,
+.aptoria-setup-premium-card { height: 100%; border: 1px solid #dbe5f0; border-radius: 12px; background: #fff; padding: 20px; box-shadow: 0 10px 24px rgba(15, 35, 70, .04); }
+.aptoria-feature-icon { width: 42px; height: 42px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 14px; }
+.aptoria-feature-icon i { width: 22px; height: 22px; }
+.aptoria-setup-feature-card h4 { margin: 0 0 8px; color: #10244a; font-size: 1rem; font-weight: 700; }
+.aptoria-setup-feature-card p { margin: 0; color: #64748b; line-height: 1.5; }
+.aptoria-setup-note,
+.aptoria-setup-inline-info { display: flex; align-items: flex-start; gap: 10px; border: 1px solid #dbe5f0; border-radius: 9px; padding: 13px 15px; background: #f9fbfe; color: #55677f; }
+.aptoria-setup-note i,
+.aptoria-setup-inline-info i { width: 19px; height: 19px; color: #64748b; flex: 0 0 19px; margin-top: 1px; }
+.aptoria-env-checks { display: grid; gap: 8px; }
+.aptoria-env-check-row { display: grid; grid-template-columns: 42px minmax(0,1fr) 260px 106px; align-items: center; gap: 12px; min-height: 66px; padding: 10px 14px; border: 1px solid #dbe5f0; border-radius: 8px; background: #fff; opacity: .94; transform: translateY(0); transition: opacity .2s ease, transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.aptoria-env-check-row.is-current { border-color: rgba(23,105,245,.45); box-shadow: 0 8px 20px rgba(23,105,245,.08); }
+.aptoria-env-check-row.is-complete { opacity: 1; }
+.aptoria-env-check-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: #eef4fc; color: var(--aptoria-setup-blue); }
+.aptoria-env-check-icon i { width: 19px; height: 19px; }
+.aptoria-env-check-title { font-weight: 700; color: #10244a; }
+.aptoria-env-check-detail, .aptoria-env-check-fix { color: #60718a; font-size: .82rem; word-break: break-word; }
+.aptoria-env-check-fix { margin-top: 2px; color: #a16207; }
+.aptoria-env-check-progress { height: 4px; border-radius: 999px; overflow: hidden; background: #dfe6ef; }
+.aptoria-env-check-progress span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--aptoria-setup-blue); transition: width .32s ease; }
+.aptoria-env-check-result { justify-self: end; }
+.aptoria-mini-spinner { width: 20px; height: 20px; display: inline-block; border: 3px dotted var(--aptoria-setup-blue); border-radius: 999px; animation: aptoria-spinner-rotate 1.1s linear infinite; }
+.aptoria-setup-check-status-pill { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; background: #f2f7ff; color: var(--aptoria-setup-blue); font-weight: 700; font-size: .82rem; white-space: nowrap; }
+.aptoria-setup-check-status-pill i { width: 5px; height: 5px; border-radius: 999px; background: var(--aptoria-setup-blue); display: inline-block; animation: aptoria-dot-pulse 1s ease-in-out infinite; }
+.aptoria-setup-check-status-pill i:nth-child(3) { animation-delay: .12s; }
+.aptoria-setup-check-status-pill i:nth-child(4) { animation-delay: .24s; }
+.aptoria-auto-action-list { display: grid; gap: 8px; }
+.aptoria-auto-action-row { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; gap: 12px; align-items: center; border: 1px solid #dbe5f0; border-radius: 8px; padding: 12px 14px; background: #fff; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.aptoria-auto-action-row:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(15,35,70,.06); }
+.aptoria-auto-action-icon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: #eef5ff; color: var(--aptoria-setup-blue); }
+.aptoria-auto-action-body strong { display: block; color: #10244a; }
+.aptoria-auto-action-body span { display:block; color: #64748b; font-size: .82rem; line-height: 1.4; }
+.aptoria-default-admin-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
+.aptoria-default-admin-head h4 { margin: 0 0 4px; color: #10244a; }
+.aptoria-default-admin-head p { margin: 0; color: #64748b; }
+.aptoria-admin-credential-list { display: grid; gap: 10px; margin-top: 18px; }
+.aptoria-admin-credential-row { display: flex; justify-content: space-between; gap: 12px; align-items:center; border: 1px solid #dbe5f0; border-radius: 8px; padding: 12px 14px; background: #f9fbfe; }
+.aptoria-admin-credential-row span { color: #64748b; }
+.aptoria-install-stack { display: grid; gap: 14px; }
+.aptoria-install-flow-card { border-color: rgba(23,105,245,.18); }
+.aptoria-install-steps { display: grid; gap: 10px; padding-left: 1.2rem; color: #40546f; }
+.aptoria-install-action-card { display: grid; grid-template-columns: 62px minmax(0,1fr) auto; align-items: center; gap: 16px; border: 1px solid rgba(34,179,120,.28); border-radius: 12px; background: #fff; padding: 18px; box-shadow: 0 10px 28px rgba(20,83,45,.08); }
+.aptoria-install-action-icon { width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; background: #ecfdf5; color: #16a36a; margin: 0; }
+.aptoria-install-action-icon i { width: 27px; height: 27px; }
+.aptoria-install-action-content h4 { margin: 0 0 4px; color: #10244a; }
+.aptoria-install-action-content p { margin: 0 0 10px; color: #64748b; }
+.aptoria-install-confirm { display:flex; gap: 9px; align-items:flex-start; margin: 0; padding: 10px 12px; border: 1px solid #e6d7a8; border-radius: 8px; background: #fff8e6; color: #65430a; }
+.aptoria-install-action-buttons { display: inline-flex; gap: 10px; align-items: center; }
+.aptoria-setup-lock-button { width: auto; min-height: 44px; padding-left: 18px; padding-right: 18px; border-radius: 8px; display:inline-flex; align-items:center; justify-content:center; gap: 8px; }
+.aptoria-setup-bottom-bar { margin-top: auto; padding-top: 20px; display: grid; grid-template-columns: 170px minmax(0,1fr) auto; align-items: center; gap: 16px; border-top: 1px solid #eef2f7; }
+.aptoria-setup-bottom-bar > .btn { justify-self: start; min-width: 120px; border-radius: 8px; min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.aptoria-setup-next { justify-self: end !important; min-width: 150px !important; box-shadow: 0 10px 22px rgba(23,105,245,.22); }
+.aptoria-setup-step-dots { justify-self: center; display: inline-flex; align-items: center; gap: 14px; }
+.aptoria-setup-step-dots span { width: 7px; height: 7px; border-radius: 999px; background: #c9d5e5; transition: transform .18s ease, background-color .18s ease; }
+.aptoria-setup-step-dots span.is-active { background: var(--aptoria-setup-blue); transform: scale(1.3); }
+.aptoria-setup-step-dots span.is-complete { background: #a8bdd8; }
+.aptoria-setup-page-loader, .aptoria-install-progress-overlay { background: #fff; }
+.aptoria-setup-loader-card, .aptoria-install-progress-card { border-radius: 14px; border-color: #dbe5f0; box-shadow: 0 22px 54px rgba(15,35,70,.14); }
+.aptoria-swal-popup { border-radius: 14px !important; border: 1px solid #dbe5f0 !important; box-shadow: 0 24px 64px rgba(15,35,70,.18) !important; }
+.aptoria-swal-popup .swal2-title { color: #0b1f44; font-size: 1.28rem; font-weight: 700; }
+.aptoria-swal-actions { gap: .65rem; }
+.aptoria-swal-confirm, .aptoria-swal-cancel { border-radius: 8px; min-height: 42px; min-width: 130px; }
+@keyframes aptoria-spinner-rotate { to { transform: rotate(360deg); } }
+@keyframes aptoria-dot-pulse { 0%, 100% { opacity: .35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-1px); } }
+@media (max-width: 1399.98px) {
+    .aptoria-setup-page .aptoria-guided-setup { filter: blur(1px); pointer-events: none; }
+}
+.aptoria-setup-page .btn-primary {
+    background-color: var(--aptoria-setup-blue) !important;
+    border-color: var(--aptoria-setup-blue) !important;
+    color: #fff !important;
+}
+.aptoria-setup-page .btn-primary:hover,
+.aptoria-setup-page .btn-primary:focus {
+    background-color: #0f5ee9 !important;
+    border-color: #0f5ee9 !important;
+}
+.aptoria-setup-page .btn-success {
+    background-color: #16a36a !important;
+    border-color: #16a36a !important;
+    color: #fff !important;
+}
+
+/* v0.0.43 setup polish hotfix: Tabler-first setup icons, no status card, clean install actions row. */
+.aptoria-setup-page .aptoria-setup-status-box {
+    display: none !important;
+}
+.aptoria-setup-page .ti,
+.aptoria-setup-page .aptoria-icon-ready {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.aptoria-setup-page .ti::before {
+    line-height: 1;
+}
+.aptoria-setup-page .aptoria-icon-svg {
+    width: 1em;
+    height: 1em;
+}
+.aptoria-setup-page .aptoria-setup-icon-bubble .ti,
+.aptoria-setup-page .aptoria-setup-icon-bubble .aptoria-icon-svg {
+    width: 28px;
+    height: 28px;
+    font-size: 28px;
+}
+.aptoria-setup-page .aptoria-env-check-icon .ti,
+.aptoria-setup-page .aptoria-env-check-icon .aptoria-icon-svg,
+.aptoria-setup-page .aptoria-auto-action-icon .ti,
+.aptoria-setup-page .aptoria-auto-action-icon .aptoria-icon-svg {
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+}
+.aptoria-setup-page .aptoria-feature-icon .ti,
+.aptoria-setup-page .aptoria-feature-icon .aptoria-icon-svg {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+}
+.aptoria-setup-page .aptoria-setup-note > .ti,
+.aptoria-setup-page .aptoria-setup-inline-info > .ti,
+.aptoria-setup-page .aptoria-setup-note > .aptoria-icon-ready,
+.aptoria-setup-page .aptoria-setup-inline-info > .aptoria-icon-ready {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+.aptoria-setup-page .aptoria-stepper-number .ti,
+.aptoria-setup-page .aptoria-stepper-number .aptoria-icon-svg {
+    width: 21px;
+    height: 21px;
+    font-size: 21px;
+}
+.aptoria-setup-page .aptoria-install-action-icon .ti,
+.aptoria-setup-page .aptoria-install-action-icon .aptoria-icon-svg {
+    width: 28px;
+    height: 28px;
+    font-size: 28px;
+}
+.aptoria-setup-page .btn .ti,
+.aptoria-setup-page .btn .aptoria-icon-svg {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+.aptoria-setup-page .aptoria-install-action-card {
+    grid-template-columns: 62px minmax(0, 1fr) !important;
+    align-items: start;
+}
+.aptoria-setup-page .aptoria-install-action-buttons {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding-top: 16px;
+    margin-top: 2px;
+    border-top: 1px solid #eef2f7;
+}
+.aptoria-setup-page .aptoria-install-action-buttons .btn {
+    min-height: 44px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.aptoria-setup-page .aptoria-install-action-buttons .btn-light {
+    min-width: 116px;
+}
+.aptoria-setup-page .aptoria-install-action-buttons .aptoria-setup-lock-button {
+    min-width: 220px;
+}
+
+/* v0.0.44 standalone security / first-run hardening */
+.aptoria-security-hardening-panel {
+    border: 1px solid #dbe5f0;
+    border-radius: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(236, 245, 255, .86), rgba(255,255,255,.92));
+    box-shadow: 0 14px 34px rgba(15,35,70,.06);
+}
+.aptoria-security-hardening-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.aptoria-security-hardening-head h4 {
+    margin: 0 0 4px;
+    color: #10244a;
+    font-size: 1rem;
+}
+.aptoria-security-hardening-head p {
+    margin: 0;
+    color: #64748b;
+    font-size: .84rem;
+    line-height: 1.45;
+}
+.aptoria-security-hardening-grid {
+    display: grid;
+    gap: 8px;
+}
+.aptoria-security-hardening-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(219,229,240,.9);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.86);
+}
+.aptoria-security-hardening-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+}
+.aptoria-security-hardening-copy strong {
+    display: block;
+    font-size: .86rem;
+    color: #10244a;
+}
+.aptoria-security-hardening-copy small {
+    display: block;
+    color: #64748b;
+    line-height: 1.35;
+}
+.aptoria-password-policy-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+}
+.aptoria-password-policy-list span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ins-secondary-color);
+    font-size: .78rem;
+}
+.aptoria-password-policy-list i { color: var(--ins-success); }
+html[data-bs-theme="dark"] .aptoria-security-hardening-panel,
+html[data-bs-theme="dark"] .aptoria-security-hardening-item {
+    background: var(--ins-tertiary-bg);
+    border-color: var(--ins-border-color);
+}
+html[data-bs-theme="dark"] .aptoria-security-hardening-head h4,
+html[data-bs-theme="dark"] .aptoria-security-hardening-copy strong { color: var(--ins-heading-color); }
+html[data-bs-theme="dark"] .aptoria-security-hardening-head p,
+html[data-bs-theme="dark"] .aptoria-security-hardening-copy small { color: var(--ins-secondary-color); }
+@media (max-width: 991.98px) {
+    .aptoria-security-hardening-item { grid-template-columns: 34px minmax(0, 1fr); }
+    .aptoria-security-hardening-item .badge { grid-column: 2; justify-self: start; }
+}
+
+/* v0.0.47 hotfix - evidence intake form consistency */
+.aptoria-form-shell {
+    overflow: hidden;
+}
+.aptoria-form-section {
+    border: 1px solid var(--ins-border-color);
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--ins-card-bg, var(--ins-body-bg));
+}
+.aptoria-form-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--ins-border-color);
+}
+.aptoria-form-section-header h6 {
+    font-size: .92rem;
+    font-weight: 400;
+    margin: 0;
+}
+.aptoria-form-section-header p {
+    line-height: 1.45;
+}
+.aptoria-evidence-intake-form textarea.form-control {
+    min-height: 110px;
+    resize: vertical;
+}
+.aptoria-evidence-intake-form .form-label {
+    font-weight: 400;
+}
+.aptoria-evidence-intake-form .form-text {
+    font-size: .78rem;
+    line-height: 1.35;
+}
+@media (max-width: 767.98px) {
+    .aptoria-form-section {
+        padding: 14px;
+        border-radius: 12px;
+    }
+    .aptoria-form-section-header {
+        align-items: flex-start;
+    }
+}
+
+/* v0.0.48 Import Adapter Layer */
+.aptoria-adapter-option {
+    cursor: pointer;
+    display: block;
+}
+
+.aptoria-adapter-option .aptoria-form-section {
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.aptoria-adapter-option:hover .aptoria-form-section,
+.aptoria-adapter-option:focus-within .aptoria-form-section {
+    border-color: rgba(13, 110, 253, .35);
+    box-shadow: 0 .25rem .75rem rgba(15, 23, 42, .08);
+}
+
+.aptoria-adapter-option input:checked + .aptoria-form-section {
+    border-color: rgba(25, 135, 84, .55);
+    box-shadow: 0 0 0 .15rem rgba(25, 135, 84, .12);
+}
+
+/* v0.0.49 hotfix - native test forms return to scrollable modal workflow */
+.aptoria-scrollable-form-dialog {
+    --aptoria-scrollable-form-max-height: calc(100vh - 3.5rem);
+}
+.aptoria-scrollable-form-dialog .modal-content {
+    max-height: var(--aptoria-scrollable-form-max-height);
+    overflow: hidden;
+}
+.aptoria-scrollable-form-dialog .modal-content.aptoria-form-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.aptoria-scrollable-form-header,
+.aptoria-scrollable-form-footer {
+    flex: 0 0 auto;
+    background: var(--bs-modal-bg);
+    z-index: 2;
+}
+.aptoria-scrollable-form-header {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.aptoria-scrollable-form-footer {
+    border-top: 1px solid var(--bs-border-color);
+}
+.aptoria-scrollable-form-body {
+    overflow-y: auto !important;
+    max-height: calc(var(--aptoria-scrollable-form-max-height) - 9.5rem);
+    min-height: 0;
+    overscroll-behavior: contain;
+}
+.aptoria-scrollable-form-dialog textarea.form-control {
+    min-height: 5.25rem;
+    resize: vertical;
+}
+.aptoria-scrollable-form-dialog .form-label {
+    font-weight: 400;
+}
+.aptoria-scrollable-form-dialog .form-text {
+    font-size: .78rem;
+    line-height: 1.35;
+}
+@media (max-width: 767.98px) {
+    .aptoria-scrollable-form-dialog {
+        --aptoria-scrollable-form-max-height: calc(100vh - 1rem);
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+    .aptoria-scrollable-form-body {
+        max-height: calc(var(--aptoria-scrollable-form-max-height) - 8.75rem);
+    }
+}
+
+/* v0.0.50 hotfix: content-driven table columns and centered auth branding.
+   Resource tables must size columns from their content, not from fixed equal widths.
+   Long text wraps/truncates inside the cell while status/action columns keep compact natural width. */
+.content-page .aptoria-table-card .table-responsive,
+.content-page .aptoria-table-card .dt-container,
+.content-page .aptoria-table-card .dt-layout-table,
+.content-page .aptoria-table-card .dt-layout-full,
+.content-page .aptoria-table-card .dt-scroll,
+.content-page .aptoria-table-card .dt-scroll-head,
+.content-page .aptoria-table-card .dt-scroll-body,
+.content-page .aptoria-table-card .dt-scroll-foot {
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+.content-page .aptoria-table-card .table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+.content-page table.aptoria-resource-table,
+.content-page .aptoria-table-card table[data-tables],
+.content-page .aptoria-table-card .aptoria-resource-table,
+.content-page .aptoria-snapshots-table,
+.content-page .aptoria-audit-table,
+.content-page .aptoria-audit-log-table,
+.content-page .aptoria-calendar-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: auto !important;
+}
+.content-page table.aptoria-resource-table col,
+.content-page table.aptoria-resource-table [class^="aptoria-col-"],
+.content-page table.aptoria-resource-table [class*=" aptoria-col-"] {
+    width: auto !important;
+}
+.content-page table.aptoria-resource-table th,
+.content-page table.aptoria-resource-table td,
+.content-page .aptoria-table-card table[data-tables] th,
+.content-page .aptoria-table-card table[data-tables] td {
+    width: auto !important;
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    vertical-align: middle;
+}
+.content-page table.aptoria-resource-table thead th,
+.content-page .aptoria-table-card table[data-tables] thead th {
+    white-space: nowrap;
+}
+.content-page table.aptoria-resource-table .aptoria-actions-cell,
+.content-page .aptoria-table-card table[data-tables] .aptoria-actions-cell,
+.content-page table.aptoria-resource-table th:last-child,
+.content-page table.aptoria-resource-table td:last-child {
+    width: 1% !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+    text-align: right;
+}
+.content-page table.aptoria-resource-table .badge,
+.content-page table.aptoria-resource-table .btn,
+.content-page table.aptoria-resource-table .dropdown,
+.content-page table.aptoria-resource-table .dropdown-toggle,
+.content-page table.aptoria-resource-table .aptoria-table-action-btn {
+    white-space: nowrap !important;
+}
+.content-page table.aptoria-resource-table .text-truncate,
+.content-page table.aptoria-resource-table code,
+.content-page table.aptoria-resource-table .aptoria-url-cell,
+.content-page table.aptoria-resource-table .aptoria-endpoint-path-cell,
+.content-page table.aptoria-resource-table .aptoria-endpoint-name-cell,
+.content-page table.aptoria-resource-table .aptoria-audit-time,
+.content-page table.aptoria-resource-table .aptoria-audit-severity,
+.content-page table.aptoria-resource-table .aptoria-audit-event,
+.content-page table.aptoria-resource-table .aptoria-audit-action,
+.content-page table.aptoria-resource-table .aptoria-audit-summary,
+.content-page table.aptoria-resource-table .aptoria-audit-subject,
+.content-page table.aptoria-resource-table .aptoria-audit-user,
+.content-page table.aptoria-resource-table .aptoria-audit-project {
+    display: block;
+    max-width: min(460px, 42vw) !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.content-page table.aptoria-resource-table .text-wrap,
+.content-page table.aptoria-resource-table .aptoria-wrap-cell {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: min(520px, 46vw) !important;
+}
+.content-page table.aptoria-resource-table .progress {
+    min-width: 92px;
+}
+.auth-bg .aptoria-auth-logo,
+.auth-bg .aptoria-brand-logo.aptoria-auth-logo,
+.auth-bg .aptoria-auth-brand .aptoria-brand-logo {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.aptoria-auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+@media (max-width: 991.98px) {
+    .content-page table.aptoria-resource-table .text-truncate,
+    .content-page table.aptoria-resource-table code,
+    .content-page table.aptoria-resource-table .aptoria-url-cell,
+    .content-page table.aptoria-resource-table .aptoria-endpoint-path-cell,
+    .content-page table.aptoria-resource-table .aptoria-endpoint-name-cell,
+    .content-page table.aptoria-resource-table .aptoria-audit-time,
+    .content-page table.aptoria-resource-table .aptoria-audit-severity,
+    .content-page table.aptoria-resource-table .aptoria-audit-event,
+    .content-page table.aptoria-resource-table .aptoria-audit-action,
+    .content-page table.aptoria-resource-table .aptoria-audit-summary,
+    .content-page table.aptoria-resource-table .aptoria-audit-subject,
+    .content-page table.aptoria-resource-table .aptoria-audit-user,
+    .content-page table.aptoria-resource-table .aptoria-audit-project {
+        max-width: 240px !important;
+    }
+    .content-page table.aptoria-resource-table .aptoria-actions-cell,
+    .content-page table.aptoria-resource-table th:last-child,
+    .content-page table.aptoria-resource-table td:last-child {
+        width: 1% !important;
+        min-width: max-content !important;
+        max-width: none !important;
+    }
+}
+
+/* v0.0.51/0.0.52 - UI & workflow stabilization */
+.aptoria-scrollable-form-modal .modal-dialog,
+.modal-dialog.aptoria-scrollable-form-modal {
+    max-width: min(1120px, calc(100vw - 2rem));
+}
+.aptoria-scrollable-form-modal .modal-content,
+.modal-dialog.aptoria-scrollable-form-modal .modal-content {
+    max-height: calc(100vh - 3rem);
+}
+.aptoria-scrollable-form-modal .modal-header,
+.aptoria-scrollable-form-modal .modal-footer,
+.modal-dialog.aptoria-scrollable-form-modal .modal-header,
+.modal-dialog.aptoria-scrollable-form-modal .modal-footer {
+    flex: 0 0 auto;
+}
+.aptoria-scrollable-form-modal .modal-body,
+.modal-dialog.aptoria-scrollable-form-modal .modal-body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 12rem);
+}
+.aptoria-form-section,
+.aptoria-workflow-section {
+    border: 1px solid var(--bs-border-color);
+    border-radius: .75rem;
+    padding: 1rem;
+    background: var(--bs-body-bg);
+}
+.aptoria-form-section + .aptoria-form-section,
+.aptoria-workflow-section + .aptoria-workflow-section {
+    margin-top: 1rem;
+}
+.aptoria-form-section-title,
+.aptoria-workflow-section-title {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .75rem;
+    font-weight: 500;
+}
+.aptoria-coverage-matrix-table th,
+.aptoria-coverage-matrix-table td {
+    vertical-align: middle;
+}
+.aptoria-coverage-matrix-table .badge {
+    white-space: nowrap;
+}
+.aptoria-coverage-matrix-table .aptoria-actions-cell {
+    width: 1% !important;
+    min-width: max-content !important;
+}
+.aptoria-panel-card .progress.progress-sm {
+    height: .42rem;
+}
+.aptoria-panel-card .card-header .avatar svg,
+.aptoria-table-card .card-header .avatar svg {
+    width: 1rem;
+    height: 1rem;
+}
+.aptoria-scrollable-form-dialog .modal-content {
+    max-height: calc(100vh - 3rem);
+}
+.aptoria-scrollable-form-dialog .modal-header,
+.aptoria-scrollable-form-dialog .modal-footer {
+    flex: 0 0 auto;
+}
+.aptoria-scrollable-form-dialog .modal-body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 12rem);
+}

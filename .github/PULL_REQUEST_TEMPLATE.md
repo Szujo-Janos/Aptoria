@@ -4,6 +4,7 @@ Describe the change and the user-facing workflow it affects.
 
 ## QA performed
 
+- [ ] PHP syntax check completed
 - [ ] `C:\xampp\php\php.exe artisan optimize:clear`
 - [ ] `C:\xampp\php\php.exe artisan migrate`
 - [ ] `C:\xampp\php\php.exe artisan test`

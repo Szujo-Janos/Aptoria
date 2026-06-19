@@ -1,1034 +1,206 @@
-## [1.1.32] - Stale v2 test cleanup hotfix
+## v0.0.53 - Release Gate Report & Decision Package
 
-### Fixed
-- Added a v1.1.32-compatible `UiFoundationLayoutTest` so stale Aptoria 2.0 UI foundation assertions are overwritten when copying this package over an existing working tree.
-- Kept the package on v1.1.32 because this is a cleanup hotfix after reverting the project baseline.
+- Added `ReleaseGateDecisionPackageService` to turn a release gate into a fixed decision package instead of a loose workflow screen.
+- Added release-gate-linked report versions through `report_versions.release_gate_id` for traceability from Reports back to the exact gate.
+- Added a Release Gate Decision Package panel on gate detail pages with report generation and HTML/PDF/JSON/ZIP exports.
+- Decision package reports include project context, gate status, final decision, score, blocker/warning counts, verified evidence, gate items, source state and gate timeline.
+- Added formatted PDF export for release gate decision packages using the same branded report renderer family as Evidence Pack PDFs.
+- Added dependency-free ZIP export containing README, Markdown report, standardized HTML, formatted PDF, structured JSON and checksum manifest.
+- Package report versions can be reviewed, approved and delivered through the existing Reports / Client Portal workflow after generation.
+- Added audit and release gate timeline events for decision package creation.
+- Added EN/HU translations, documentation and feature coverage for the decision package foundation.
 
-## [1.1.32]
+## v0.0.52 - QA Cockpit / Coverage / Blind Spot Foundation
 
-### Fixed
-- Members & Roles dashboard redesign polish.
+- Added the QA Cockpit as a project-scoped evidence quality command view.
+- Added `QaCockpitService` to calculate QA confidence score, scan/test/evidence coverage, verified evidence ratio and blocker health from existing Aptoria data.
+- Added endpoint-level coverage matrix showing safe scan proof, quick/native test proof, verified evidence, findings and per-endpoint coverage score.
+- Added blind spot detection for missing endpoint inventory, missing scan/test/evidence proof, unverified evidence, open high/critical findings, failed native test runs, missing readiness/gate and missing fixed exports.
+- Added QA Cockpit sidebar/topbar navigation with semantic `scan-search` icon and project access permission integration.
+- Added documentation and feature coverage for the cockpit foundation.
 
-# Changelog
+## v0.0.51 - UI & Workflow Stabilization Pass
 
-## Aptoria v1.1.32 – Release Workflow State Machine Pass
+- Stabilized the current UI surface before adding more large feature modules.
+- Added shared scrollable modal behavior for long Aptoria form dialogs so modal headers/footers remain usable while the body scrolls.
+- Reinforced form-section and workflow-section styling for consistent modal/page forms across Native Test, Release Gate and future modules.
+- Updated project workspace module metadata to point implemented modules to real project routes instead of placeholder pages.
+- Added QA Cockpit to workspace navigation and fixed topbar snapshot navigation to the real snapshot route.
+- Added documentation for the table/form/modal/workflow stabilization rules.
 
-### Added
+## v0.0.50 Hotfix - Table Auto Sizing & Auth Logo Alignment
 
-- Added persistent release workflow state records through `release_workflows` and `release_workflow_steps`.
-- Rebuilt the Project → Release Workflow screen as a 15-step state machine from project setup to client acknowledgement.
-- Added workflow states: Not started, In progress, Blocked, Needs review, Ready, Completed and Skipped with reason.
-- Added blocker counts, missing evidence counts, completion criteria, required actions and next-action resolution for every workflow step.
-- Added release pre-check summary to show which steps block release finalization.
-- Added manual skip-with-reason and reopen actions for release approvers / project admins.
-- Added workflow snapshot data into saved release decision packages.
-- Added audit records for skipped and reopened workflow steps.
+- Replaced the old fixed/equal resource table column fallback with content-driven auto column sizing across Aptoria resource tables.
+- Kept action/status columns compact and nowrap while allowing long descriptive cells to wrap or truncate safely inside the panel.
+- Fixed the Release Gate item table so the Review action button is no longer squeezed by a fixed action column.
+- Switched DataTables auto-width calculation back on so initialized tables size columns from rendered content.
+- Centered the auth/login logo with a dedicated auth brand wrapper and explicit auto margins.
+- Added documentation for the new table sizing and auth logo rules.
 
-### Fixed
-- Members & Roles UX redesign: split internal user directory, new-user creation, current project members, role matrix and current permission summary into clearer sections.
-- Added available-user list so project admins can see who can be added to the project without typing unknown e-mail addresses blindly.
-- Project membership form can create a missing internal Aptoria user and immediately assign a project role, avoiding the dead-end “user does not exist” flow.
-- Completed the Members & Roles localization pass so internal permission abilities no longer appear as raw codes such as `project.view` or `release.finalize` in the UI.
-- Added translated role and permission labels for both English and Hungarian, including the current project permissions panel and role matrix.
-- Localized project membership access-denied messages and audit summaries used by the internal role system.
-- Added a language audit note at `docs/LANGUAGE_AUDIT_v1.1.32.md` with the checks run for this hotfix.
-- Regression hotfix: kept the disabled page-load animation helper as `$.fn.animatePanel` so existing UI asset guards continue to pass while animations remain no-op.
+## v0.0.50 - Release Gate Workflow Foundation
 
-- Added missing English and Hungarian translation keys used by the header, QA Cockpit, Release Workflow, Evidence Graph, Scan form and report branding screens.
-- Restored language-key parity between `resources/lang/en/messages.php` and `resources/lang/hu/messages.php`.
-- Replaced scan form hardcoded labels/help text with translation keys.
-- Disabled page-load panel appearance/fade animations for a stable, immediate QA workspace.
+- Added release gate workflow tables: `release_gates`, `release_gate_items` and `release_gate_events`.
+- Added `ReleaseGateWorkflowService` to freeze readiness checks, evidence repository state, native test state and open high/critical finding risk into reviewable release gates.
+- Added Release Gates UI with dashboard metrics, gate list, gate detail, item review workflow and final go / conditional go / no-go decision modal.
+- Gate items preserve the automated state while allowing reviewer manual state and notes for transparent release decisions.
+- A plain Go decision is blocked while effective blocker items remain; reviewers must clear/waive blockers or use Conditional go with a note.
+- Added release gate project permissions, sidebar/topbar navigation, EN/HU translations, documentation and feature coverage.
 
-### Changed
+## v0.0.49 Hotfix - Native Test Modal Form Workflow
 
-- Release Workflow now persists a recalculated project-scoped snapshot instead of rendering only a static navigation checklist.
-- Release Decision package version now follows the current Aptoria version from the `VERSION` file.
-- Updated English and Hungarian release workflow labels, states, criteria and blocker messages.
+- Restored the Native Test Evidence forms to the expected Aptoria modal workflow for suite creation, case creation and test run recording.
+- Added scrollable XL modal shells for long native test forms so large procedure/result/finding sections stay usable without leaving the current context.
+- Kept the full form standard inside the modals: sectioned layout, labels, placeholders, help text, validation feedback and save/cancel actions.
+- Added validation-error modal reopening through `_native_test_modal` so failed submissions return to the same modal instead of leaving the user on a dead state.
+- Added generic scrollable form modal CSS for future long Aptoria modal forms.
 
-### QA
+## v0.0.49 - Native Test Evidence Model
 
-- Added workflow state machine coverage for 15 steps, persisted workflow snapshots, skip-with-reason and reopen behavior.
+- Added native `test_suites`, `test_cases` and `test_runs` domain tables so Aptoria can manage reusable QA procedures without depending on Postman/Newman/Jira.
+- Added a Native Test Evidence UI with test suite list, suite detail, case detail and dedicated standards-compliant create/record forms.
+- Recording a native test run now automatically creates `test_result` Evidence Repository proof with checksum and lifecycle history.
+- Failed native test runs can optionally create linked findings, preserving both test evidence and defect context.
+- Added native links from `finding_evidence` back to `test_case_id` and `test_run_id` for release traceability.
+- Added `tests.view` and `tests.manage` project permissions and sidebar navigation with semantic test icons.
+- Added EN/HU translations, documentation and icon renderer coverage for Native Test Evidence.
 
-# v1.1.31 - Internal Roles & Project Memberships Pass
+## v0.0.48 - Import Adapter Layer Foundation
 
-## Hotfix - Release Decision Room latest decision guard
+- Added the first explicit Import Adapter Layer so external tools feed Aptoria instead of being cloned inside it.
+- Added OpenAPI JSON adapter support that normalizes contract operations into endpoints, response assertions and contract evidence.
+- Added Generic QA CSV adapter support for manual QA/test rows, defects and evidence sheets.
+- Generic failing test-result rows now create both a `test_case` finding and `test_result` evidence.
+- Import evidence creation now goes through the Evidence Repository checksum/lifecycle path instead of a plain first-or-create record only.
+- Replaced the large Import Center modal with a dedicated, scrollable, standards-compliant import intake page.
+- Added adapter cards with semantic source icons for Postman, Newman, Jira CSV/JSON, OpenAPI, QA CSV and HAR.
+- Updated Import Center tables and details with source/entity icons rather than repeated generic import marks.
+- Added source samples, EN/HU translations, documentation and feature coverage for OpenAPI and QA CSV adapters.
 
-- Fixed a Release Decision Room view regression where the latest decision panel could throw an undefined `$latestDecision` variable during feature tests or after stale view compilation.
-- Kept the package version at v1.1.31 because this is a bugfix, not a feature release.
+## v0.0.47 Hotfix - Evidence Intake Form Consistency
 
-- Added project-scoped internal memberships with Project admin, QA engineer, Reviewer, Release approver and Read-only viewer roles.
-- Added a central project permission map and workspace middleware so non-admin users can access only their assigned projects and allowed actions.
-- Added Project → Members & Roles with role assignment, role updates, member removal, permission matrix and current-role visibility.
-- Hardened critical release/report/risk/finding/evidence actions with server-side permission checks and restricted UI states.
-- Added audit log coverage for project member changes and denied project action attempts.
-- Added feature tests for project visibility, member assignment, read-only restrictions and release/report permission separation.
+- Replaced the oversized Add Evidence modal with a dedicated scrollable Evidence intake page because the form is a complex editor with request/response excerpts and repository review context.
+- Reworked the Evidence intake form into the required Aptoria structure: panel, description, grouped form sections, fields, save/cancel actions.
+- Added labels, placeholders, help text and validation feedback slots for every Evidence intake field in both English and Hungarian.
+- Added form-section styling aligned with the existing Aptoria card/panel UI, with responsive and dark/light-compatible behavior.
+- Added regression coverage to prevent the non-scrollable modal from returning for Evidence creation.
 
-# v1.1.30 - Client Portal Handoff Visibility Polish
+## v0.0.47 - Evidence Repository Foundation
 
-- Added an Aptoria-branded fixed Client Audit Portal header with the application logo and project-scoped portal context.
-- Added a public role access summary so each client portal link clearly shows which content sections and acknowledgement actions are visible or restricted.
-- Added a safe restricted-role fallback: even if all client content permissions are disabled, the portal still shows the current client-safe release snapshot instead of feeling empty.
-- Added an internal role default permission matrix and role selector behavior so viewer, approver and reviewer permissions are understandable before creating a link.
-- Extended client portal feature coverage for restricted links and updated release documentation, install templates and QA checklist.
+- Strengthened the Evidence Center into a project-scoped repository with repository status, integrity status, checksum algorithm, reviewer/archive metadata and repository notes.
+- Added deterministic SHA-256 checksum handling through `EvidenceRepositoryService` so captured QA proof can be checked for silent content changes.
+- Added `evidence_lifecycle_events` with created, verified, archived and restored events for per-evidence audit history.
+- Changed legacy evidence delete behavior to archive instead of hard-delete so release evidence is not lost during team workflows.
+- Added Evidence detail screen with checksum panel, linked objects panel, lifecycle timeline and verify/archive/restore actions.
+- Updated Evidence Center UI with repository metrics, assurance panel, filters, semantic icons and Actions dropdowns.
+- Added evidence review permission so Reviewer and Release Approver roles can verify evidence without full evidence management rights.
+- Updated Evidence Pack manifests and Markdown output with verified/archived evidence counts and evidence checksums.
+- Added EN/HU translations, documentation and regression coverage for the repository foundation.
 
-# v1.1.29 - Workflow Consolidation & Permission Hardening Pass
+## v0.0.46 Hotfix - Semantic Access Icon Pass
 
-- Added Project → Release Workflow as a guided release sign-off flow from QA Cockpit through blind spots, readiness, release gate, release decision, report approval and client handoff.
-- Hardened Client Audit Portal backend permissions for evidence package downloads and acknowledgement actions.
-- Extended audit logging coverage to release decisions, accepted risk ledger entries and API behavior links.
-- Updated project navigation active-state handling for newer release/evidence workflow modules.
-- Added feature tests for workflow consolidation, client portal permission enforcement and audit coverage.
+- Reworked the v0.0.46 Users and Project Access icon usage so global account administration, project access control, project roles, password status and membership actions no longer reuse the same generic people icon.
+- Added semantic role icons for project admin, QA engineer, reviewer, release approver and read-only viewer cards and table rows.
+- Updated sidebar, topbar, project actions and Program Settings entry icons to distinguish global Users from project-scoped access control.
+- Expanded the local Aptoria icon renderer with the missing Lucide/Tabler-compatible symbols used by the app, preventing blank/fallback icons on the new access screens and existing workflow screens.
+- Added an icon availability audit to the hotfix QA so every static and service-driven icon used by the views has a renderer definition.
 
-# v1.1.28 - QA Cockpit Pass
+## v0.0.46 Hotfix - User Onboarding for Project Access
 
-- Added Project → QA Cockpit as a daily QA priority board.
-- Added cockpit queues for open blockers, fixes waiting for retest, expiring accepted risks, stale scans/reports, endpoints without evidence, release candidates needing decision and monitor alerts.
-- Added release snapshot, top blind spots, high-risk endpoint queue and quick action shortcuts.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.28 system audit notes.
-
-# v1.1.27 - Client Audit Portal Pass
-
-- Added project-scoped Client Audit Portal links for external client/reviewer evidence handoff.
-- Added token-based client portal access records with viewer, approver and reviewer roles.
-- Added approved report, release decision, accepted risk, finding summary and evidence package visibility controls.
-- Added client-side report, release decision and accepted risk acknowledgement records.
-- Added public client-safe export routes and project isolation checks.
-
-# v1.1.26 - Report Versioning & Approval Pass
-
-- Added report version history with draft, reviewed, approved and archived states.
-- Added report checksums and source evidence snapshots for scans, snapshots, compares, findings, release gates, release decisions and evidence attachments.
-- Added Markdown / HTML / PDF / JSON exports for saved report versions.
-- Added report approval metadata and audit log events.
-
-# Aptoria v1.1.25 - Contract Reality Check Pass
-
-- Added Project → Contract Reality.
-- Added OpenAPI security vs endpoint auth requirement comparison.
-- Added undocumented top-level response field detection from stored scan evidence.
-- Escalated sensitive-looking undocumented response fields as high severity contract reality mismatches.
-- Added Contract Reality summary to Release Readiness and Full QA reports.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.25 system audit notes.
-
-# Aptoria v1.1.24 - Evidence Graph Pass
-
-- Added Project → Evidence Graph.
-- Added endpoint-level Endpoint Evidence Map summaries.
-- Added finding-level Finding Evidence Chain summaries.
-- Added release-level Release Evidence Graph with scan, snapshot, release gate, decision, accepted risk and blind spot nodes.
-- Added missing evidence link detection and report builder Evidence Graph Summary.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.24 system audit notes.
-
-# Aptoria v1.1.23 - API Behavior Map Pass
-
-- Added Project → API Behavior Map.
-- Added endpoint producer/consumer behavior detection.
-- Added path parameter dependency links and suggested API call sequences.
-- Added destructive endpoint and auth boundary behavior flags.
-- Added endpoint detail behavior panel and report builder API Behavior Map summary.
+- Added a global Users page for system admins with account list, create user modal, edit user modal and temporary password reset action.
+- Added Project Access flow to create a new local Aptoria user and immediately add that user to the current project with a project role.
+- New user accounts are created with `role=user`, `password_change_required=true` and a one-time temporary password shown only in the current session.
+- Added EN/HU translations, sidebar/topbar navigation entry and Program Settings link for user onboarding.
+- Added audit events for user creation, user updates and temporary password resets.
+- Added regression coverage for system-admin user creation and project-admin create-user-and-add flow.
 
 # Changelog
 
-## v1.1.22 - Release Decision Room Pass
+## v0.0.46 - Project Access & Membership Foundation
 
-- Added project-level Release Decision Room for Go / No-Go / Conditional Go / Pending evidence / Blocked release decisions.
-- Added persisted release_decisions packages with decision owner, timestamp, notes, readiness score, blockers, warnings, blind spots, accepted risks and evidence chain snapshots.
-- Added Markdown, HTML, PDF and JSON exports for saved release decision packages.
-- Integrated latest release decision metadata into Release Readiness and Full QA reports.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.22 system audit notes.
+- Added a project-scoped membership model with project admin, QA engineer, reviewer, release approver and read-only viewer roles.
+- Added the `project_memberships` migration with owner backfill so existing project owners become locked project admins.
+- Added `ProjectAccessService` and route-level project access middleware to protect project pages and nested project resources.
+- Scoped project lists, dashboard project switching and current-project context to the projects the signed-in user can actually access.
+- Added a Project Access screen with a standardized Aptoria card/table/actions UI and EN/HU translations.
+- Added member add/update/remove flows for existing Aptoria users, with owner membership locked against accidental removal.
+- Added access-aware project action visibility in the Projects table, Project detail page, sidebar and user menu.
+- Added audit events for project member add/update/remove actions.
+- Added regression coverage for owner membership creation, non-member denial, read-only restrictions and project admin member assignment.
 
-## v1.1.21 - Risk Acceptance Ledger Pass
+## v0.0.45 - Report & Evidence Export Standardization
 
-- Added a dedicated risk_acceptances ledger for accepted risk decisions with accepted by, accepted until, reason, business justification, mitigation note, evidence requirement, release scope and expiry action.
-- Added project-level Risk Ledger page with active, high/critical, missing expiry, expiring soon and expired summaries.
-- Added finding detail risk acceptance panel that records accepted risk decisions and syncs the legacy finding Accepted risk fields for backward compatibility.
-- Integrated risk acceptance expiry status into Release Readiness blockers, warnings, score checks and recommended actions.
-- Added Risk Acceptance Ledger Summary to Release Readiness and Full QA reports.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.21 system audit notes.
+### v0.0.45 Hotfix - Evidence PDF Logo Fix
 
-## v1.1.20 - Finding Verification & Ownership Pass
+- Fixed the Evidence Pack PDF header so it renders the real Aptoria logo instead of the temporary `APT` placeholder mark.
+- Added a PDF-safe logo raster derivative generated from the official `logo-color.svg` asset for the dependency-free PDF renderer.
+- Updated Evidence Pack PDF regression coverage to verify the embedded image stream and prevent the placeholder mark from returning.
 
-- Added finding ownership fields: owner, due date, priority and linked release gate context.
-- Added QA verification fields: verification status, retest required, retest result, fix evidence required, verified by, verified at and last retest timestamp.
-- Added Ready for retest, Retest failed and Verified lifecycle states with release readiness impact.
-- Added finding comments for QA, developer, verification, risk acceptance and retest notes.
-- Integrated finding verification summary into Release Readiness and Full QA reports.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.20 system audit notes.
+### v0.0.45 Hotfix - Evidence ZIP/PDF Delivery Fix
 
-## v1.1.19 - QA Blind Spot Detector Pass
+- Fixed Evidence Pack ZIP downloads so they always return a real `.zip` archive instead of falling back to Markdown when `ZipArchive` is unavailable.
+- Added a dependency-free stored ZIP writer for local XAMPP environments without the PHP zip extension.
+- Reworked Evidence Pack PDF generation from plain text output into a visibly formatted document with branded header, metadata table, summary cards, section headings, bordered tables and footer checksum.
+- Added regression coverage for real ZIP output and formatted PDF markers.
 
-- Added project-level QA Blind Spots to show missing or stale release evidence before sign-off.
-- Detects endpoints without scans, endpoints without assertions, auth endpoints without no-auth comparison, fixed findings without retest evidence, accepted risks without expiry, stale scan evidence and missing recent release reports.
-- Added accepted risk expiry fields and a Retest evidence type for finding verification.
-- Integrated Blind Spot Summary into Release Readiness, Full QA Report Builder and standard report exports.
-- Added English/Hungarian localization, feature tests, PowerShell install template and v1.1.19 system audit notes.
+- Standardized Evidence Pack HTML downloads through the shared `ReportVisualStandardService`.
+- Evidence Pack HTML exports now use the mandatory `data-aptoria-report-standard="report-visual-standard-v1.1"` shell with header, metadata table, KPI summary strip, evidence notice, numbered sections and footer.
+- Added standardized Evidence Pack PDF downloads with fixed report-standard metadata, checksum, project context, selected sections and evidence summary.
+- Updated Evidence Pack ZIP generation to include the standardized `report.html` and `report.pdf` alongside README, manifest and checksum files.
+- Refreshed the Evidence Pack detail screen with a dedicated standardized export panel and HTML/PDF/ZIP actions.
+- Added EN/HU translation keys for standardized Evidence Pack export labels, status labels and evidence-summary copy.
+- Added regression coverage to verify Evidence Pack HTML/PDF exports use the shared report standard.
 
-### v1.1.18 Help / How it works completeness polish
+## v0.0.44 - Standalone Security & First-run Hardening
 
-- Re-expanded Help Center into a detailed module-by-module user guide instead of a shortened summary.
-- Rebuilt How it works as a full operational workflow with actions, outputs and safety notes.
-- Added complete Hungarian translations for Help Center and How it works.
-- Fixed the Help Center snapshot search regression by restoring the expected Snapshots and compare section and making Reports searchable for snapshot/export context.
+- Added a shared password policy for setup-created admins and profile password changes.
+- First-login password change now blocks reusing the current/default password and other obvious/default passwords.
+- Added mixed-case, number, symbol and 12-character password requirements to the profile password modal with UI policy hints.
+- Added login throttling for failed authentication attempts.
+- Added global security headers: frame blocking, nosniff, referrer policy, permissions policy and CSP report-only.
+- Added authenticated session inactivity timeout middleware with a configurable Program Settings value.
+- Added a first-run security hardening panel to the setup wizard, aligned with the existing Aptoria setup UI.
+- Hardened `.env.example` defaults by disabling debug output and lowering log verbosity.
+- Added regression coverage for password hardening, security headers and session timeout setting persistence.
 
+## v0.0.43 - Report Visual Standard Foundation
 
-## v1.1.18 - Help Center & README Logo Polish Hotfix
 
-- Updated Help Center documentation to match the current v1.1.18 QA platform workflow, including demo data, finding lifecycle, evidence attachments, executive/technical reports, branding, scheduled monitoring, notifications, system health and audit log.
-- Updated How it works to the current end-to-end flow from setup and demo import through release readiness, reporting, monitoring and audit evidence.
-- Replaced outdated milestone/MVP tutorial wording with current workflow language.
-- Pointed the demo CTA to the Demo Project generator.
-- Updated the README header so the existing Aptoria horizontal logo replaces the separate Aptoria title text.
-- Updated documentation-related regression expectations.
+### v0.0.43 Hotfix - Desktop-only Shell Guard
 
-## v1.1.18 - Navigation & Profile Menu Cleanup Pass
+- Removed the sidebar logo image; sidebar branding now keeps text only.
+- Removed the topbar hamburger/collapse button so the sidebar is not intentionally hidden on supported desktop widths.
+- Added a global desktop-only white-screen overlay for widths below XXL / 1400 px.
+- Added EN/HU translation keys for the desktop-only workspace message.
+- Added regression coverage for sidebar branding, topbar controls and the desktop-only guard.
 
-- Reorganized the sidebar into clear global groups: Projects, Release & reports, Operations, Audit & admin, and Help & workflow.
-- Reworked current-project navigation into grouped sections for setup, API inventory, QA workflow, risk/evidence, release/reporting and automation/audit.
-- Added project Monitors to the current project module list and moved global monitor alerts under Operations.
-- Cleaned the profile dropdown so it only contains account-level actions and has no blank operational duplicates.
-- Renamed profile report identity copy to Default Report Identity and clarified project override behavior.
-- Added English/Hungarian localization, navigation CSS polish and regression coverage.
+### v0.0.43 Hotfix - Report Visual Polish Pass
 
-## v1.1.17 - Demo Project Sample Data Generator Pass
+- Replaced the placeholder `A` report mark with the real Aptoria logo embedded into exported HTML as a standalone base64 image.
+- Fixed unresolved translation-key leakage in report metadata, including `messages.projects.project`.
+- Reworked the generated report body into a professional fixed structure: Executive Summary, Evidence Summary, Findings & Risk, Release Decision, optional Approval Sign-off and Technical Appendix.
+- Demoted stored inner report headings so exports no longer show a second oversized document title below the header.
+- Updated the report standard marker to `report-visual-standard-v1.1` and expanded regression coverage for logo, translation and structure checks.
 
-- Added an authenticated Demo Project page for importing, re-importing and removing the comprehensive Northstar Commerce sample QA workspace.
-- Added a CLI generator: `php artisan aptoria:demo-project`, with `--json` and `--remove` modes for repeatable deployment checks.
-- Reused and hardened the comprehensive demo importer with audit-safe seeding and a single auditable import/remove system event.
-- Added dashboard/navigation access to the demo generator and summary cards for endpoints, scans, snapshots, findings, evidence, test cases, release gates and monitors.
-- Added English/Hungarian localization, feature tests and system audit documentation for the demo workflow.
 
-## v1.1.16 - Audit Log Activity Timeline Pass
+- Added `ReportVisualStandardService` as the shared HTML export wrapper for report versions.
+- Standardized report exports around the professional report layout: header, meta table, KPI summary strip, notice block, numbered sections and footer.
+- Internal report downloads and public Client Portal report downloads now use the same HTML visual standard.
+- Added `docs/REPORT_VISUAL_STANDARD.md` as the mandatory future rule for every report/export.
+- Added QA checklist coverage for report visual consistency, print preview and public portal downloads.
 
-- Added a dedicated audit log table, model, service and observer-based activity recorder.
-- Added global and project-specific Audit Log / Activity Timeline pages with filters and JSON export.
-- Records authentication, data changes, report generation, database export/import and hard reset requests.
-- Captures user, project, subject, route, URL, IP, user agent, before/after values and metadata with sensitive value masking.
-- Added English/Hungarian localization, navigation entries, feature tests and system audit documentation.
+## v0.0.42 - Finding Deduplication & Merge Workflow
 
-## v1.1.15 - System Health Diagnostics Pass
+### v0.0.42 Hotfix - Release Readiness Simulation Method Fix
 
-- Expanded System Health diagnostics with cache, import/export, reporting/evidence and queue categories.
-- Added temporary cache write/read/delete probe and deployment-focused PHP/runtime details.
-- Added checks for report output, project logo storage, finding evidence storage and PHP temporary upload directory readiness.
-- Added DOMPDF availability note while keeping Aptoria's built-in dependency-free PDF renderer as the primary fallback.
-- Added queue readiness checks and clearer scheduler/CLI diagnostics guidance.
-- Updated System Health UI with CLI command examples, English/Hungarian localization, documentation and feature coverage.
+- Fixed Rule Builder simulation form method handling when the save form contains Laravel method spoofing.
+- The simulation endpoint now accepts both POST and PUT so the preview button cannot trigger a MethodNotAllowed error from the shared rules form.
+- Added regression coverage for the method-spoofed simulation request.
 
-## v1.1.14 - Email / Webhook Notification Pass
 
-- Added monitor notification trigger settings for critical findings, high findings, HTTP 5xx responses, sensitive data, broken auth and schema drift.
-- Added global monitor alert center with channel, severity and open-alert filters.
-- Added monitor test notification workflow for dashboard/email/webhook delivery verification.
-- Added alert trigger summaries and fingerprinting to reduce repeated notifications for unchanged problem states.
-- Extended scheduled monitor summaries with scan alert signal metadata.
-- Updated email/text alert content, English/Hungarian localization, documentation and feature coverage.
+- Added finding duplicate candidate detection.
+- Added merge workflow that moves evidence to the primary finding.
+- Duplicate findings are retained as merged trace records.
+- Added candidate score, merge notes, dismiss workflow and audit events.
+- Findings page now links to the deduplication workflow.
+- Cumulatively includes v0.0.40 profiles/simulation and v0.0.41 evidence pack exports.
 
-## v1.1.13 - Scheduled Monitor Runner Pass
-
-- Extended scheduled monitors with optional regression test suite binding per monitor.
-- Added project/environment/suite filters to the `aptoria:run-monitors` Artisan runner for unattended Windows Task Scheduler and cron jobs.
-- Added saved JSON run summaries through `--save-json` and `--output` for auditable scheduled execution evidence.
-- Added environment and suite columns to monitor command output and monitor UI tables.
-- Updated monitor forms with test suite selection and cron/Task Scheduler command guidance.
-- Added English/Hungarian localization and feature coverage for filtered saved runner output.
-
-## v1.1.12 - Project Report Branding Pass
-
-- Added project-level report branding overrides for client name, organization, prepared-by, role/title, confidentiality label and report disclaimer.
-- Added optional project report logo upload/removal with private storage and HTML report embedding.
-- Updated Markdown, HTML and PDF report presentation so project branding overrides global profile identity where configured.
-- Extended Executive, Technical, Full Project, Release Readiness, QA Release Gate, QA Evidence, Scan and Snapshot Compare exports with project branding context.
-- Added English/Hungarian localization, project form UI and regression coverage for branded report exports.
-
-## v1.1.11 - Executive / Technical Report Split Pass
-
-- Added dedicated Executive Report exports for decision-focused release readiness, main risk and recommendation summaries.
-- Added dedicated Technical Report exports for QA/developer handoff with endpoint inventory, findings, evidence, contract validation, scan/snapshot/regression context and request/response evidence.
-- Added Markdown, HTML and PDF routes for both report profiles.
-- Added report center cards for quick Executive and Technical exports.
-- Extended the custom report builder with an optional technical request/response evidence table.
-- Added English/Hungarian localization, regression coverage and v1.1.11 system audit documentation.
-
-## v1.1.10 - Evidence Attachment Pass
-
-- Extended finding evidence into an auditable attachment workflow with active evidence types for note, screenshot, JSON response, cURL command, request/response excerpt, file attachment and external link.
-- Added attachment upload/download support for finding evidence with original filename, MIME type, size and SHA-256 checksum metadata.
-- Added captured-at and captured-by metadata for evidence auditability.
-- Added dedicated request excerpt, response excerpt and cURL command fields to finding evidence.
-- Updated finding detail UI with expanded evidence creation and evidence table details.
-- Updated Release Readiness, Full Project reports and QA Evidence pack output with evidence/attachment visibility.
-- Added English/Hungarian localization and feature tests for attachment upload, download and cleanup.
-
-## v1.1.9 - Finding Lifecycle Pass
-
-- Added canonical finding lifecycle statuses: Open, Confirmed, In progress, Fixed, False positive, Accepted risk and Reopened.
-- Added quick lifecycle transition UI, lifecycle note, changed-by, changed-at and reopened count metadata for findings.
-- Added `finding_lifecycle_events` timeline storage for auditable status history.
-- Added status-based finding filtering and project-level lifecycle status summaries.
-- Updated release readiness scoring/reporting so reopened findings count as open risk while fixed, false-positive and accepted-risk findings do not block the release score.
-- Added lifecycle status breakdowns to release readiness and full QA reports.
-- Added English/Hungarian localization, regression coverage and v1.1.9 system audit documentation.
-
-## v1.1.8 - Release Readiness Score Pass
-
-- Added weighted release readiness score components for evidence, endpoint coverage, QA coverage, assertions, regression execution, snapshot regression status, security/auth readiness, findings, contract validation and report/sign-off readiness.
-- Added a score breakdown table to the project Release Readiness dashboard with earned points, maximum points, status and supporting checks.
-- Updated release readiness Markdown reports with a score breakdown section for audit/release evidence.
-- Added regression coverage for the weighted score model and dashboard rendering.
-- Updated English/Hungarian localization and release documentation for v1.1.8.
-
-## v1.1.7 - Regression Test Suite Builder Pass
-
-- Added Regression Test Suite Builder for creating executable suites from endpoint inventory.
-- Added generated hybrid test cases with execution order and builder metadata.
-- Added optional expected-status and required JSON path assertion generation.
-- Added one-click suite execution that runs safe GET/HEAD probes and records test case results.
-- Linked Suite Builder from Test Suites and Test Execution dashboards.
-- Added English/Hungarian localization and regression coverage for the builder workflow.
-
-## v1.1.6 - Schema Drift Detector Pass
-
-- Added response JSON schema extraction to safe scan results.
-- Added schema drift comparison against the previous completed scan for the same endpoint.
-- Detects added fields, removed fields, type changes and nullability changes.
-- Stores schema drift summary, change count and current response schema on scan results.
-- Creates regression findings with HTTP evidence when schema drift is detected.
-- Added schema drift flags to Scan Results and Endpoint Inventory, including a dedicated inventory filter.
-- Added schema drift risk signal integration and full project report metrics.
-- Extended snapshot compare schema grouping with added/removed/type/nullability field labels.
-- Added English/Hungarian localization and regression coverage for the Schema Drift Detector.
-
-## v1.1.5 - Baseline Diff Viewer Pass
-
-- Added richer baseline vs current snapshot diff grouping for inventory, status, performance, headers, body, schema, security, risk and metadata drift.
-- Added response body preview hashing/excerpts and JSON schema path comparison to snapshot metadata.
-- Added sensitive-data and unauthenticated-access comparison deltas to compare summaries.
-- Added breaking-change metrics to the snapshot compare UI and full project report.
-- Added quick Compare snapshots action from Endpoint Inventory.
-- Updated English/Hungarian localization and regression coverage for the diff viewer.
-
-## v1.1.4 - Broken Auth Comparison Scan Pass
-
-- Added broken authentication comparison for auth-required GET/HEAD endpoints.
-- Safe probes now compare authenticated responses with no-auth responses where an auth profile is available.
-- Added broken auth flags to scan results, Endpoint Inventory and full project reports.
-- Added automatic finding and masked HTTP evidence when unauthenticated access looks suspicious.
-- Added global security settings for enabling broken auth comparison and storing masked unauthenticated previews.
-- Added English and Hungarian translations plus regression coverage for broken auth detection.
-
-## v1.1.3 - Sensitive Data Detector Pass
-
-- Added response header/body sensitive data detection during safe GET/HEAD probes.
-- Detects sensitive-looking JSON fields, Authorization/Set-Cookie headers, JWTs, bearer tokens, API keys, private keys, email addresses, phone numbers and debug traces.
-- Stores only masked evidence summaries and never raw detected secret values in the detector output.
-- Adds sensitive data flags to scan results and Endpoint Inventory.
-- Generates scan findings with HTTP evidence for sensitive data detections.
-- Adds sensitive data risk signal integration and release/report visibility through existing finding evidence.
-- Added English/Hungarian translations and regression tests for the Sensitive Data Detector.
-
-## v1.1.2 - Environment Manager Pass
-
-- Added a dedicated project Environment Manager page at `/projects/{project}/environments`.
-- Added environment type support for local, development, staging, production and custom targets.
-- Added default environment selection from the environment manager.
-- Added environment-level auth profile visibility and default handoff.
-- Added environment metrics for endpoint, scan and snapshot usage.
-- Added Environment Manager navigation from the project sidebar and project details.
-- Added environment matrix output to full project reports.
-- Added English/Hungarian translations and feature tests for the Environment Manager.
-
-## v1.1.1 - Endpoint Inventory Pass
-
-- Added a dedicated project Endpoint Inventory page at `/projects/{project}/endpoint-inventory`.
-- Added endpoint audit columns for method, path, environment, auth state, risk, latest scan, HTTP status, response time, open findings, source and coverage gaps.
-- Added server-side filters for method, risk, environment, auth state, scan state, findings, coverage gaps, import source and endpoint status.
-- Added endpoint inventory summary metrics for scan coverage, risk review queue, auth-required endpoints, open findings and average response time.
-- Linked Endpoint Inventory from the project sidebar, project details and endpoint list.
-- Added English/Hungarian localization and regression coverage for the Endpoint Inventory view.
-
-## v1.1.0 - Postman Compatibility, Globals & Newman Import Pass
-
-- Combined the planned v1.0.99 and v1.1.0 work into one cumulative release.
-- Added Postman Globals JSON support to endpoint import.
-- Added Postman collection compatibility metadata for v2.0/v2.1 schema review, unsupported auth warnings and unsupported script counters.
-- Extended Postman import preview with globals count, schema label and compatibility warnings.
-- Added Newman JSON report import into Aptoria test execution.
-- Added Newman JUnit XML report import into Aptoria test execution.
-- Newman imports create/update test suites, test cases and test case results.
-- Failed Newman assertions can create findings with log evidence.
-- Added Newman import UI under project Test Execution.
-- Added English/Hungarian translations and regression tests for Postman Globals and Newman import.
-
-## v1.0.98 - Postman Import Max Pass
-
-- Expanded Postman import from endpoint-only extraction to collection + environment aware import.
-- Added optional Postman Environment JSON input with variable resolution for `{{baseUrl}}`, auth tokens and request metadata.
-- Added import preview enrichment for detected environment, variables, auth profiles, response examples, assertion candidates and folder-derived test suites.
-- Added optional environment creation from Postman `baseUrl`.
-- Added optional auth profile creation from Postman Bearer, Basic, API key or auth headers when values are complete.
-- Added optional assertion rule creation from response examples and simple `pm.test` scripts.
-- Added optional test suite/test case generation from Postman folder structure.
-- Preserved secret masking for headers, body previews and environment variable previews.
-- Added Postman Environment sample controls and English/Hungarian localization.
-- Updated API collection import regression coverage for environment/auth/assertion/suite creation.
-
-## v1.0.97 - API Collection Import Pass
-
-- Added Postman Collection JSON import beside the existing CSV, JSON endpoint list and OpenAPI/Swagger JSON/YAML import flow.
-- Extended endpoint import preview to show request metadata before saving, including imported header count and request body type.
-- Persisted imported request header/body metadata on endpoints for audit documentation while masking sensitive header values and common token/password fields.
-- Added Postman folder recursion, raw URL and URL object parsing, `:id` to `{id}` path parameter normalization, example response status/content-type extraction and auth-required detection from collection auth or auth headers.
-- Added Postman sample payload buttons to the standalone endpoint import page and the Guided Project Wizard.
-- Kept import safe: preview and confirm import only write endpoint inventory; they do not send API requests.
-- Added regression coverage for Postman preview, confirm import, masking and UI translation output.
-- Updated release documentation, QA checklist and system audit documentation.
-- Bumped VERSION to `1.0.97`.
-
-## v1.0.96 - Auth Profile Tester Pass
-
-- Added a fuller Auth Profile Tester workflow to the auth profile edit screen.
-- Added endpoint-based auth tests using saved GET/HEAD endpoint inventory, environment/base URL resolution and path parameter values.
-- Kept custom URL testing for quick external health/auth checks with GET/HEAD only.
-- Applied Bearer, Basic and Custom header profiles to the test request and displayed masked auth metadata.
-- Added structured test results with HTTP status, duration, content type, masked response headers and masked response preview.
-- Classified 2xx/3xx responses as passed, 401/403 as failed and other 4xx/5xx responses as needs review.
-- Added regression coverage for Bearer header application, unauthorized responses and the auth tester result UI.
-- Updated release documentation, QA checklist and system audit documentation.
-- Bumped VERSION to `1.0.96`.
-
-## v1.0.95 - Project Onboarding Wizard Stabilization Pass
-
-- Consolidated the v1.0.94 onboarding review into a single stabilization release instead of a chain of small hotfixes.
-- Fixed QA Coverage Matrix regression coverage so endpoint filtering assertions are not confused by the global System Health navigation link.
-- Stabilized the System Health diagnostics page title and storage category assertion coverage.
-- Hardened Guided Project Wizard auth validation: Bearer requires token, Basic requires username/password, and Custom header requires header name/value.
-- Added regression coverage for missing Bearer token rollback, keeping the wizard from creating half-configured projects.
-- Updated release documentation, QA checklist and system audit documentation.
-- Bumped VERSION to `1.0.95`.
-
-## v1.0.94 - Project Onboarding Wizard Pass
-
-- Completed the guided project onboarding wizard as the originally selected first roadmap item.
-- Extended the wizard to create a project, first environment, default auth profile, endpoint inventory, default assertion rules, first safe scan, first baseline snapshot and first report readiness check in one flow.
-- Added onboarding completion page with links to the project, first scan, first snapshot and full project Markdown/HTML/PDF report exports.
-- Prevented the wizard from finishing with an empty or invalid endpoint payload, avoiding empty half-configured projects.
-- Stored the selected wizard environment and auth profile as project scan defaults.
-- Kept production safety: environments marked as production are not auto-scanned from the wizard.
-- Added regression coverage for onboarding project creation, scan, snapshot, completion page and invalid endpoint rollback.
-- Updated English/Hungarian UI text, installation notes, QA checklist and system audit documentation.
-- Bumped VERSION to `1.0.94`.
-
-## v1.0.93 - System Health Diagnostics Pass
-
-- Added admin-only System Health diagnostics page at `/system/health` with runtime, application, storage, database, security, maintenance and automation readiness checks.
-- Added machine-readable System Health JSON export at `/system/health.json`.
-- Added `aptoria:health` artisan command for server/deployment diagnostics, with JSON and fail-on-warning options.
-- Added global navigation shortcuts for System Health in the sidebar, top toolbar and user menu.
-- Added regression coverage for the System Health service, web page, JSON export and navigation link.
-- Updated installation, server and QA documentation to include the new health diagnostics workflow.
-- Bumped VERSION to `1.0.93`.
-
-## v1.0.92 - Database Import FK Restore Hotfix
-
-- Fixed full database import/restore failing with SQLite `FOREIGN KEY constraint failed` when child tables such as auth profiles were restored before projects.
-- Added dependency-aware table ordering for database restore: parent tables are imported before child tables, and destructive deletes run in the reverse order.
-- Kept foreign key constraint toggling as a safety layer, then added SQLite `PRAGMA foreign_key_check` verification after restore/reset.
-- Reused the same dependency-aware delete order for hard reset so reset remains safe even when the database driver keeps constraints active.
-- Reset auto-increment counters after import for tables with an `id` column.
-- Updated release documentation and QA checks to v1.0.92.
-- Bumped VERSION to `1.0.92`.
-
-## v1.0.91 - Database Import/Export & Hard Reset Pass
-
-- Added admin-only Settings → Database maintenance tab.
-- Added full database JSON export for all Aptoria database tables and rows.
-- Added full database import/restore with schema hash validation and typed `IMPORT DATABASE` confirmation.
-- Added hard reset with typed `HARD RESET` confirmation.
-- Hard reset deletes application data/users, preserves migration metadata, removes the setup lock, logs the user out and redirects to first-run setup.
-- Added database maintenance documentation and release QA checks.
-- Added regression coverage for export payloads, import restore, import confirmation and hard reset setup-lock removal.
-- Bumped VERSION to `1.0.91`.
-
-## v1.0.90 - First-Run Setup Flow Pass
-
-- Tightened first-run application access so normal pages and login attempts remain behind `/setup` until `storage/app/installed.lock` exists.
-- Kept migrated users without a setup lock in setup-required mode instead of treating the application as fully open.
-- Closed `/setup` after setup is locked; GET requests redirect to login/profile and write attempts return 403.
-- Prevented setup from being finished until at least one admin/user exists.
-- Added one-time first-login redirect to My Profile and login timestamp tracking.
-- Added regression coverage for first login profile redirect and setup finish guard.
-- Updated first-run installation documentation, QA checklist and system audit to v1.0.90.
-- Bumped VERSION to `1.0.90`.
-
-## v1.0.89 - Professional Report Layout Pass
-
-- Reworked generated HTML report presentation into a cleaner professional QA / audit report layout with restrained colors, no dashboard-style gradient header and a more print-friendly structure.
-- Added Organization / client to the HTML metadata bar using the profile Report identity organization field, with a Not configured fallback when blank.
-- Reworked PDF report header metadata to include Organization / client, Prepared by, optional Role / title, project, base URL, generated timestamp and Aptoria version.
-- Removed duplicate leading report titles from HTML/PDF bodies when the Markdown H1 matches the report title.
-- Kept README release history policy clean: README links to CHANGELOG.md instead of embedding changelog entries.
-- Added `docs/SYSTEM_AUDIT_v1.0.89.md` and updated release QA checklist/docs to v1.0.89.
-- Bumped VERSION to `1.0.89`.
-
-## v1.0.88 - Report Branding & Author Profile Polish
-
-- Polished generated HTML report headers so the Aptoria brand appears through the logo without repeated large product-name text.
-- Added separated report metadata bar for project, base URL, generated timestamp and Aptoria version.
-- Added compact structured HTML report footer credit.
-- Added profile-driven Report identity fields used by generated HTML/PDF reports.
-- Added PDF report header metadata for prepared-by, project, base URL, generated timestamp and version.
-- Prevented Markdown credit footers from being duplicated inside HTML/PDF report bodies.
-- Kept README clean of embedded changelog sections and linked release history through CHANGELOG.md.
-- Bumped VERSION to `1.0.88`.
-
-## v1.0.87 - HTML & PDF Report Export Pass
-
-- Added reusable HTML report rendering for core Markdown reports.
-- Added dependency-free PDF report export for full project, release readiness, QA release gate, scan, snapshot compare and custom report builder outputs.
-- Added professional printable HTML layout with Aptoria branding and credit footer.
-- Added PDF page footer with Aptoria version and attribution metadata.
-- Added report center, project detail and report builder links for HTML/PDF exports.
-- Added regression coverage for HTML/PDF report routes and services.
-- Kept README clean by linking to CHANGELOG.md instead of embedding release history.
-- Bumped VERSION to `1.0.87`.
-
-## v1.0.86 - Export Credit Setting Runtime Hotfix
-
-- Wired the visible `report.include_copyright_footer` setting into `ExportCreditService`.
-- Fixed the GitHub Actions failure in `SettingsFunctionalAuditTest` where the setting existed in Settings UI but had no runtime consumer.
-- Kept Aptoria attribution enabled by default while making the existing footer setting functional.
-- Updated release documentation to v1.0.86.
-- Bumped VERSION to `1.0.86`.
-
-## v1.0.85 - Export Credit Namespace Hotfix
-
-- Fixed `ReleaseReadinessService` so it imports `App\Services\Exports\ExportCreditService` correctly.
-- Resolved dashboard and project detail 500 errors caused by Laravel resolving the wrong `App\Services\ExportCreditService` class name.
-- Kept the v1.0.84 export attribution behavior intact.
-- Updated release documentation to v1.0.85.
-- Bumped VERSION to `1.0.85`.
-
-## v1.0.84 - Export Credits & Attribution Pass
-
-- Added centralized `ExportCreditService` for report/export attribution metadata.
-- Added Aptoria product/version/repository/author/license attribution to Markdown report footers.
-- Added structured `generated_by` metadata to JSON exports.
-- Added `APTORIA_CREDITS.txt` to QA Evidence Pack ZIP exports.
-- Added Aptoria metadata to calendar `.ics` exports.
-- Added Aptoria attribution columns to endpoint inventory CSV exports.
-- Added regression coverage for export credit metadata.
-- Bumped VERSION to 1.0.84.
-
-## v1.0.83 - User Profile Center
-
-- Added an authenticated user profile center at `/profile`.
-- Added profile editing for name, e-mail, interface language and timezone.
-- Added a separate password change form with current-password verification.
-- Added account information and activity summary panels.
-- Added profile navigation to the user dropdown.
-- Added user `locale` and `timezone` persistence.
-- Added profile feature regression coverage.
-- Bumped VERSION to `1.0.83`.
-
-## v1.0.82 - Optional Vendor Plugin Guard Hotfix
-
-- Guarded Aptoria UI initialization for optional vendor plugins so public/auth pages do not throw JavaScript errors when sidebar-only plugins are not loaded.
-- `aptoria-ui.js` now checks for `$.fn.metisMenu`, `$.fn.slimScroll`, and `$.fn.animatePanel` before calling those helpers.
-- Added regression coverage for optional Aptoria UI vendor plugin guards.
-- Updated release documentation to v1.0.82.
-- Bumped VERSION to `1.0.82`.
-
-## v1.0.81 - Local HTTPS Force Scheme Hotfix
-
-- Fixed local `artisan serve` asset loading when `.env` still has `APP_ENV=production` but `APP_URL` points to a local HTTP URL.
-- Changed `AppServiceProvider` so `URL::forceScheme('https')` is only applied when the configured application URL itself starts with `https://`.
-- Prevents local HTTP installs from generating HTTPS asset URLs that cause `Invalid request (Unsupported SSL request)` and browser `ERR_CONNECTION_CLOSED` errors.
-- Updated README, installation guide, server installer notes and QA checklist to v1.0.81.
-- Added `docs/SYSTEM_AUDIT_v1.0.81.md`.
-- Bumped VERSION to `1.0.81`.
-
-## v1.0.80 - Windows Cleanup Path Assertion Hotfix
-
-- Fixed `AptoriaRebrandTest` cleanup-path assertions to match the actual PowerShell single-backslash path literals used in `scripts/windows-xampp-common.ps1`.
-- Kept the Windows/XAMPP cleanup behavior unchanged.
-- Updated public release documentation to v1.0.80.
-- Added `docs/SYSTEM_AUDIT_v1.0.80.md`.
-- Bumped VERSION to `1.0.80`.
-
-## v1.0.79 - Rebrand Regression Scope Hotfix
-
-- Fixed the Aptoria rebrand regression test so historical changelog entries are not treated as current product branding.
-- Removed legacy literal path examples from the current public QA checklist while keeping the manual cleanup checks understandable.
-- Kept Windows/XAMPP cleanup coverage for stale pre-rebrand files by checking the cleanup paths in encoded form inside the test.
-- Updated public release documentation to v1.0.79.
-- Added `docs/SYSTEM_AUDIT_v1.0.79.md`.
-- Bumped VERSION to `1.0.79`.
-
-## v1.0.78 - Legacy Rebrand Artifact Cleanup Hotfix
-
-- Added Windows/XAMPP update cleanup for stale files left behind by Copy-Item based upgrades.
-- Removes legacy rebrand artifacts that may remain in an existing project root after upgrading from older API Radar builds:
-  - `docs/RADAR_UI_TEMPLATE_AUDIT.md`
-  - `docs/RADAR_UI_UX_REFRESH.md`
-  - `config/api-radar.php`
-  - `public/assets/api-radar`
-  - `public/assets/radar-ui`
-- Updated rebrand regression coverage so the cleanup remains protected.
-- Updated public release documentation to v1.0.78.
-- Bumped VERSION to `1.0.78`.
-
-## v1.0.77 - Rebrand Test Consistency Hotfix
-
-- Fixed the rebrand regression test so it validates the current `VERSION` dynamically instead of expecting a stale rebrand release version.
-- Hardened release documentation consistency checks so release-facing docs must reference the current short ZIP name only.
-- Updated README, installation guide, server installer notes, QA checklist and system audit references to v1.0.77.
-- Kept the corrected Aptoria logo icon and favicon assets from v1.0.75.
-- Bumped VERSION to 1.0.77.
-
-## v1.0.76 - Aptoria Rebrand Polish Pass
-
-- Aligned README, installation guide, server installer notes and QA checklist with v1.0.76.
-- Updated release ZIP examples to `aptoria-1.0.76.zip` and root folder `aptoria-1.0.76/`.
-- Updated `scripts/build-release.ps1` so required system audit validation follows the current VERSION instead of v1.0.74.
-- Updated `AptoriaRebrandTest` to read the current VERSION dynamically instead of hardcoding v1.0.74.
-- Renamed legacy public UI documentation filenames to the `APTORIA_UI_*` naming pattern.
-- Added `docs/SYSTEM_AUDIT_v1.0.76.md`.
-- Kept the v1.0.75 corrected Aptoria icon assets.
-- Bumped VERSION to 1.0.76.
-
-## v1.0.75 - Logo Icon Crop Hotfix
-
-- Fixed `public/assets/aptoria/img/aptoria-logo-icon.png` so the icon no longer includes the stray bottom of the `A` wordmark.
-- Regenerated related favicon and launcher icon assets from the corrected Aptoria icon:
-  - `favicon.ico`
-  - `favicon-16.png`
-  - `favicon-32.png`
-  - `favicon-64.png`
-  - `apple-touch-icon.png`
-  - `android-chrome-192.png`
-  - `android-chrome-512.png`
-- Bumped VERSION to `1.0.75`.
-
-## v1.0.74 - Aptoria Rebrand Pass
-
-- Rebranded the application from Aptoria's former API-focused name to **Aptoria** across source code, views, settings, tests, documentation and release metadata.
-- Updated Composer package metadata, environment variable prefixes, Artisan command names, config namespace, session/cache prefixes and public repository URLs to use Aptoria naming.
-- Renamed public asset namespaces to `assets/aptoria` and `assets/aptoria-ui`.
-- Added the new Aptoria logo set, favicon files and app icon assets.
-- Updated Windows/XAMPP, GitHub clone and scheduled monitor commands to use the new `aptoria` naming and repository URL.
-- Added rebrand regression coverage to prevent legacy pre-rebrand naming from returning to public-facing code and documentation.
-- Bumped VERSION to 1.0.74.
-
-## v1.0.73 - Documentation & Release Polish Hotfix
-
-- Aligned README, installation guide, server installer notes and QA checklist with v1.0.73.
-- Corrected ZIP references to the short release name `aptoria-1.0.73.zip`.
-- Corrected public GitHub clone URLs to `Szujo-Janos/Aptoria`.
-- Updated the documentation map to point at `docs/SYSTEM_AUDIT_v1.0.73.md`.
-- Removed leftover internal `status => active` metadata from global Settings defaults.
-- Added release documentation consistency regression coverage.
-- Bumped VERSION to 1.0.73.
-
-## v1.0.72 - Settings Functional Audit Hotfix
-
-- Audited the global and project Settings systems for save, validation, persistence and runtime consumption.
-- Removed non-functional assertion default controls that were only referenced by dead code.
-- Removed the unused demo-hint Settings reference from the help workflow panel.
-- Added functional audit coverage for visible Settings fields, runtime consumers, misleading activation copy, UI rendering switches, session timeout behavior and project notes display.
-- Restored the complete local Homer/Aptoria UI vendor asset set required by Blade layouts and release ZIP validation.
-- Added missing Laravel runtime `.gitkeep` folders required by clean ZIP installs.
-- Updated release metadata, QA checklist and Settings audit documentation.
-- Bumped VERSION to 1.0.72.
-
-## v1.0.71 – Settings Help Text Noise Hotfix
-
-- Removed the generic per-field Settings help boilerplate from English and Hungarian localization.
-- The Settings Center now renders help text only when a field has concrete, useful guidance.
-- Kept localization keys present for regression coverage without forcing noisy placeholder copy into the UI.
-- Added a regression test that fails if the generic help boilerplate comes back.
-- Bumped VERSION to 1.0.71.
-
-## v1.0.70 – Settings Center Test & Localization Compatibility Hotfix
-
-- Restored the Settings Center English UI contract expected by `SettingsCenterTest`.
-- Restored the `Security & Privacy`, `System Info`, and `Aptoria v{version}` strings on the Settings Center.
-- Kept the Hungarian Settings labels localized, including `Biztonság és adatvédelem`.
-- No new Settings status categories were added; Settings remains active-only in the UI.
-
-## v1.0.69 – Settings Localization & Hardcode Hotfix
-
-- Added complete English and Hungarian labels for every Settings Center field introduced up to v1.0.68.
-- Added complete English and Hungarian help text for every Settings Center field, group and select option.
-- Added missing Settings groups such as Scan Profiles and Release Readiness to the localized group map.
-- Removed the Settings view fallback that could display English `SettingService` descriptions on the Hungarian UI.
-- Replaced generated English headline fallbacks with an explicit missing-translation message so missing localization is visible during QA instead of silently leaking English UI copy.
-- Added a regression test that fails when any Settings key lacks English/Hungarian labels, help text, group text or option labels.
-- Bumped VERSION to 1.0.69.
-
-## v1.0.68 – Settings Activation Test Hotfix
-
-- Fixed assertion evaluation regression introduced by v1.0.67: endpoints without explicit assertion rules are again reported as `not_configured`, matching the existing test contract and release readiness semantics.
-- Kept assertion default Settings active by using the default status code as the create-rule form default instead of silently creating synthetic runtime rules.
-- Fixed the SweetAlert confirmation regression by removing the literal `window.confirm(` call from the runtime asset while keeping the configured fallback confirmation behavior.
-- Bumped VERSION to 1.0.68.
-
-## v1.0.67 – Settings Activation Pass
-
-- Removed Settings maturity counters and field badges from the Settings UI.
-- Corrected mismatched Settings keys in scan safety and report builder defaults.
-- Added runtime consumers for session timeout, audit logging, assertion fallback rules, typed production confirmation and destructive path keyword guards.
-- Bumped VERSION to 1.0.67.
-
-## v1.0.66 – Settings Functional Audit Reality Pass
-
-- Performed the initial Settings runtime review.
-- Updated the Settings Center status counters and badges to show the audit states instead of the previous blanket active/prepared/planned wording.
-- Replaced `docs/SETTINGS_FUNCTIONAL_AUDIT.md` with a detailed per-control audit table and requested group rollup.
-- Added `docs/SYSTEM_AUDIT_v1.0.66.md` with release hygiene and QA focus.
-- Superseded by v1.0.67 activation wiring.
-
-## v1.0.65 – Settings Full Wiring Pass
-
-- Fixed raw Blade/PHP layout setup code being rendered above the application header.
-- Restored normal Blade asset helper expressions for CSS, JavaScript, logo and favicon URLs.
-- Replaced the app layout's inline title setup directives with a proper `@php ... @endphp` setup block.
-- Keeps the Settings Center runtime wiring, risk scoring, layout fallback and GitHub Actions fixes from v1.0.57–v1.0.63 intact.
-
-## v1.0.61 – Layout Page Title Fallback Hotfix
-
-- Fixed layout rendering failures caused by Settings-driven UI variables not being available on every Blade render path.
-- Added a `layouts.app` view composer that shares Aptoria UI identity, sidebar, density, theme and project-navigation variables centrally.
-- Kept defensive layout fallbacks in `resources/views/layouts/app.blade.php` so feature tests and cached views do not fail on missing UI preference variables.
-- Preserved the v1.0.57–v1.0.59 Settings wiring work and short ZIP naming.
-
-## v1.0.59 – Reports & Export Settings Wiring
-
-- Expanded the Settings Center into a full operational control panel with General, Scan Profiles, HTTP Scan Behavior, Probe Safety, Risk Engine, Assertions, Snapshots & Retention, Reports & Exports, Dashboard & UI, Security & Privacy and Release Readiness groups.
-- Added status labels for settings: Active, Prepared and Planned.
-- Added all proposed switches from the settings planning pass while keeping not-yet-automated controls clearly marked as Prepared or Planned.
-- Added generic setting validation based on SettingService metadata, so future settings can be added without brittle controller updates.
-- Wired additional UI identity settings into the layout and extended secret masking with custom sensitive header/JSON field lists.
-- Added `docs/SETTINGS_FUNCTIONAL_AUDIT.md` and `docs/SYSTEM_AUDIT_v1.0.59.md`.
-
-## v1.0.55 – GitHub Actions Security Audit Full CI Hotfix
-
-- Fixed the GitHub Actions `aptoria:security-audit` failure by preparing a CI-only installed lock and strong setup token before the deployment/security readiness audit runs.
-- Keeps the runtime security audit strict for real deployments while allowing the public QA gate to validate a production-like security state in CI.
-- Preserves the v1.0.52 directive-based security header assertion hotfix and the v1.0.53 Laravel cache path preparation.
-- Updated release metadata and audit documentation for v1.0.55.
-
-## v1.0.53 – GitHub Actions Cache Path Hotfix
-
-- Fixed GitHub Actions PHPUnit failures caused by missing Laravel writable runtime directories after checkout.
-- Added an explicit workflow step to create `bootstrap/cache` and the required `storage/framework/*` paths before tests.
-- Kept the public repository hygiene gate and security assertions intact.
-
-
-## v1.0.53 - Security Header CI Assertion Hotfix
-
-- Fixed the GitHub Actions PHPUnit failure in `SecurityHardeningTest` by making the sensitive-page `Cache-Control` assertion directive-based instead of order-sensitive.
-- Kept the security requirement intact: sensitive pages must still include `no-store`, `no-cache`, `must-revalidate` and `max-age=0`.
-- Tolerates framework/runtime-added cache directives such as `private` when the required no-cache directives are present.
-- Updated release metadata and audit documentation for v1.0.53.
-
-## v1.0.53 - Portfolio Showcase Documentation Pass
-
-- Added `docs/PORTFOLIO_SHOWCASE.md` for public portfolio positioning and demo narrative.
-- Added screenshot placeholder folder under `docs/assets/screenshots/.gitkeep`.
-- Updated README with portfolio showcase and suggested public screenshot paths.
-- Updated GitHub/public readiness checklists for public-safe showcase materials.
-
-
-## v1.0.50 - GitHub Actions Public QA Gate
-
-- Expanded `.github/workflows/php.yml` into the Aptoria Public QA Gate.
-- Added CI checks for forbidden runtime files and required public repository files.
-- Added Composer validation, PHP syntax check, testing environment preparation, migrations, PHPUnit and security audit steps.
-- Updated README and public repository checklists to reference the workflow gate.
-
-
-## v1.0.49 - Public README Installation Command Polish
-
-- Aligned README Windows/XAMPP release ZIP commands with the exact local PowerShell template.
-- Added a public GitHub clone installation workflow to README and installation docs.
-- Updated Composer license metadata to `proprietary` to avoid contradicting the source-available LICENSE.
-- Refreshed QA checklist and system audit for v1.0.49.
-
-
-## v1.0.48 - Credits & Copyright Notice Pass
-
-- Added `NOTICE.md` with explicit Aptoria copyright, ownership and source-available visibility language.
-- Added `CREDITS.md` with project owner, product direction, technology foundation and AI-assisted development disclosure.
-- Updated README, GitHub/public readiness docs, installation docs, QA checklist and security docs to the v1.0.48 release line.
-- Added a lightweight copyright notice to the main app footer, landing footer and login screen.
-- Updated the release build script to require `NOTICE.md`, `CREDITS.md` and the v1.0.48 system audit.
-- Kept runtime workflows, database structure, routes and Aptoria UI vendor assets unchanged.
-
-## v1.0.47 - Public Repository Readiness Polish
-
-- Added a source-available `LICENSE` so public GitHub visibility does not imply open-source redistribution rights.
-- Expanded public repository readiness documentation with `docs/PUBLIC_REPOSITORY_CHECKLIST.md`.
-- Updated README, installation, GitHub checklist, QA checklist, security and contribution docs to the v1.0.47 public-readiness line.
-- Expanded `THIRD_PARTY_NOTICES.md` with bundled Aptoria UI frontend dependency/license notes.
-- Added `.github/PULL_REQUEST_TEMPLATE.md` and `.github/dependabot.yml` for public repository hygiene.
-- Kept runtime behavior unchanged: no database migration, controller, route or Blade workflow changes were introduced.
-
-## v1.0.46 - Aptoria UI Vendor Asset Runtime Hotfix
-
-- Restored the full Aptoria UI third-party vendor asset tree under `public/assets/aptoria-ui/vendor/`.
-- Fixed missing Bootstrap, jQuery, Font Awesome, MetisMenu, DataTables, Chart.js, Toastr, SweetAlert and iCheck runtime assets after the v1.0.44 namespace cleanup.
-- Fixed a JavaScript syntax regression in `public/assets/aptoria/js/app.js` by renaming `initAptoria UIProUi()` to `initAptoriaProUi()`.
-- Kept the user-facing product identity as Aptoria / Aptoria UI without restoring the old visible template namespace.
-
-## v1.0.45 - Product Identity Polish
-
-- Finalized Aptoria product identity language across GitHub-facing documentation and release notes.
-- Added public repository readiness notes for the Aptoria UI asset namespace and brand-safe presentation.
-- Updated QA checklist and system audit for the completed three-step rebrand sequence.
-
-
-## v1.0.44 - Aptoria UI Asset Namespace Cleanup
-
-- Moved bundled admin UI runtime assets to `public/assets/aptoria-ui`.
-- Updated Blade layouts, landing page, release validation and documentation to the new Aptoria UI namespace.
-- Renamed the runtime helper script to `aptoria-ui.js`.
-
-
-## v1.0.43 - Visible Template Rebrand Pass
-
-- Removed visible template-brand wording from the public landing, documentation and repository-facing text.
-- Renamed template-specific CSS classes and JavaScript helper names to Aptoria/Aptoria UI names.
-- Kept runtime asset paths unchanged in this step to avoid a risky combined path migration.
-
-
-## v1.0.42 - Light Button & Badge Typography Hotfix
-
-- Reduced button typography weight across the admin, auth and landing surfaces so action text no longer appears bold/semi-bold.
-- Reduced badge and label typography weight across status pills, project badges, calendar badges, sidebar counters and dashboard metric badges.
-- Kept existing button/badge colors, spacing and calendar tone markers intact; only the font weight/letter spacing was normalized.
-- Added v1.0.42 system audit and updated release baseline metadata.
-
-## v1.0.41 - Dashboard Project-Style Calendar Preview Pass
-
-- Restyled the global dashboard header into the same project-workspace structure used by the Project Details page.
-- Added dashboard-level Calendar preview with upcoming QA operations, status/priority badges and day-view links.
-- Added project-scoped Calendar preview to the Project Details page.
-- Added reusable `calendar._preview` Blade partial so dashboard and project workspaces use the same calendar preview rendering.
-- Added dashboard/project calendar preview CSS while preserving the existing calendar tone markers.
-- Added regression coverage for dashboard and project calendar previews.
-- Updated release baseline metadata and added v1.0.41 system audit.
-
-## v1.0.40 - Calendar Seed Noise & Title Visibility Hotfix
-
-- Fixed the calendar upcoming events table so color tone classes no longer turn row titles white on a white background. Activity log titles are readable again.
-- Suppressed calendar activity logging during setup admin creation, migrate-and-seed operations, DatabaseSeeder and DemoQaProjectSeeder imports.
-- Removed User model activity events from the calendar audit scope because setup/admin account creation is not a QA operations event.
-- Kept user-level project CRUD activity logs and manual domain CRUD logs intact.
-- Added `aptoria:calendar-cleanup-setup-noise` to remove previously generated setup/demo technical calendar noise when needed.
-- Updated release baseline metadata and added v1.0.40 system audit.
-
-## v1.0.39 - Calendar UX, Activity Noise Reduction & Visual Timeline Hotfix
-
-- Reduced calendar activity log noise during project creation by logging the user-level project creation action while suppressing automatically generated default environment, auth profile and project setting setup entries.
-- Added event/action color tones for created, updated, deleted, alert, monitor, release, maintenance, security, regression and manual QA calendar entries.
-- Added clickable calendar days and a dedicated day view for reviewing all entries on a selected date.
-- Rendered multi-day calendar events across every affected date in the month grid with continuous range styling.
-- Updated JSON feed and .ics export range logic so multi-day events are included when they overlap the selected range.
-- Added regression coverage for project creation noise reduction and day-view/multi-day event rendering.
-- Added v1.0.39 system audit and updated release baseline metadata.
-
-## v1.0.38 - Calendar Activity Log Display Labels Hotfix
-
-- Fixed immutable calendar activity log display labels so project setting keys such as `scan.enabled` render as translated human-readable labels.
-- Split activity action wording between title context and sentence/description context.
-- Kept raw technical keys in structured metadata while rendering UI, JSON feed and .ics output from localized display accessors.
-- Added regression coverage for localized project setting activity log titles.
-- Added v1.0.38 system audit and updated release baseline metadata.
-
-## v1.0.37 - Calendar Activity Log Localization Hotfix
-
-- Fixed immutable calendar activity log localization by rendering titles and descriptions from structured activity metadata at display/export time.
-- Added translated activity subject labels for English and Hungarian UI output.
-- Updated calendar list, month chips, JSON feed and .ics export to use localized display text instead of stored one-language text.
-- Added a regression test for render-time activity log localization.
-- Added v1.0.37 system audit and updated release baseline metadata.
-
-## v1.0.36 - Calendar Activity Log & Header Actions Hotfix
-
-- Moved calendar action buttons into the calendar panel header.
-- Added immutable activity log entries to the QA Operations Calendar for create/update/delete operations.
-- Added activity metadata fields to calendar events and protected system log entries from edit/complete/delete actions.
-- Added calendar activity observer coverage for Aptoria domain models.
-- Added calendar activity log documentation and v1.0.36 system audit.
-
-## v1.0.35 - Calendar Hardening, Tests & Documentation Pass
-
-- Added CalendarOperationsTest coverage for calendar rendering, event creation, completion, alert follow-up, JSON feed and .ics export.
-- Added QA operations calendar documentation and v1.0.35 system audit.
-- Preserved release ZIP hygiene and Windows/XAMPP install path.
-
-## v1.0.34 - Calendar Export & Operations Dashboard Pass
-
-- Added JSON feed and iCalendar export for stored calendar events.
-- Added calendar summary cards, month grid and monitor run preview.
-- Added calendar export operations documentation.
-
-## v1.0.33 - Calendar Follow-up & Monitor Integration Pass
-
-- Added monitor alert follow-up creation from the alert history screen.
-- Linked calendar events to projects, endpoints, monitors, monitor alert events and release gates.
-- Added project calendar route and sidebar integration.
-
-## v1.0.32 - QA Operations Calendar Pass
-
-- Added calendar_events table and CalendarEvent model.
-- Added CalendarController, calendar routes and Blade create/edit/index screens.
-- Added English and Hungarian calendar translations.
-
-## v1.0.31 - Monitor Alert Triage & Acknowledgement Pass
-- Added acknowledgement fields to monitor alert events so operators can mark alerts as reviewed without deleting delivery evidence.
-- Added per-alert acknowledgement action with optional triage note on monitor alert history pages.
-- Added open alert counters to project and global monitor tables.
-- Added alert acknowledgement relation to users and acknowledgement status helpers.
-- Extended monitor alerting tests for alert acknowledgement.
-- Added monitor alert triage operations documentation and v1.0.31 system audit.
-
-## v1.0.30 - Monitor Email Delivery & Alert History Pass
-- Added Laravel Mail based monitor email delivery for state-change alerts.
-- Added mail configuration defaults and environment examples for local log delivery, testing array delivery and production SMTP.
-- Added HTML and plain-text monitor alert mail templates.
-- Added email alert event recording with sent/failed delivery status and delivery timestamps.
-- Added monitor alert history pages so dashboard, email and webhook delivery events can be reviewed per monitor.
-- Added monitor alert history links to project and global monitor tables.
-- Extended monitor alerting tests for email delivery and alert history rendering.
-- Added monitor email delivery operations documentation and v1.0.30 system audit.
-
-## v1.0.29 - Monitor Notifications & Alerting Pass
-- Added state-change monitor alerting for failed, warning, regression and recovery states.
-- Added `monitor_alert_events` storage for dashboard/webhook alert history.
-- Added monitor alert fields: alert email, webhook URL, recovery alerts, last alert time and last alert status.
-- Added optional JSON webhook delivery for monitor status changes.
-- Extended monitor runner summaries with alert and alert failure counters.
-- Added monitor alerting UI fields and last-alert columns on monitor lists.
-- Added `MonitorAlertingTest`, monitor alerting operations documentation and v1.0.29 system audit.
-
-## v1.0.28 - Scheduled Monitoring Operations Pass
-- Expanded `php artisan aptoria:run-monitors` with operational filters: `--project`, `--monitor`, `--force`, `--dry-run`, `--json`, `--fail-on-warning` and `--fail-on-regression`.
-- Added structured monitor runner summaries with due/ran/failed/warning/regression/skipped counts.
-- Added dry-run support so Windows Task Scheduler and cron configuration can be verified without executing safe scans.
-- Added monitor command feature tests for dry-run behavior, project filtering and inactive-project failure handling.
-- Added scheduled monitoring operations documentation for Windows Task Scheduler and Linux cron.
-- Updated README, installation, QA checklist, build metadata and v1.0.28 system audit documentation.
-
-## v1.0.26 - Documentation & GitHub Readiness Cleanup
-- Replaced the outdated README with a current project overview, installation path, feature list and GitHub publishing guidance.
-- Reframed the old MVP plan as a current product status and roadmap document.
-- Rebuilt the QA checklist around the v1.0.26 documentation/repository-readiness release scope.
-- Updated server installer and installation documentation to the current Windows/XAMPP PowerShell flow.
-- Added GitHub repository checklist, third-party notices, contribution notes, security policy, GitHub Actions workflow and issue templates.
-- Documented the Aptoria UI asset redistribution caveat for public repositories.
-
-## v1.0.25 - Test Stability & Release Baseline Hotfix
-- Isolated setup lock detection during PHPUnit runs so a local `storage/app/installed.lock` file cannot block setup/demo import tests.
-- Stabilized the full project Markdown report by forcing fresh project relation loading and querying latest/failed test-case context directly.
-- Aligned the Project Details test-case summary label with the existing `messages.test_cases.total` translation key.
-- Updated release metadata and build slug for the new v1.0.25 baseline.
-
-## v1.0.24 - Roboto Typography & System Audit
-- Set Roboto as the primary UI font across authenticated admin pages, login/setup screens, the public landing page and the first-run preflight page.
-- Added Google Fonts loading links with safe Helvetica/Arial fallbacks so the app remains usable if the font cannot be fetched.
-- Fixed missing literal translation keys for auth profile placeholder, endpoint placeholder and project health assertion labels in English and Hungarian.
-- Added a system audit document for the v1.0.23 baseline and v1.0.24 patch scope.
-- Kept the Aptoria UI/Bootstrap-based UI direction intact.
-
-## v1.0.23 - Login Throttle Feedback, Fixed Footer & Localization Cleanup
-- Fixed login throttling feedback so the lockout message is shown immediately when the threshold is reached.
-- Added an inline login error panel as a no-JavaScript fallback in addition to Toastr.
-- Changed the application footer to stay fixed at the bottom of the viewport with content padding to avoid overlap.
-- Replaced several hardcoded dashboard, layout and project-detail UI strings with translation keys.
-- Added missing Hungarian translations and aligned English/Hungarian language keys.
-
-## v1.0.22 - Security Hardening Foundation + Deployment Security Status
-- Combined v1.0.21 and v1.0.22 security work into one cumulative release based on v1.0.20.
-- Added setup-token protection for non-local setup routes.
-- Blocked browser-based dependency installation unless localhost or a valid setup token is used.
-- Added login throttling, admin-only middleware and baseline security headers.
-- Switched release .env defaults to production-safe values.
-- Added a Security status panel under Settings.
-- Strengthened SSRF/network target blocking and sensitive value masking.
-- Added SECURITY_HARDENING and DEPLOYMENT_SECURITY_CHECKLIST documentation.
-
-## v1.0.20 - Compact workspace module buttons
-- Replaced oversized Workspace Modules widget cards with compact Aptoria UI-compatible buttons.
-- Kept icons, counters and quick navigation while reducing the vertical footprint.
-- Added compact button hover styling and safe overflow handling for long labels.
-
-## v1.0.19 - Project details footer escape fix and module widget polish
-- Fixed an extra closing wrapper div in the Project Details view that allowed the global footer to appear inside the workspace modules area.
-- Added a global app footer override so the footer flows after content instead of overlaying long pages.
-- Polished workspace module widgets with Aptoria UI-style mini chart strips and clearer footer call-to-action arrows.
-- Added clearfix/z-index stabilization around the workspace modules grid.
-
-## v1.0.18 - Workspace module widget redesign and footer stabilization
-- Fixed Project Details workspace module layout so widget footers no longer bleed into the module area.
-- Stabilized project and health widgets with flex-based footer alignment.
-- Redesigned workspace module buttons into richer Aptoria UI-style widget cards inspired by the template panels.
-- Improved visual hierarchy with eyebrow labels, large values, icon framing and dedicated footer call-to-action strips.
-
-## v1.0.17 - Project details widget redesign and polished project health
-- Replaced project detail color metric blocks with Aptoria UI-style widget panels.
-- Redesigned the Project Details area with a clearer overview, operational summary and richer workspace module cards.
-- Refreshed Project Health with summary widgets, execution quality, contract quality and finding pressure cards.
-- Preserved cumulative package contents and existing project workflows.
-
-## v1.0.16 - Aptoria UI widgets, app views and centered toastr
-- Added top-center Toastr notifications for success, warning, info and error activity flash messages across authenticated and auth/setup pages.
-- Refreshed dashboard with additional Aptoria UI-style widget panels and panel footers.
-- Added a recent activity stream and app-view shortcut cards inspired by Aptoria UI interface/app view patterns.
-- Removed inline auth/setup flash alerts in favor of unified Toastr feedback.
-
-## v1.0.15 - Project details layout refinement
-- Project detail action buttons moved into the Project Details panel header.
-- Added Aptoria UI-style colored top accent on the Project Details panel.
-- Introduced a colored project summary hero with visual metric cards to reduce empty space.
-- Kept project module shortcuts inside the block with improved visual balance.
-
-## v1.0.14 - Aptoria UI/UX polish follow-up
-- KPI and workflow icons switched to clean white styling and alignment was corrected.
-- Sidebar footer note moved into the page title area to avoid overlap with navigation items.
-- Sidebar logo block centering improved.
-- Badge readability improved with lighter label weight.
-- Project health warning translation key completed.
-- Project detail header simplified to add/new/edit actions only, with module links moved into the detail block.
-- Add/new actions now use leading plus icons for better consistency.
-
-# Aptoria v1.0.13 - Professional Aptoria UI/UX Refresh
-
-## Changed
-
-- Added a professional Aptoria UI-style page title and breadcrumb bar across authenticated screens.
-- Added project context information to the global page header when working inside a project.
-- Added FontAwesome icons to the main and project sidebar navigation.
-- Added a Aptoria UI-style safe QA mode footer to the sidebar.
-- Polished global panels, tables, forms, buttons, labels, alerts, pagination and code blocks.
-- Improved dashboard hero, KPI cards and auth/setup screen presentation.
-- Added responsive UI adjustments for smaller screens.
-
-## Preserved
-
-- Continues from the 1.0.10 server first-run installer line plus the later Aptoria UI/env stability hotfixes.
-- No database migration changes.
-- No business logic changes to scans, assertions, evidence packs, findings or release gates.
-
-## Packaging
-
-- `vendor/` is not included in the release ZIP.
-- `.env` is not included.
-- `database/database.sqlite` is not included.
-- `storage/app/installed.lock` is not included.
-- `public/assets/aptoria-ui/vendor` remains included.
-
-### Fixed
-- Decision Room Blade hotfix: normalized the inline PHP bootstrap block to prevent raw template code from leaking into the page header area.
-- Project navigation icon hotfix: replaced unsupported member-role icons with Font Awesome 4 compatible icons so menu icons render consistently.
-- Hungarian language polish: localized the visible Release Decision Room / Release Workflow labels for the Hungarian UI.

@@ -1,93 +1,59 @@
 @csrf
-<div class="form-group">
-    <label for="name">{{ __('messages.common.name') }}</label>
-    <input type="text" name="name" id="name" class="form-control" value="{{ old('name', $project->name) }}" required maxlength="150" placeholder="{{ __('messages.projects.project_name_placeholder') }}">
-    <span class="help-block">{{ __('messages.projects.name_help') }}</span>
-</div>
-<div class="form-group">
-    <label for="base_url">{{ __('messages.common.base_url') }}</label>
-    <input type="url" name="base_url" id="base_url" class="form-control" value="{{ old('base_url', $project->base_url) }}" required placeholder="https://api.example.com">
-    <span class="help-block">{{ __('messages.projects.base_url_help') }}</span>
-</div>
-<div class="form-group">
-    <label for="description">{{ __('messages.common.description') }}</label>
-    <textarea name="description" id="description" class="form-control" rows="5">{{ old('description', $project->description) }}</textarea>
-    <span class="help-block">{{ __('messages.projects.description_help') }}</span>
-</div>
-<div class="hr-line-dashed"></div>
-<h4 class="m-t-md"><i class="fa fa-id-card-o"></i> {{ __('messages.projects.report_branding_title') }}</h4>
-<p class="text-muted">{{ __('messages.projects.report_branding_intro') }}</p>
-<div class="row">
-    <div class="col-md-6">
-        <div class="form-group @error('report_client_name') has-error @enderror">
-            <label for="report_client_name">{{ __('messages.projects.report_client_name') }}</label>
-            <input type="text" name="report_client_name" id="report_client_name" class="form-control" value="{{ old('report_client_name', $project->report_client_name) }}" maxlength="160" placeholder="Acme Client / Demo Client">
-            <span class="help-block">{{ __('messages.projects.report_client_name_help') }}</span>
-            @error('report_client_name')<span class="help-block">{{ $message }}</span>@enderror
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="form-group @error('report_organization') has-error @enderror">
-            <label for="report_organization">{{ __('messages.projects.report_organization') }}</label>
-            <input type="text" name="report_organization" id="report_organization" class="form-control" value="{{ old('report_organization', $project->report_organization) }}" maxlength="160" placeholder="Client organization / Portfolio QA Lab">
-            <span class="help-block">{{ __('messages.projects.report_organization_help') }}</span>
-            @error('report_organization')<span class="help-block">{{ $message }}</span>@enderror
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="form-group @error('report_prepared_by') has-error @enderror">
-            <label for="report_prepared_by">{{ __('messages.projects.report_prepared_by') }}</label>
-            <input type="text" name="report_prepared_by" id="report_prepared_by" class="form-control" value="{{ old('report_prepared_by', $project->report_prepared_by) }}" maxlength="120" placeholder="{{ auth()->user()?->report_display_name ?: auth()->user()?->name }}">
-            <span class="help-block">{{ __('messages.projects.report_prepared_by_help') }}</span>
-            @error('report_prepared_by')<span class="help-block">{{ $message }}</span>@enderror
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="form-group @error('report_role_title') has-error @enderror">
-            <label for="report_role_title">{{ __('messages.projects.report_role_title') }}</label>
-            <input type="text" name="report_role_title" id="report_role_title" class="form-control" value="{{ old('report_role_title', $project->report_role_title) }}" maxlength="160" placeholder="QA Engineer / API Auditor">
-            @error('report_role_title')<span class="help-block">{{ $message }}</span>@enderror
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="form-group @error('report_confidentiality_label') has-error @enderror">
-            <label for="report_confidentiality_label">{{ __('messages.projects.report_confidentiality_label') }}</label>
-            <input type="text" name="report_confidentiality_label" id="report_confidentiality_label" class="form-control" value="{{ old('report_confidentiality_label', $project->report_confidentiality_label) }}" maxlength="120" placeholder="Internal / Confidential / Client draft">
-            @error('report_confidentiality_label')<span class="help-block">{{ $message }}</span>@enderror
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="form-group @error('report_logo') has-error @enderror">
-            <label for="report_logo">{{ __('messages.projects.report_logo') }}</label>
-            <input type="file" name="report_logo" id="report_logo" class="form-control" accept=".png,.jpg,.jpeg,.webp,.svg">
-            <span class="help-block">{{ __('messages.projects.report_logo_help') }}</span>
-            @if($project->report_logo_original_name)
-                <span class="help-block"><i class="fa fa-picture-o"></i> {{ __('messages.projects.current_report_logo') }}: {{ $project->report_logo_original_name }}</span>
-                <div class="checkbox checkbox-danger m-t-xs">
-                    <label><input type="checkbox" name="remove_report_logo" value="1"> {{ __('messages.projects.remove_report_logo') }}</label>
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">{{ __('messages.projects.profile_card') }}</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <label class="form-label">{{ __('messages.projects.name') }}</label>
+                        <div class="input-group"><span class="input-group-text"><i data-lucide="folder-kanban"></i></span><input class="form-control" name="name" value="{{ old('name', $project->name) }}" required placeholder="{{ __('messages.projects.name_placeholder') }}"></div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">{{ __('messages.projects.status') }}</label>
+                        <select class="form-select" name="status">
+                            <option value="draft" @selected(old('status', $project->status ?: 'draft') === 'draft')>{{ __('messages.projects.status_draft') }}</option>
+                            <option value="active" @selected(old('status', $project->status) === 'active')>{{ __('messages.projects.status_active') }}</option>
+                            <option value="paused" @selected(old('status', $project->status) === 'paused')>{{ __('messages.projects.status_paused') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('messages.projects.base_url') }}</label>
+                        <div class="input-group"><span class="input-group-text"><i data-lucide="globe"></i></span><input class="form-control" name="base_url" value="{{ old('base_url', $project->base_url) }}" placeholder="{{ __('messages.projects.base_url_placeholder') }}"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ __('messages.projects.environment') }}</label>
+                        <input class="form-control" name="environment_label" value="{{ old('environment_label', $project->environment_label) }}" placeholder="{{ __('messages.projects.environment_placeholder') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">{{ __('messages.projects.qa_owner') }}</label>
+                        <input class="form-control" name="qa_owner" value="{{ old('qa_owner', $project->qa_owner) }}" placeholder="{{ __('messages.projects.qa_owner_placeholder') }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ __('messages.projects.description') }}</label>
+                        <textarea class="form-control" name="description" rows="4" placeholder="{{ __('messages.projects.description_placeholder') }}">{{ old('description', $project->description) }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ __('messages.projects.release_goal') }}</label>
+                        <textarea class="form-control" name="release_goal" rows="4" placeholder="{{ __('messages.projects.release_goal_placeholder') }}">{{ old('release_goal', $project->release_goal) }}</textarea>
+                    </div>
                 </div>
-            @endif
-            @error('report_logo')<span class="help-block">{{ $message }}</span>@enderror
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0">{{ __('messages.workspace.workspace_preview') }}</h5></div>
+            <div class="card-body">
+                <div class="aptoria-preview-step"><span class="avatar avatar-xs rounded text-bg-primary"><span class="avatar-title">1</span></span><div><strong>{{ __('messages.workspace.preview_project') }}</strong><small>{{ __('messages.workspace.preview_project_copy') }}</small></div></div>
+                <div class="aptoria-preview-step"><span class="avatar avatar-xs rounded text-bg-light"><span class="avatar-title">2</span></span><div><strong>{{ __('messages.workspace.preview_endpoint') }}</strong><small>{{ __('messages.workspace.preview_endpoint_copy') }}</small></div></div>
+                <div class="aptoria-preview-step"><span class="avatar avatar-xs rounded text-bg-light"><span class="avatar-title">3</span></span><div><strong>{{ __('messages.workspace.preview_evidence') }}</strong><small>{{ __('messages.workspace.preview_evidence_copy') }}</small></div></div>
+                <div class="alert alert-light border mt-3 mb-0"><i data-lucide="info" class="me-1"></i>{{ __('messages.projects.form_help') }}</div>
+            </div>
+        </div>
+        <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-primary btn-lg" type="submit"><i data-lucide="save" class="me-1"></i>{{ __('messages.common.save') }}</button>
+            <a href="{{ route('projects.index') }}" class="btn btn-light">{{ __('messages.common.cancel') }}</a>
         </div>
     </div>
 </div>
-<div class="form-group @error('report_disclaimer') has-error @enderror">
-    <label for="report_disclaimer">{{ __('messages.projects.report_disclaimer') }}</label>
-    <textarea name="report_disclaimer" id="report_disclaimer" class="form-control" rows="4" maxlength="3000" placeholder="{{ __('messages.projects.report_disclaimer_placeholder') }}">{{ old('report_disclaimer', $project->report_disclaimer) }}</textarea>
-    <span class="help-block">{{ __('messages.projects.report_disclaimer_help') }}</span>
-    @error('report_disclaimer')<span class="help-block">{{ $message }}</span>@enderror
-</div>
-
-<div class="checkbox checkbox-success">
-    <label>
-        <input type="checkbox" name="is_active" value="1" {{ old('is_active', $project->is_active) ? 'checked' : '' }}> {{ __('messages.projects.is_active') }}
-    </label>
-    <span class="help-block">{{ __('messages.projects.active_help') }}</span>
-</div>
-<div class="hr-line-dashed"></div>
-<button type="submit" class="btn btn-success">{{ __('messages.common.save') }}</button>
-<a href="{{ route('projects.index') }}" class="btn btn-default">{{ __('messages.common.cancel') }}</a>

@@ -10,51 +10,25 @@ class ContractValidationResult extends Model
 {
     use HasFactory;
 
-    public const STATUS_PASS = 'pass';
-    public const STATUS_FAIL = 'fail';
-    public const STATUS_WARNING = 'warning';
-    public const STATUS_SKIPPED = 'skipped';
-
-    public const SEVERITY_LOW = 'low';
-    public const SEVERITY_MEDIUM = 'medium';
-    public const SEVERITY_HIGH = 'high';
-    public const SEVERITY_CRITICAL = 'critical';
-
-    public const CHECK_OPERATION_DOCUMENTED = 'operation_documented';
-    public const CHECK_OPERATION_IMPLEMENTED = 'operation_implemented';
-    public const CHECK_STATUS_CODE = 'status_code';
-    public const CHECK_CONTENT_TYPE = 'content_type';
-    public const CHECK_RESPONSE_SCHEMA = 'response_schema';
-    public const CHECK_SCAN_EVIDENCE = 'scan_evidence';
-    public const CHECK_AUTH_REQUIREMENT = 'auth_requirement';
-    public const CHECK_UNDOCUMENTED_RESPONSE_FIELD = 'undocumented_response_field';
+    public const TYPES = ['matched', 'undocumented_endpoint', 'missing_inventory'];
+    public const SEVERITIES = ['info', 'warning', 'blocker'];
 
     protected $fillable = [
-        'contract_validation_run_id',
         'project_id',
+        'contract_validation_run_id',
         'endpoint_id',
-        'scan_result_id',
+        'result_type',
+        'severity',
         'method',
         'path',
-        'check_type',
-        'severity',
-        'status',
-        'message',
-        'expected',
-        'actual',
-        'evidence_json',
+        'operation_id',
+        'summary',
+        'details_json',
     ];
 
     protected function casts(): array
     {
-        return [
-            'evidence_json' => 'array',
-        ];
-    }
-
-    public function run(): BelongsTo
-    {
-        return $this->belongsTo(ContractValidationRun::class, 'contract_validation_run_id');
+        return ['details_json' => 'array'];
     }
 
     public function project(): BelongsTo
@@ -62,54 +36,41 @@ class ContractValidationResult extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function run(): BelongsTo
+    {
+        return $this->belongsTo(ContractValidationRun::class, 'contract_validation_run_id');
+    }
+
     public function endpoint(): BelongsTo
     {
         return $this->belongsTo(Endpoint::class);
     }
 
-    public function scanResult(): BelongsTo
+    public function getTypeLabelAttribute(): string
     {
-        return $this->belongsTo(ScanResult::class);
-    }
-
-    public function findings(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(Finding::class);
-    }
-
-    public function getStatusCssAttribute(): string
-    {
-        return match ($this->status) {
-            self::STATUS_PASS => 'success',
-            self::STATUS_FAIL => 'danger',
-            self::STATUS_WARNING => 'warning',
-            self::STATUS_SKIPPED => 'default',
-            default => 'info',
-        };
-    }
-
-    public function getSeverityCssAttribute(): string
-    {
-        return match ($this->severity) {
-            self::SEVERITY_CRITICAL => 'danger',
-            self::SEVERITY_HIGH => 'warning',
-            self::SEVERITY_LOW => 'success',
-            default => 'info',
-        };
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return __('messages.contract_validations.result_statuses.'.$this->status);
+        return __('messages.contract_validation.result_types.'.($this->result_type ?: 'matched'));
     }
 
     public function getSeverityLabelAttribute(): string
     {
-        return __('messages.contract_validations.severities.'.$this->severity);
+        return __('messages.contract_validation.severities.'.($this->severity ?: 'info'));
     }
 
-    public function getCheckTypeLabelAttribute(): string
+    public function getSeverityToneAttribute(): string
     {
-        return __('messages.contract_validations.check_types.'.$this->check_type);
+        return match ($this->severity) {
+            'blocker' => 'danger',
+            'warning' => 'warning',
+            default => 'success',
+        };
+    }
+
+    public function getTypeToneAttribute(): string
+    {
+        return match ($this->result_type) {
+            'undocumented_endpoint' => 'warning',
+            'missing_inventory' => 'info',
+            default => 'success',
+        };
     }
 }

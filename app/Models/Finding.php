@@ -11,232 +11,59 @@ class Finding extends Model
 {
     use HasFactory;
 
-    public const SOURCE_MANUAL = 'manual';
-    public const SOURCE_SCAN = 'scan';
-    public const SOURCE_ASSERTION = 'assertion';
-    public const SOURCE_CONTRACT = 'contract';
-    public const SOURCE_TEST_CASE = 'test_case';
-    public const SOURCE_REGRESSION = 'regression';
-
-    public const SOURCES = [
-        self::SOURCE_MANUAL,
-        self::SOURCE_SCAN,
-        self::SOURCE_ASSERTION,
-        self::SOURCE_CONTRACT,
-        self::SOURCE_TEST_CASE,
-        self::SOURCE_REGRESSION,
-    ];
-
-    public const SEVERITY_LOW = 'low';
-    public const SEVERITY_MEDIUM = 'medium';
-    public const SEVERITY_HIGH = 'high';
-    public const SEVERITY_CRITICAL = 'critical';
-
-    public const SEVERITIES = [
-        self::SEVERITY_LOW,
-        self::SEVERITY_MEDIUM,
-        self::SEVERITY_HIGH,
-        self::SEVERITY_CRITICAL,
-    ];
-
-    public const STATUS_OPEN = 'open';
-    public const STATUS_CONFIRMED = 'confirmed';
-    public const STATUS_TRIAGED = 'triaged';
-    public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_FIXED = 'fixed';
-    public const STATUS_READY_FOR_RETEST = 'ready_for_retest';
-    public const STATUS_RETEST_FAILED = 'retest_failed';
-    public const STATUS_VERIFIED = 'verified';
-    public const STATUS_FALSE_POSITIVE = 'false_positive';
-    public const STATUS_ACCEPTED_RISK = 'accepted_risk';
-    public const STATUS_CLOSED = 'closed';
-    public const STATUS_REOPENED = 'reopened';
-
-    public const PRIORITY_LOW = 'low';
-    public const PRIORITY_MEDIUM = 'medium';
-    public const PRIORITY_HIGH = 'high';
-    public const PRIORITY_CRITICAL = 'critical';
-
-    public const PRIORITIES = [
-        self::PRIORITY_LOW,
-        self::PRIORITY_MEDIUM,
-        self::PRIORITY_HIGH,
-        self::PRIORITY_CRITICAL,
-    ];
-
-    public const VERIFICATION_PENDING = 'pending';
-    public const VERIFICATION_READY_FOR_RETEST = 'ready_for_retest';
-    public const VERIFICATION_RETEST_FAILED = 'retest_failed';
-    public const VERIFICATION_VERIFIED = 'verified';
-    public const VERIFICATION_NOT_REQUIRED = 'not_required';
-
-    public const VERIFICATION_STATUSES = [
-        self::VERIFICATION_PENDING,
-        self::VERIFICATION_READY_FOR_RETEST,
-        self::VERIFICATION_RETEST_FAILED,
-        self::VERIFICATION_VERIFIED,
-        self::VERIFICATION_NOT_REQUIRED,
-    ];
-
-    public const RETEST_PENDING = 'pending';
-    public const RETEST_PASS = 'pass';
-    public const RETEST_FAIL = 'fail';
-    public const RETEST_BLOCKED = 'blocked';
-
-    public const RETEST_RESULTS = [
-        self::RETEST_PENDING,
-        self::RETEST_PASS,
-        self::RETEST_FAIL,
-        self::RETEST_BLOCKED,
-    ];
-
-    /**
-     * Canonical finding lifecycle states shown in the v1.1.9 UI and reports.
-     * Legacy states are still accepted through STATUSES for older databases.
-     */
-    public const LIFECYCLE_STATUSES = [
-        self::STATUS_OPEN,
-        self::STATUS_CONFIRMED,
-        self::STATUS_IN_PROGRESS,
-        self::STATUS_FIXED,
-        self::STATUS_READY_FOR_RETEST,
-        self::STATUS_RETEST_FAILED,
-        self::STATUS_VERIFIED,
-        self::STATUS_FALSE_POSITIVE,
-        self::STATUS_ACCEPTED_RISK,
-        self::STATUS_REOPENED,
-    ];
-
-    public const LEGACY_STATUSES = [
-        self::STATUS_TRIAGED,
-        self::STATUS_CLOSED,
-    ];
-
-    public const STATUSES = [
-        self::STATUS_OPEN,
-        self::STATUS_CONFIRMED,
-        self::STATUS_TRIAGED,
-        self::STATUS_IN_PROGRESS,
-        self::STATUS_FIXED,
-        self::STATUS_READY_FOR_RETEST,
-        self::STATUS_RETEST_FAILED,
-        self::STATUS_VERIFIED,
-        self::STATUS_FALSE_POSITIVE,
-        self::STATUS_ACCEPTED_RISK,
-        self::STATUS_CLOSED,
-        self::STATUS_REOPENED,
-    ];
-
-    public const OPEN_STATUSES = [
-        self::STATUS_OPEN,
-        self::STATUS_CONFIRMED,
-        self::STATUS_TRIAGED,
-        self::STATUS_IN_PROGRESS,
-        self::STATUS_READY_FOR_RETEST,
-        self::STATUS_RETEST_FAILED,
-        self::STATUS_REOPENED,
-    ];
-
-    public const RESOLVED_STATUSES = [
-        self::STATUS_FIXED,
-        self::STATUS_VERIFIED,
-        self::STATUS_FALSE_POSITIVE,
-        self::STATUS_ACCEPTED_RISK,
-        self::STATUS_CLOSED,
-    ];
+    public const SOURCES = ['manual', 'scan', 'assertion', 'contract', 'test_case', 'regression'];
+    public const SEVERITIES = ['low', 'medium', 'high', 'critical'];
+    public const STATUSES = ['open', 'confirmed', 'triaged', 'in_progress', 'fixed', 'ready_for_retest', 'retest_failed', 'verified'];
+    public const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
+    public const RETEST_STATUSES = ['not_required', 'required', 'ready_for_retest', 'passed', 'failed'];
 
     protected $fillable = [
         'project_id',
-        'owner_user_id',
         'endpoint_id',
-        'test_case_id',
-        'linked_release_gate_id',
         'scan_run_id',
         'scan_result_id',
-        'contract_validation_result_id',
+        'endpoint_snapshot_compare_id',
+        'endpoint_snapshot_compare_item_id',
         'title',
-        'description',
         'source',
         'severity',
-        'priority',
         'status',
-        'verification_status',
-        'retest_required',
-        'retest_result',
-        'fix_evidence_required',
-        'verified_by_user_id',
-        'verified_at',
-        'last_retest_at',
+        'priority',
+        'owner_name',
         'due_date',
+        'summary',
         'reproduction_steps',
         'expected_result',
         'actual_result',
         'recommendation',
-        'lifecycle_note',
-        'lifecycle_changed_at',
-        'lifecycle_changed_by_user_id',
-        'reopened_count',
-        'detected_at',
-        'resolved_at',
-        'accepted_risk_expires_at',
-        'accepted_risk_note',
+        'evidence_required',
+        'retest_required',
+        'retest_status',
+        'retest_note',
+        'retest_requested_at',
+        'ready_for_retest_at',
+        'retested_at',
+        'retested_by_user_id',
+        'retest_evidence_id',
+        'merged_into_finding_id',
+        'duplicate_group_key',
+        'merged_at',
+        'merged_by_user_id',
+        'metadata_json',
     ];
 
     protected function casts(): array
     {
         return [
-            'detected_at' => 'datetime',
-            'resolved_at' => 'datetime',
-            'due_date' => 'datetime',
-            'verified_at' => 'datetime',
-            'last_retest_at' => 'datetime',
+            'due_date' => 'date',
+            'evidence_required' => 'boolean',
             'retest_required' => 'boolean',
-            'fix_evidence_required' => 'boolean',
-            'accepted_risk_expires_at' => 'datetime',
-            'lifecycle_changed_at' => 'datetime',
-            'reopened_count' => 'integer',
+            'retest_requested_at' => 'datetime',
+            'ready_for_retest_at' => 'datetime',
+            'retested_at' => 'datetime',
+            'merged_at' => 'datetime',
+            'metadata_json' => 'array',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::saving(function (Finding $finding): void {
-            if (in_array($finding->status, self::RESOLVED_STATUSES, true)) {
-                if (! $finding->resolved_at) {
-                    $finding->resolved_at = now();
-                }
-            } else {
-                $finding->resolved_at = null;
-            }
-
-            if ($finding->status === self::STATUS_READY_FOR_RETEST) {
-                $finding->verification_status = self::VERIFICATION_READY_FOR_RETEST;
-                $finding->retest_required = true;
-            } elseif ($finding->status === self::STATUS_RETEST_FAILED) {
-                $finding->verification_status = self::VERIFICATION_RETEST_FAILED;
-                $finding->retest_required = true;
-                $finding->retest_result = self::RETEST_FAIL;
-            } elseif ($finding->status === self::STATUS_VERIFIED) {
-                $finding->verification_status = self::VERIFICATION_VERIFIED;
-                $finding->retest_result = self::RETEST_PASS;
-                if (! $finding->verified_at) {
-                    $finding->verified_at = now();
-                }
-            } elseif ($finding->status === self::STATUS_FALSE_POSITIVE || $finding->status === self::STATUS_ACCEPTED_RISK) {
-                $finding->verification_status = self::VERIFICATION_NOT_REQUIRED;
-            } elseif (in_array($finding->status, [self::STATUS_OPEN, self::STATUS_CONFIRMED, self::STATUS_IN_PROGRESS, self::STATUS_REOPENED], true)
-                && in_array($finding->verification_status, [self::VERIFICATION_VERIFIED, self::VERIFICATION_NOT_REQUIRED], true)) {
-                $finding->verification_status = self::VERIFICATION_PENDING;
-            }
-
-            if (in_array($finding->retest_result, [self::RETEST_PASS, self::RETEST_FAIL, self::RETEST_BLOCKED], true) && ! $finding->last_retest_at) {
-                $finding->last_retest_at = now();
-            }
-
-            if (! $finding->detected_at) {
-                $finding->detected_at = now();
-            }
-        });
     }
 
     public function project(): BelongsTo
@@ -244,29 +71,9 @@ class Finding extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function owner(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'owner_user_id');
-    }
-
-    public function verifiedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'verified_by_user_id');
-    }
-
-    public function linkedReleaseGate(): BelongsTo
-    {
-        return $this->belongsTo(QaReleaseGate::class, 'linked_release_gate_id');
-    }
-
     public function endpoint(): BelongsTo
     {
         return $this->belongsTo(Endpoint::class);
-    }
-
-    public function testCase(): BelongsTo
-    {
-        return $this->belongsTo(TestCase::class);
     }
 
     public function scanRun(): BelongsTo
@@ -279,216 +86,157 @@ class Finding extends Model
         return $this->belongsTo(ScanResult::class);
     }
 
-    public function contractValidationResult(): BelongsTo
+    public function endpointSnapshotCompare(): BelongsTo
     {
-        return $this->belongsTo(ContractValidationResult::class);
+        return $this->belongsTo(EndpointSnapshotCompare::class);
+    }
+
+    public function endpointSnapshotCompareItem(): BelongsTo
+    {
+        return $this->belongsTo(EndpointSnapshotCompareItem::class);
     }
 
     public function evidence(): HasMany
     {
-        return $this->hasMany(FindingEvidence::class)->latest();
+        return $this->hasMany(FindingEvidence::class);
     }
 
-    public function lifecycleEvents(): HasMany
+    public function retestedBy(): BelongsTo
     {
-        return $this->hasMany(FindingLifecycleEvent::class)->latest('changed_at')->latest();
+        return $this->belongsTo(User::class, 'retested_by_user_id');
     }
 
-    public function comments(): HasMany
+    public function retestEvidence(): BelongsTo
     {
-        return $this->hasMany(FindingComment::class)->latest();
+        return $this->belongsTo(FindingEvidence::class, 'retest_evidence_id');
     }
 
     public function riskAcceptances(): HasMany
     {
-        return $this->hasMany(RiskAcceptance::class)->latest('accepted_at')->latest();
+        return $this->hasMany(RiskAcceptance::class);
     }
 
-    public function activeRiskAcceptance()
+    public function mergedInto(): BelongsTo
     {
-        return $this->hasOne(RiskAcceptance::class)->where('status', RiskAcceptance::STATUS_ACTIVE)->latestOfMany('accepted_at');
+        return $this->belongsTo(Finding::class, 'merged_into_finding_id');
     }
 
-    public function lifecycleChangedBy(): BelongsTo
+    public function mergedDuplicates(): HasMany
     {
-        return $this->belongsTo(User::class, 'lifecycle_changed_by_user_id');
+        return $this->hasMany(Finding::class, 'merged_into_finding_id');
     }
 
-
-    /** @return array<string, string> */
-    public static function lifecycleStatusOptions(): array
+    public function duplicateCandidatesAsPrimary(): HasMany
     {
-        return collect(self::LIFECYCLE_STATUSES)
-            ->mapWithKeys(fn (string $status): array => [$status => __('messages.findings.statuses.'.$status)])
-            ->all();
+        return $this->hasMany(FindingDuplicateCandidate::class, 'primary_finding_id');
     }
 
-    /** @return array<string, string> */
-    public static function lifecycleTransitionsFor(string $status): array
+    public function activeRiskAcceptance(): HasMany
     {
-        return match ($status) {
-            self::STATUS_OPEN => [
-                self::STATUS_CONFIRMED => __('messages.findings.lifecycle.actions.confirm'),
-                self::STATUS_IN_PROGRESS => __('messages.findings.lifecycle.actions.start'),
-                self::STATUS_READY_FOR_RETEST => __('messages.findings.lifecycle.actions.ready_for_retest'),
-                self::STATUS_FIXED => __('messages.findings.lifecycle.actions.mark_fixed'),
-                self::STATUS_FALSE_POSITIVE => __('messages.findings.lifecycle.actions.false_positive'),
-                self::STATUS_ACCEPTED_RISK => __('messages.findings.lifecycle.actions.accept_risk'),
-            ],
-            self::STATUS_CONFIRMED, self::STATUS_TRIAGED => [
-                self::STATUS_IN_PROGRESS => __('messages.findings.lifecycle.actions.start'),
-                self::STATUS_READY_FOR_RETEST => __('messages.findings.lifecycle.actions.ready_for_retest'),
-                self::STATUS_FIXED => __('messages.findings.lifecycle.actions.mark_fixed'),
-                self::STATUS_FALSE_POSITIVE => __('messages.findings.lifecycle.actions.false_positive'),
-                self::STATUS_ACCEPTED_RISK => __('messages.findings.lifecycle.actions.accept_risk'),
-            ],
-            self::STATUS_IN_PROGRESS => [
-                self::STATUS_READY_FOR_RETEST => __('messages.findings.lifecycle.actions.ready_for_retest'),
-                self::STATUS_FIXED => __('messages.findings.lifecycle.actions.mark_fixed'),
-                self::STATUS_FALSE_POSITIVE => __('messages.findings.lifecycle.actions.false_positive'),
-                self::STATUS_ACCEPTED_RISK => __('messages.findings.lifecycle.actions.accept_risk'),
-                self::STATUS_REOPENED => __('messages.findings.lifecycle.actions.reopen'),
-            ],
-            self::STATUS_FIXED => [
-                self::STATUS_READY_FOR_RETEST => __('messages.findings.lifecycle.actions.ready_for_retest'),
-                self::STATUS_VERIFIED => __('messages.findings.lifecycle.actions.verify'),
-                self::STATUS_REOPENED => __('messages.findings.lifecycle.actions.reopen'),
-            ],
-            self::STATUS_READY_FOR_RETEST => [
-                self::STATUS_RETEST_FAILED => __('messages.findings.lifecycle.actions.retest_failed'),
-                self::STATUS_VERIFIED => __('messages.findings.lifecycle.actions.verify'),
-                self::STATUS_REOPENED => __('messages.findings.lifecycle.actions.reopen'),
-            ],
-            self::STATUS_RETEST_FAILED => [
-                self::STATUS_IN_PROGRESS => __('messages.findings.lifecycle.actions.start'),
-                self::STATUS_READY_FOR_RETEST => __('messages.findings.lifecycle.actions.ready_for_retest'),
-                self::STATUS_FIXED => __('messages.findings.lifecycle.actions.mark_fixed'),
-            ],
-            self::STATUS_VERIFIED, self::STATUS_FALSE_POSITIVE, self::STATUS_ACCEPTED_RISK, self::STATUS_CLOSED => [
-                self::STATUS_REOPENED => __('messages.findings.lifecycle.actions.reopen'),
-            ],
-            self::STATUS_REOPENED => [
-                self::STATUS_CONFIRMED => __('messages.findings.lifecycle.actions.confirm'),
-                self::STATUS_IN_PROGRESS => __('messages.findings.lifecycle.actions.start'),
-                self::STATUS_READY_FOR_RETEST => __('messages.findings.lifecycle.actions.ready_for_retest'),
-                self::STATUS_FIXED => __('messages.findings.lifecycle.actions.mark_fixed'),
-                self::STATUS_FALSE_POSITIVE => __('messages.findings.lifecycle.actions.false_positive'),
-                self::STATUS_ACCEPTED_RISK => __('messages.findings.lifecycle.actions.accept_risk'),
-            ],
-            default => [],
-        };
-    }
-
-    /** @return array<string, string> */
-    public function availableLifecycleTransitions(): array
-    {
-        return self::lifecycleTransitionsFor($this->status);
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return __('messages.findings.statuses.'.$this->status);
-    }
-
-    public function getSeverityLabelAttribute(): string
-    {
-        return __('messages.findings.severities.'.$this->severity);
+        return $this->riskAcceptances()->where('status', 'active')->latest('accepted_at');
     }
 
     public function getSourceLabelAttribute(): string
     {
-        return __('messages.findings.sources.'.$this->source);
+        return __('messages.findings.sources.'.($this->source ?: 'manual'));
+    }
+
+    public function getSeverityLabelAttribute(): string
+    {
+        return __('messages.findings.severities.'.($this->severity ?: 'low'));
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return __('messages.findings.statuses.'.($this->status ?: 'open'));
     }
 
     public function getPriorityLabelAttribute(): string
     {
-        return __('messages.findings.priorities.'.($this->priority ?: self::PRIORITY_MEDIUM));
+        return __('messages.findings.priorities.'.($this->priority ?: 'normal'));
     }
 
-    public function getVerificationStatusLabelAttribute(): string
+    public function getRetestStatusLabelAttribute(): string
     {
-        return __('messages.findings.verification_statuses.'.($this->verification_status ?: self::VERIFICATION_PENDING));
+        return __('messages.findings.retest_statuses.'.($this->retest_status ?: 'not_required'));
     }
 
-    public function getRetestResultLabelAttribute(): string
+    public function getRetestStatusToneAttribute(): string
     {
-        return $this->retest_result ? __('messages.findings.retest_results.'.$this->retest_result) : __('messages.common.not_available');
-    }
-
-    public function getStatusCssAttribute(): string
-    {
-        return match ($this->status) {
-            self::STATUS_OPEN => 'danger',
-            self::STATUS_CONFIRMED => 'warning',
-            self::STATUS_TRIAGED => 'warning',
-            self::STATUS_IN_PROGRESS => 'info',
-            self::STATUS_REOPENED => 'danger',
-            self::STATUS_READY_FOR_RETEST => 'warning',
-            self::STATUS_RETEST_FAILED => 'danger',
-            self::STATUS_FIXED => 'success',
-            self::STATUS_VERIFIED => 'success',
-            self::STATUS_FALSE_POSITIVE => 'default',
-            self::STATUS_ACCEPTED_RISK => 'warning',
-            self::STATUS_CLOSED => 'default',
-            default => 'default',
+        return match ($this->retest_status) {
+            'passed' => 'success',
+            'failed' => 'danger',
+            'ready_for_retest' => 'primary',
+            'required' => 'warning',
+            default => 'secondary',
         };
     }
 
-    public function getSeverityCssAttribute(): string
+    public function getActiveRiskAcceptanceAttribute(): ?RiskAcceptance
+    {
+        return $this->relationLoaded('riskAcceptances')
+            ? $this->riskAcceptances->first(fn (RiskAcceptance $acceptance) => $acceptance->is_active_and_valid)
+            : $this->activeRiskAcceptance()->get()->first(fn (RiskAcceptance $acceptance) => $acceptance->is_active_and_valid);
+    }
+
+    public function getLatestRiskAcceptanceAttribute(): ?RiskAcceptance
+    {
+        return $this->relationLoaded('riskAcceptances')
+            ? $this->riskAcceptances->sortByDesc('accepted_at')->first()
+            : $this->riskAcceptances()->latest('accepted_at')->latest()->first();
+    }
+
+    public function getRiskAcceptanceStateLabelAttribute(): string
+    {
+        if ($this->active_risk_acceptance) {
+            return $this->active_risk_acceptance->status_label;
+        }
+
+        if ($this->latest_risk_acceptance?->display_status === 'expired') {
+            return __('messages.risk_acceptance.statuses.expired');
+        }
+
+        return __('messages.risk_acceptance.not_accepted');
+    }
+
+    public function getRiskAcceptanceToneAttribute(): string
+    {
+        if ($this->active_risk_acceptance) {
+            return $this->active_risk_acceptance->status_tone;
+        }
+
+        return $this->latest_risk_acceptance?->display_status === 'expired' ? 'danger' : 'secondary';
+    }
+
+    public function getSeverityToneAttribute(): string
     {
         return match ($this->severity) {
-            self::SEVERITY_CRITICAL => 'danger',
-            self::SEVERITY_HIGH => 'warning',
-            self::SEVERITY_LOW => 'success',
-            default => 'info',
+            'critical' => 'danger',
+            'high' => 'warning',
+            'medium' => 'info',
+            default => 'success',
         };
     }
 
-    public function getPriorityCssAttribute(): string
+    public function getStatusToneAttribute(): string
+    {
+        return match ($this->status) {
+            'verified' => 'success',
+            'fixed', 'ready_for_retest' => 'primary',
+            'retest_failed' => 'danger',
+            'in_progress', 'triaged' => 'warning',
+            'confirmed' => 'info',
+            default => 'secondary',
+        };
+    }
+
+    public function getPriorityToneAttribute(): string
     {
         return match ($this->priority) {
-            self::PRIORITY_CRITICAL => 'danger',
-            self::PRIORITY_HIGH => 'warning',
-            self::PRIORITY_LOW => 'success',
-            default => 'info',
+            'urgent' => 'danger',
+            'high' => 'warning',
+            'low' => 'secondary',
+            default => 'primary',
         };
-    }
-
-    public function getVerificationStatusCssAttribute(): string
-    {
-        return match ($this->verification_status) {
-            self::VERIFICATION_VERIFIED => 'success',
-            self::VERIFICATION_READY_FOR_RETEST => 'warning',
-            self::VERIFICATION_RETEST_FAILED => 'danger',
-            self::VERIFICATION_NOT_REQUIRED => 'default',
-            default => 'info',
-        };
-    }
-
-    public function getRetestResultCssAttribute(): string
-    {
-        return match ($this->retest_result) {
-            self::RETEST_PASS => 'success',
-            self::RETEST_FAIL => 'danger',
-            self::RETEST_BLOCKED => 'warning',
-            default => 'default',
-        };
-    }
-
-    public function getIsOverdueAttribute(): bool
-    {
-        return $this->due_date !== null
-            && $this->due_date->isPast()
-            && ! in_array($this->verification_status, [self::VERIFICATION_VERIFIED, self::VERIFICATION_NOT_REQUIRED], true);
-    }
-
-    public function getHasRetestEvidenceAttribute(): bool
-    {
-        return $this->evidence->contains(fn (FindingEvidence $evidence): bool => $evidence->type === FindingEvidence::TYPE_RETEST);
-    }
-
-    public function getIsOpenAttribute(): bool
-    {
-        return in_array($this->status, self::OPEN_STATUSES, true);
     }
 }

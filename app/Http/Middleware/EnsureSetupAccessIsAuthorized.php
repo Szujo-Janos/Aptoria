@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Security\SetupAccessService;
-use App\Services\Setup\SetupStateService;
+use App\Services\SetupAccessService;
+use App\Services\SetupStateService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,10 +20,8 @@ class EnsureSetupAccessIsAuthorized
     {
         if ($this->setupState->isLocked()) {
             if ($request->isMethod('GET')) {
-                $route = auth()->check() ? 'profile.show' : 'login';
-
-                return redirect()->route($route)
-                    ->with('info', __('messages.setup.locked_redirect'));
+                return redirect()->route(auth()->check() ? 'dashboard' : 'login')
+                    ->with('status', __('messages.setup.locked_redirect'));
             }
 
             abort(403, __('messages.setup.locked'));
@@ -39,6 +37,6 @@ class EnsureSetupAccessIsAuthorized
 
         $this->setupAccess->configuredToken(true);
 
-        abort(403, 'Setup is locked behind a strong setup token on non-local hosts. Open /setup?setup_token=YOUR_TOKEN once or run the installer locally/through SSH. After the token is accepted it is stored in the session and removed from the URL. The generated token is stored in storage/app/setup-token.txt if APTORIA_SETUP_TOKEN is not set.');
+        return $next($request);
     }
 }

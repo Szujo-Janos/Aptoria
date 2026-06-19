@@ -1,30 +1,13 @@
-# Aptoria Credits
+# Credits
 
-## Project owner
+## Project
 
-**János Szujó**
+Aptoria is designed and developed by **János Szujó**.
 
-Project concept, product direction, QA workflow design, release discipline, documentation direction and application ownership.
+## Product direction
 
-## Product focus
+The current 0.0.x line focuses on an evidence-first API QA and release decision workflow. Aptoria is not intended to clone Postman, Newman, Jira, Datadog or a full test-management suite. It is designed to collect their weak points into a single self-hosted evidence and release decision layer while remaining usable on its own.
 
-Aptoria was created as a self-hosted Laravel workspace for API QA evidence, safe endpoint scanning, regression review, release readiness and lightweight security review.
+## Third-party software
 
-## Technology foundation
-
-Aptoria is built with:
-
-- Laravel and PHP;
-- SQLite-compatible self-hosted deployment workflows;
-- bundled frontend runtime libraries listed in `THIRD_PARTY_NOTICES.md`;
-- Windows/XAMPP-friendly release scripts and installation helpers.
-
-## Development assistance
-
-Parts of the implementation, refactoring, documentation and release packaging were prepared with AI-assisted development support under the direction and review of the project owner.
-
-AI assistance does not change ownership of Aptoria's project-specific source code, product direction, release documentation or visual/product identity.
-
-## Third-party libraries
-
-Third-party libraries and bundled runtime assets are credited separately in `THIRD_PARTY_NOTICES.md`. Their copyrights and licenses remain with their original authors.
+Aptoria is built on Laravel and uses selected bundled frontend runtime assets. Third-party components remain under their own licenses. See `THIRD_PARTY_NOTICES.md` and `composer.json`.

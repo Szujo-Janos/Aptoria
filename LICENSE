@@ -13,6 +13,6 @@ Unless a separate written agreement says otherwise, you may not:
 
 Internal evaluation, learning, code review and non-commercial local testing are allowed.
 
-Third-party dependencies and bundled frontend libraries remain under their own licenses. See NOTICE.md, CREDITS.md, THIRD_PARTY_NOTICES.md, composer.json and composer.lock.
+Third-party dependencies and bundled frontend libraries remain under their own licenses. See NOTICE.md, CREDITS.md, THIRD_PARTY_NOTICES.md and composer.json.
 
 This license is intentionally not an open-source license. For commercial use, redistribution, managed hosting or contribution arrangements, contact the project owner.

@@ -2,100 +2,112 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\AssertionRuleRequest;
+use App\Models\Endpoint;
 use App\Models\EndpointAssertionRule;
 use App\Models\Project;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
-use App\Services\Settings\SettingService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AssertionRuleController extends Controller
 {
-    public function create(Project $project, SettingService $settings): View
+    public function index(Project $project): View
     {
-        $project->load('endpoints');
-        $endpointId = request()->integer('endpoint_id') ?: null;
+        $rules = $project->assertionRules()
+            ->with('endpoint')
+            ->latest()
+            ->get();
 
-        return view('assertion_rules.create', [
+        return view('assertions.index', [
             'project' => $project,
-            'rule' => new EndpointAssertionRule([
-                'project_id' => $project->id,
-                'endpoint_id' => $endpointId,
-                'rule_key' => EndpointAssertionRule::RULE_STATUS_CODE,
-                'operator' => EndpointAssertionRule::OPERATOR_EQUALS,
-                'target_path' => null,
-                'expected_value' => (string) $settings->integer('assertions.default_status_code', 200),
-                'severity' => EndpointAssertionRule::SEVERITY_FAIL,
-                'enabled' => true,
-            ]),
+            'rules' => $rules,
+            'endpoints' => $project->endpoints()->orderBy('method')->orderBy('path')->get(),
+            'metrics' => [
+                'total' => $rules->count(),
+                'enabled' => $rules->where('enabled', true)->count(),
+                'project_level' => $rules->whereNull('endpoint_id')->count(),
+                'blockers' => $rules->where('severity', 'blocker')->count(),
+            ],
         ]);
     }
 
-    public function store(AssertionRuleRequest $request, Project $project): RedirectResponse
+    public function store(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        $rule = $project->assertionRules()->create($this->payload($request));
+        $data = $this->validated($request, $project);
+        $rule = $project->assertionRules()->create($data);
 
-        return $this->redirectAfterMutation($project, $rule)
-            ->with('success', __('messages.assertions.created'));
+        $auditLogger->record('created', __('messages.audit_messages.assertion_rule_created'), $project, [
+            'assertion_rule_id' => $rule->id,
+            'rule_key' => $rule->rule_key,
+            'severity' => $rule->severity,
+        ], 'assertion');
+
+        return redirect()->route('projects.assertions.index', $project)->with('status', __('messages.assertions.created'));
     }
 
-    public function edit(Project $project, EndpointAssertionRule $assertionRule): View
+    public function update(Request $request, Project $project, EndpointAssertionRule $assertion, AuditLogger $auditLogger): RedirectResponse
     {
-        $this->ensureRuleBelongsToProject($project, $assertionRule);
-        $project->load('endpoints');
+        $this->ensureBelongsToProject($project, $assertion);
+        $before = $assertion->only(['name', 'rule_key', 'operator', 'expected_value', 'severity', 'enabled']);
+        $assertion->update($this->validated($request, $project));
 
-        return view('assertion_rules.edit', [
-            'project' => $project,
-            'rule' => $assertionRule,
+        $auditLogger->record('updated', __('messages.audit_messages.assertion_rule_updated'), $project, [
+            'assertion_rule_id' => $assertion->id,
+            'before' => $before,
+            'after' => $assertion->only(['name', 'rule_key', 'operator', 'expected_value', 'severity', 'enabled']),
+        ], 'assertion');
+
+        return redirect()->route('projects.assertions.index', $project)->with('status', __('messages.assertions.updated'));
+    }
+
+    public function destroy(Project $project, EndpointAssertionRule $assertion, AuditLogger $auditLogger): RedirectResponse
+    {
+        $this->ensureBelongsToProject($project, $assertion);
+
+        $auditLogger->record('deleted', __('messages.audit_messages.assertion_rule_deleted'), $project, [
+            'assertion_rule_id' => $assertion->id,
+            'name' => $assertion->name,
+        ], 'assertion', 'warning');
+
+        $assertion->delete();
+
+        return redirect()->route('projects.assertions.index', $project)->with('status', __('messages.assertions.deleted'));
+    }
+
+    private function validated(Request $request, Project $project): array
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:180'],
+            'endpoint_id' => ['nullable', 'integer'],
+            'rule_key' => ['required', Rule::in(EndpointAssertionRule::RULE_KEYS)],
+            'operator' => ['required', Rule::in(EndpointAssertionRule::OPERATORS)],
+            'expected_value' => ['required', 'string', 'max:1000'],
+            'target_path' => ['nullable', 'string', 'max:255'],
+            'severity' => ['required', Rule::in(EndpointAssertionRule::SEVERITIES)],
+            'description' => ['nullable', 'string', 'max:3000'],
         ]);
+
+        $data['enabled'] = $request->boolean('enabled', true);
+        $data['endpoint_id'] = $this->validEndpointId($project, $data['endpoint_id'] ?? null);
+
+        return $data;
     }
 
-    public function update(AssertionRuleRequest $request, Project $project, EndpointAssertionRule $assertionRule): RedirectResponse
+    private function validEndpointId(Project $project, mixed $endpointId): ?int
     {
-        $this->ensureRuleBelongsToProject($project, $assertionRule);
-        $assertionRule->update($this->payload($request));
+        if (! $endpointId) {
+            return null;
+        }
 
-        return $this->redirectAfterMutation($project, $assertionRule)
-            ->with('success', __('messages.assertions.updated'));
+        return Endpoint::query()->where('project_id', $project->id)->where('id', $endpointId)->exists()
+            ? (int) $endpointId
+            : null;
     }
 
-    public function destroy(Project $project, EndpointAssertionRule $assertionRule): RedirectResponse
+    private function ensureBelongsToProject(Project $project, EndpointAssertionRule $assertion): void
     {
-        $this->ensureRuleBelongsToProject($project, $assertionRule);
-        $endpoint = $assertionRule->endpoint;
-        $assertionRule->delete();
-
-        $redirect = $endpoint
-            ? redirect()->route('projects.endpoints.show', [$project, $endpoint])
-            : redirect()->route('projects.settings.edit', $project);
-
-        return $redirect->with('success', __('messages.assertions.deleted'));
-    }
-
-    private function payload(AssertionRuleRequest $request): array
-    {
-        $validated = $request->validated();
-
-        return [
-            'endpoint_id' => $validated['endpoint_id'] ?? null,
-            'rule_key' => $validated['rule_key'],
-            'operator' => $validated['operator'],
-            'target_path' => trim((string) ($validated['target_path'] ?? '')) ?: null,
-            'expected_value' => trim((string) ($validated['expected_value'] ?? '')) ?: null,
-            'severity' => $validated['severity'],
-            'enabled' => $request->boolean('enabled'),
-        ];
-    }
-
-    private function redirectAfterMutation(Project $project, EndpointAssertionRule $rule): RedirectResponse
-    {
-        return $rule->endpoint_id
-            ? redirect()->route('projects.endpoints.show', [$project, $rule->endpoint_id])
-            : redirect()->route('projects.settings.edit', $project);
-    }
-
-    private function ensureRuleBelongsToProject(Project $project, EndpointAssertionRule $rule): void
-    {
-        abort_unless($rule->project_id === $project->id, 404);
+        abort_unless((int) $assertion->project_id === (int) $project->id, 404);
     }
 }

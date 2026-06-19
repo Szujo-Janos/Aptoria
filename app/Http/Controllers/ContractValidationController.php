@@ -4,88 +4,74 @@ namespace App\Http\Controllers;
 
 use App\Models\ContractValidationRun;
 use App\Models\Project;
-use App\Models\ScanRun;
-use App\Services\Contracts\OpenApiContractValidationService;
-use App\Services\Settings\SettingService;
+use App\Services\AuditLogger;
+use App\Services\OpenApiContractValidationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ContractValidationController extends Controller
 {
-    public function index(Project $project, SettingService $settings): View
+    public function index(Project $project, OpenApiContractValidationService $service): View
     {
         $runs = $project->contractValidationRuns()
-            ->with('scanRun.environment')
+            ->with('validatedBy')
+            ->withCount('results')
+            ->latest('validated_at')
             ->latest()
-            ->paginate($settings->integer('app.items_per_page', 25));
-
-        return view('contract_validations.index', compact('project', 'runs'));
-    }
-
-    public function create(Project $project): View
-    {
-        $scanRuns = $project->scanRuns()
-            ->with('environment')
-            ->latest()
-            ->limit(20)
+            ->limit(25)
             ->get();
 
-        return view('contract_validations.create', compact('project', 'scanRuns'));
+        return view('contract_validation.index', [
+            'project' => $project,
+            'runs' => $runs,
+            'latestRun' => $runs->first(),
+            'summary' => $service->summary($project),
+        ]);
     }
 
-    public function store(Request $request, Project $project, OpenApiContractValidationService $validator): RedirectResponse
+    public function store(Request $request, Project $project, OpenApiContractValidationService $service, AuditLogger $auditLogger): RedirectResponse
     {
-        $validated = $request->validate([
+        $data = $request->validate([
             'source_name' => ['nullable', 'string', 'max:180'],
-            'scan_run_id' => ['nullable', 'integer'],
-            'contract_payload' => ['required', 'string', 'max:1000000'],
+            'source_version' => ['nullable', 'string', 'max:120'],
+            'contract_content' => ['required', 'string', 'max:200000'],
+            'confirm_validation' => ['accepted'],
         ]);
 
-        $scanRun = null;
-        if (! empty($validated['scan_run_id'])) {
-            $scanRun = ScanRun::query()
-                ->where('project_id', $project->id)
-                ->findOrFail((int) $validated['scan_run_id']);
-        }
+        $run = $service->validate($project, $data, $request->user());
 
-        $run = $validator->validate(
-            $project,
-            $validated['contract_payload'],
-            $scanRun,
-            $validated['source_name'] ?? null
-        );
+        $auditLogger->record('contract_validation_completed', __('messages.audit_messages.contract_validation_completed'), $project, [
+            'contract_validation_run_id' => $run->id,
+            'status' => $run->status,
+            'documented_operations' => $run->documented_operations,
+            'inventory_operations' => $run->inventory_operations,
+            'matched_operations' => $run->matched_operations,
+            'undocumented_inventory_operations' => $run->undocumented_inventory_operations,
+            'missing_inventory_operations' => $run->missing_inventory_operations,
+            'blockers' => $run->blocker_count,
+            'warnings' => $run->warning_count,
+        ], 'contract', $run->status === 'blocked' ? 'warning' : 'info');
 
-        $message = $run->status === ContractValidationRun::STATUS_FAILED
-            ? __('messages.contract_validations.run_failed')
-            : __('messages.contract_validations.completed');
-
-        return redirect()
-            ->route('projects.contract-validations.show', [$project, $run])
-            ->with('success', $message);
+        return redirect()->route('projects.contract-validation.show', [$project, $run])->with('status', __('messages.contract_validation.created'));
     }
 
-    public function show(Project $project, ContractValidationRun $contractValidation): View
+    public function show(Project $project, ContractValidationRun $contractValidationRun, OpenApiContractValidationService $service): View
     {
-        $this->ensureRunBelongsToProject($project, $contractValidation);
+        abort_unless((int) $contractValidationRun->project_id === (int) $project->id, 404);
 
-        $contractValidation->load([
-            'scanRun.environment',
-            'results' => fn ($query) => $query->with(['endpoint', 'scanResult'])->orderBy('status')->orderBy('severity')->orderBy('method')->orderBy('path'),
+        $contractValidationRun->load(['validatedBy', 'results.endpoint']);
+
+        return view('contract_validation.show', [
+            'project' => $project,
+            'run' => $contractValidationRun,
+            'results' => $contractValidationRun->results()
+                ->with('endpoint')
+                ->orderByRaw("CASE severity WHEN 'blocker' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END")
+                ->orderBy('method')
+                ->orderBy('path')
+                ->get(),
+            'markdownEvidence' => $service->markdownEvidence($contractValidationRun),
         ]);
-
-        $summary = [
-            'pass' => $contractValidation->results->where('status', 'pass')->count(),
-            'warning' => $contractValidation->results->where('status', 'warning')->count(),
-            'fail' => $contractValidation->results->where('status', 'fail')->count(),
-            'skipped' => $contractValidation->results->where('status', 'skipped')->count(),
-        ];
-
-        return view('contract_validations.show', compact('project', 'contractValidation', 'summary'));
-    }
-
-    private function ensureRunBelongsToProject(Project $project, ContractValidationRun $run): void
-    {
-        abort_unless($run->project_id === $project->id, 404);
     }
 }

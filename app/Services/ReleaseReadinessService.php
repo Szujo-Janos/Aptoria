@@ -2,1062 +2,438 @@
 
 namespace App\Services;
 
-use App\Models\ApiMonitor;
-use App\Models\Endpoint;
-use App\Models\Finding;
 use App\Models\Project;
-use App\Models\ReleaseDecision;
-use App\Models\ScanResult;
-use App\Models\TestCase;
-use App\Services\Risk\RiskAnalyzer;
-use App\Services\Risk\RiskAcceptanceLedgerService;
-use App\Services\BlindSpots\QaBlindSpotDetectorService;
-use App\Services\Contracts\ContractRealityService;
-use App\Services\Settings\SettingService;
-use App\Services\Exports\ExportCreditService;
-use Illuminate\Support\Collection;
+use App\Models\ReleaseReadinessRun;
+use App\Models\ReleaseReadinessRule;
+use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 class ReleaseReadinessService
 {
-    public const STATUS_PASS = 'pass';
-    public const STATUS_WARNING = 'warning';
-    public const STATUS_FAIL = 'fail';
-    public const STATUS_IDLE = 'idle';
-
     public function __construct(
-        private readonly RiskAnalyzer $riskAnalyzer,
-        private readonly AssertionEvaluationService $assertions,
-        private readonly RegressionEvaluationService $regressions,
-        private readonly QaCoverageMatrixService $coverageMatrix,
-        private readonly SettingService $settings,
-        private readonly ExportCreditService $credits,
-        private readonly QaBlindSpotDetectorService $blindSpots,
-        private readonly RiskAcceptanceLedgerService $riskLedger,
+        private readonly RetestClosureService $retestClosureService,
+        private readonly RiskAcceptanceService $riskAcceptanceService,
+        private readonly OpenApiContractValidationService $contractValidationService,
+        private readonly ExternalQaImportService $externalQaImportService,
+        private readonly ReleaseReadinessProfileService $profileService,
     ) {
     }
 
-    /** @return array<string, mixed> */
-    public function summarize(Project $project): array
+    public function evaluate(Project $project, ?array $ruleOverrides = null): array
     {
-        $project->loadMissing([
-            'scanRuns.environment',
-            'snapshots.environment',
-            'compareRuns.items',
-            'apiMonitors.environment',
-            'contractValidationRuns',
-            'findings.owner',
-            'findings.verifiedBy',
-            'findings.evidence',
-            'riskAcceptances.finding.endpoint',
-            'riskAcceptances.acceptedBy',
-            'latestReleaseDecision.owner',
-            'testCases',
-        ]);
-        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'apiMonitors', 'testCases']);
+        $metrics = $this->metrics($project);
+        $retestClosure = $this->retestClosureService->summary($project);
+        $riskAcceptance = $this->riskAcceptanceService->summary($project);
+        $contractValidation = $this->contractValidationService->summary($project);
+        $externalImport = $this->externalQaImportService->summary($project);
+        $metrics = array_merge($metrics, $this->retestClosureMetrics($retestClosure), $this->riskAcceptanceMetrics($riskAcceptance), $this->contractValidationMetrics($contractValidation), $this->externalImportMetrics($externalImport));
+        $checks = $this->checks($metrics, $project, $ruleOverrides);
+        $profile = $this->profileService->summary($project);
 
-        $endpoints = $project->endpoints()
-            ->with(['project', 'environment', 'authProfile', 'latestScanResult'])
-            ->get();
-        $latestScan = $project->scanRuns()->with(['environment', 'results.endpoint'])->latest()->first();
-        $latestCompare = $project->compareRuns()->with(['snapshotA', 'snapshotB', 'items'])->latest()->first();
-        $latestSnapshot = $project->snapshots()->with('environment')->latest()->first();
-        $latestContractValidation = $project->contractValidationRuns()->latest()->first();
-        $openFindings = $project->findings()
-            ->whereIn('status', Finding::OPEN_STATUSES)
-            ->with(['endpoint', 'testCase', 'evidence.capturedBy', 'lifecycleChangedBy'])
-            ->latest('detected_at')
-            ->get();
-        $findingStatusCounts = $project->findings()
-            ->selectRaw('status, COUNT(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
-        $findingLifecycleCounts = collect(Finding::LIFECYCLE_STATUSES)
-            ->mapWithKeys(fn (string $status): array => [$status => (int) ($findingStatusCounts[$status] ?? 0)])
-            ->all();
-        $fixedUnverifiedCount = $project->findings
-            ->filter(fn (Finding $finding): bool => $finding->status === Finding::STATUS_FIXED && $finding->verification_status !== Finding::VERIFICATION_VERIFIED)
-            ->count();
-        $overdueFindingsCount = $project->findings
-            ->filter(fn (Finding $finding): bool => $finding->is_overdue)
-            ->count();
-        $fixEvidenceMissingCount = $project->findings
-            ->filter(fn (Finding $finding): bool => (bool) $finding->fix_evidence_required && $finding->evidence->isEmpty())
-            ->count();
-
-        $findingCounts = [
-            'total' => (int) $project->findings->count(),
-            'open' => $openFindings->count(),
-            'critical_open' => $openFindings->where('severity', Finding::SEVERITY_CRITICAL)->count(),
-            'high_open' => $openFindings->where('severity', Finding::SEVERITY_HIGH)->count(),
-            'medium_open' => $openFindings->where('severity', Finding::SEVERITY_MEDIUM)->count(),
-            'low_open' => $openFindings->where('severity', Finding::SEVERITY_LOW)->count(),
-            'fixed' => $findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0,
-            'ready_for_retest' => $findingLifecycleCounts[Finding::STATUS_READY_FOR_RETEST] ?? 0,
-            'retest_failed' => $findingLifecycleCounts[Finding::STATUS_RETEST_FAILED] ?? 0,
-            'verified' => $findingLifecycleCounts[Finding::STATUS_VERIFIED] ?? 0,
-            'fixed_unverified' => $fixedUnverifiedCount,
-            'overdue' => $overdueFindingsCount,
-            'fix_evidence_missing' => $fixEvidenceMissingCount,
-            'false_positive' => $findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0,
-            'accepted_risk' => $findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0,
-            'reopened' => $findingLifecycleCounts[Finding::STATUS_REOPENED] ?? 0,
-            'resolved' => (int) (($findingLifecycleCounts[Finding::STATUS_FIXED] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_VERIFIED] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_FALSE_POSITIVE] ?? 0) + ($findingLifecycleCounts[Finding::STATUS_ACCEPTED_RISK] ?? 0)),
-            'status_counts' => $findingLifecycleCounts,
-        ];
-        $testRunCounts = collect(TestCase::RUN_STATUSES)
-            ->mapWithKeys(fn (string $status): array => [$status => 0])
-            ->all();
-        foreach ($project->testCases as $testCase) {
-            $status = $testCase->last_run_status ?: TestCase::RUN_NOT_RUN;
-            $testRunCounts[$status] = ($testRunCounts[$status] ?? 0) + 1;
-        }
-        $testExecutedCount = $testRunCounts[TestCase::RUN_PASS]
-            + $testRunCounts[TestCase::RUN_FAIL]
-            + $testRunCounts[TestCase::RUN_BLOCKED]
-            + $testRunCounts[TestCase::RUN_SKIPPED];
-        $testExecution = [
-            'total' => (int) $project->test_cases_count,
-            'executed' => $testExecutedCount,
-            'execution_percent' => $project->test_cases_count > 0 ? (int) round(($testExecutedCount / $project->test_cases_count) * 100) : 0,
-            'pass_rate' => $testExecutedCount > 0 ? (int) round(($testRunCounts[TestCase::RUN_PASS] / $testExecutedCount) * 100) : 0,
-            'run_counts' => $testRunCounts,
-        ];
-        $qaCoverage = $this->coverageMatrix->summarize($project)['summary'];
-
-        $regression = $latestCompare
-            ? $this->regressions->evaluateCompare($latestCompare)
-            : $this->emptyRegression();
-
-        $assertionCounts = [
-            AssertionEvaluationService::STATUS_PASS => 0,
-            AssertionEvaluationService::STATUS_WARNING => 0,
-            AssertionEvaluationService::STATUS_FAIL => 0,
-            AssertionEvaluationService::STATUS_NOT_CONFIGURED => 0,
-        ];
-
-        $riskCounts = collect(Endpoint::RISKS)->mapWithKeys(fn (string $risk): array => [$risk => 0])->all();
-        $failedEndpoints = collect();
-        $warningEndpoints = collect();
-        $slowEndpoints = collect();
-        $securityHeaderIssues = collect();
-        $topRiskEndpoints = collect();
-        $riskTrend = $this->riskTrend($project);
-        $regressionTrend = $this->regressionTrend($project);
-
-        foreach ($endpoints as $endpoint) {
-            $latest = $endpoint->latestScanResult;
-            $assertion = $this->assertions->evaluate($endpoint, $latest);
-            $analysis = $this->riskAnalyzer->analyze($endpoint, $latest);
-
-            $assertionCounts[$assertion['status']] = ($assertionCounts[$assertion['status']] ?? 0) + 1;
-            $riskCounts[$analysis['final_level']] = ($riskCounts[$analysis['final_level']] ?? 0) + 1;
-
-            $row = [
-                'endpoint' => $endpoint,
-                'latest' => $latest,
-                'assertion' => $assertion,
-                'analysis' => $analysis,
-            ];
-
-            if ($assertion['status'] === AssertionEvaluationService::STATUS_FAIL) {
-                $failedEndpoints->push($row);
-            } elseif ($assertion['status'] === AssertionEvaluationService::STATUS_WARNING) {
-                $warningEndpoints->push($row);
-            }
-
-            if ($latest?->response_time_ms !== null) {
-                $slowEndpoints->push($row);
-            }
-
-            if (collect($analysis['signals'])->contains(fn (array $signal): bool => ($signal['key'] ?? '') === 'security_headers_missing')) {
-                $securityHeaderIssues->push($row);
-            }
-
-            $topRiskEndpoints->push($row);
-        }
-
-        $coverageCount = $latestScan
-            ? $latestScan->results->whereNotNull('endpoint_id')->unique('endpoint_id')->count()
-            : $endpoints->filter(fn (Endpoint $endpoint): bool => $endpoint->latestScanResult !== null)->count();
-        $endpointCount = max(0, (int) $project->endpoints_count);
-        $coveragePercent = $endpointCount > 0 ? (int) round(($coverageCount / $endpointCount) * 100) : 0;
-        $blindSpotSummary = $this->blindSpots->summarize($project);
-        $riskAcceptanceSummary = $this->riskLedger->summarize($project);
-        $contractRealitySummary = app(ContractRealityService::class)->summarize($project, $latestContractValidation);
-
-        $blockingIssues = $this->blockingIssues($project, $latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $latestContractValidation, $findingCounts, $testExecution, $blindSpotSummary, $riskAcceptanceSummary);
-        if (($contractRealitySummary['summary']['breaking_contract_mismatch'] ?? 0) > 0) {
-            $blockingIssues[] = __('messages.release_readiness.issues.contract_reality_breaking', ['count' => $contractRealitySummary['summary']['breaking_contract_mismatch']]);
-        }
-
-        $warnings = $this->warnings($latestScan, $assertionCounts, $regression, $riskCounts, $coveragePercent, $project, $latestContractValidation, $findingCounts, $testExecution, $blindSpotSummary, $riskAcceptanceSummary);
-        $contractRealityWarnings = (int) (($contractRealitySummary['summary']['auth_contract_mismatch'] ?? 0) + ($contractRealitySummary['summary']['undocumented_response'] ?? 0) + ($contractRealitySummary['summary']['undocumented_endpoint'] ?? 0));
-        if ($contractRealityWarnings > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.contract_reality_warnings', ['count' => $contractRealityWarnings]);
-        }
-        $blockingIssues = array_values(array_unique($blockingIssues));
-        $warnings = array_values(array_unique($warnings));
-
-        $scoreComponents = $this->scoreComponents(
-            $project,
-            $endpoints,
-            $latestScan,
-            $latestSnapshot,
-            $latestCompare,
-            $latestContractValidation,
-            $findingCounts,
-            $testExecution,
-            $qaCoverage,
-            $assertionCounts,
-            $regression,
-            $riskCounts,
-            $coveragePercent,
-            $blindSpotSummary,
-            $riskAcceptanceSummary
-        );
-        $score = $this->componentScore($scoreComponents);
-        $status = $this->status($project, $latestScan, $blockingIssues, $warnings, $score);
+        $blockerCount = collect($checks)->where('level', 'blocker')->count();
+        $warningCount = collect($checks)->where('level', 'warning')->count();
+        $passedCount = collect($checks)->where('level', 'pass')->count();
+        $score = $this->score($checks);
+        $status = $blockerCount > 0 ? 'blocked' : ($warningCount > 0 ? 'warning' : 'ready');
 
         return [
             'status' => $status,
-            'label' => __('messages.release_readiness.statuses.'.$status),
-            'css' => $this->statusCss($status),
             'score' => $score,
-            'grade' => $this->grade($score),
-            'score_components' => $scoreComponents,
-            'score_component_total' => array_sum(array_column($scoreComponents, 'max_points')),
-            'endpoint_count' => $endpointCount,
-            'coverage_count' => $coverageCount,
-            'coverage_percent' => $coveragePercent,
-            'latest_scan' => $latestScan,
-            'latest_snapshot' => $latestSnapshot,
-            'latest_compare' => $latestCompare,
-            'latest_contract_validation' => $latestContractValidation,
-            'finding_counts' => $findingCounts,
-            'test_execution' => $testExecution,
-            'qa_coverage' => $qaCoverage,
-            'open_findings' => $openFindings->take(10)->values(),
-            'assertion_counts' => $assertionCounts,
-            'risk_counts' => $riskCounts,
-            'regression' => $regression,
-            'blind_spots' => $blindSpotSummary,
-            'risk_acceptances' => $riskAcceptanceSummary,
-            'contract_reality' => $contractRealitySummary,
-            'latest_release_decision' => $project->latestReleaseDecision,
-            'risk_trend' => $riskTrend,
-            'regression_trend' => $regressionTrend,
-            'blocking_issues' => $blockingIssues,
-            'warnings' => $warnings,
-            'failed_endpoints' => $failedEndpoints->take(10)->values(),
-            'warning_endpoints' => $warningEndpoints->take(10)->values(),
-            'top_slow_endpoints' => $slowEndpoints->sortByDesc(fn (array $row): int => (int) ($row['latest']?->response_time_ms ?? 0))->take(10)->values(),
-            'top_risk_endpoints' => $topRiskEndpoints->sortByDesc(fn (array $row): int => (int) ($row['analysis']['score'] ?? 0))->take(10)->values(),
-            'security_header_issues' => $securityHeaderIssues->take(10)->values(),
-            'recommended_actions' => $this->recommendedActions($blockingIssues, $warnings, $regression, $assertionCounts, $coveragePercent, $findingCounts, $blindSpotSummary, $riskAcceptanceSummary),
-            'policy' => $this->releasePolicy(),
+            'grade' => $this->grade($score, $status),
+            'blocker_count' => $blockerCount,
+            'warning_count' => $warningCount,
+            'check_count' => count($checks),
+            'passed_check_count' => $passedCount,
+            'metrics' => $metrics,
+            'checks' => $checks,
+            'rules' => $this->ruleSummary($project),
+            'profile' => $profile,
+            'summary' => [
+                'headline' => __('messages.release_readiness.summary_'.$status),
+                'decision' => __('messages.release_readiness.decision_'.$status),
+            ],
+            'retest_closure' => $retestClosure,
+            'risk_acceptance' => $riskAcceptance,
+            'contract_validation' => $contractValidation,
+            'external_import' => $externalImport,
         ];
     }
 
-    public function markdown(Project $project): string
+    public function createRun(Project $project, ?User $user = null, ?string $decisionNote = null): ReleaseReadinessRun
     {
-        $summary = $this->summarize($project);
-        $lines = [];
-        $lines[] = '# Aptoria Release Readiness Report';
-        $lines[] = '';
-        $lines[] = '**Project:** '.$project->name;
-        $lines[] = '**Base URL:** '.$project->display_base_url;
-        foreach ($this->credits->projectBrandingMarkdownLines($project) as $brandingLine) {
-            $lines[] = $this->mdBrandingLine($brandingLine);
-        }
-        if (($disclaimer = $this->credits->projectDisclaimerMarkdown($project)) !== '') {
-            $lines[] = '**Disclaimer:** '.$this->md($disclaimer);
-        }
-        $lines[] = '**Generated:** '.now()->format('Y-m-d H:i:s');
-        $lines[] = '**Aptoria version:** '.config('aptoria.version');
-        $lines[] = '';
-        $lines[] = '## Overall Status';
-        $lines[] = '';
-        $lines[] = '| Metric | Value |';
-        $lines[] = '|---|---:|';
-        $lines[] = '| Status | '.$this->md($summary['label']).' |';
-        $lines[] = '| Release readiness score | '.$summary['score'].' / 100 |';
-        $lines[] = '| Grade | '.$summary['grade'].' |';
-        $lines[] = '| Endpoint coverage | '.$summary['coverage_percent'].'% |';
-        $lines[] = '| Test execution coverage | '.$summary['test_execution']['execution_percent'].'% |';
-        $lines[] = '| Test pass rate | '.$summary['test_execution']['pass_rate'].'% |';
-        $lines[] = '| QA coverage | '.$summary['qa_coverage']['coverage_percent'].'% |';
-        $lines[] = '| QA coverage blocked endpoints | '.$summary['qa_coverage']['blocked'].' |';
-        $lines[] = '| Blocking issues | '.count($summary['blocking_issues']).' |';
-        $lines[] = '| Warnings | '.count($summary['warnings']).' |';
-        $lines[] = '| Blind spots | '.($summary['blind_spots']['summary']['total'] ?? 0).' |';
-        $lines[] = '| Release-blocking blind spots | '.($summary['blind_spots']['summary']['release_blockers'] ?? 0).' |';
-        $lines[] = '| Contract reality breaking mismatches | '.($summary['contract_reality']['summary']['breaking_contract_mismatch'] ?? 0).' |';
-        $lines[] = '| Contract reality auth mismatches | '.($summary['contract_reality']['summary']['auth_contract_mismatch'] ?? 0).' |';
-        $lines[] = '| Undocumented response fields | '.($summary['contract_reality']['summary']['undocumented_response'] ?? 0).' |';
-        if ($summary['latest_release_decision'] instanceof ReleaseDecision) {
-            $lines[] = '| Latest release decision | '.$this->md($summary['latest_release_decision']->status_label).' |';
-            $lines[] = '| Release decision owner | '.$this->md($summary['latest_release_decision']->owner?->name ?: 'n/a').' |';
-            $lines[] = '| Release decision checksum | '.$this->md($summary['latest_release_decision']->package_checksum ?: 'n/a').' |';
-        } else {
-            $lines[] = '| Latest release decision | n/a |';
-        }
-        $lines[] = '';
-        $lines[] = '## Evidence Summary';
-        $lines[] = '';
-        $lines[] = '| Evidence | Value |';
-        $lines[] = '|---|---|';
-        $lines[] = '| Latest scan | '.$this->md($summary['latest_scan'] ? '#'.$summary['latest_scan']->id.' '.$summary['latest_scan']->status_label : 'n/a').' |';
-        $lines[] = '| Latest snapshot | '.$this->md($summary['latest_snapshot']?->name ?: 'n/a').' |';
-        $lines[] = '| Latest compare | '.$this->md($summary['latest_compare'] ? '#'.$summary['latest_compare']->id : 'n/a').' |';
-        $lines[] = '| Latest contract validation | '.$this->md($summary['latest_contract_validation'] ? '#'.$summary['latest_contract_validation']->id.' '.$summary['latest_contract_validation']->health_label : 'n/a').' |';
-        $lines[] = '| Open findings | '.$summary['finding_counts']['open'].' |';
-        $lines[] = '| Critical open findings | '.$summary['finding_counts']['critical_open'].' |';
-        $lines[] = '| High open findings | '.$summary['finding_counts']['high_open'].' |';
-        $lines[] = '| Reopened findings | '.($summary['finding_counts']['reopened'] ?? 0).' |';
-        $lines[] = '| Fixed findings | '.($summary['finding_counts']['fixed'] ?? 0).' |';
-        $lines[] = '| Fixed but unverified findings | '.($summary['finding_counts']['fixed_unverified'] ?? 0).' |';
-        $lines[] = '| Ready for retest findings | '.($summary['finding_counts']['ready_for_retest'] ?? 0).' |';
-        $lines[] = '| Retest failed findings | '.($summary['finding_counts']['retest_failed'] ?? 0).' |';
-        $lines[] = '| Verified findings | '.($summary['finding_counts']['verified'] ?? 0).' |';
-        $lines[] = '| Overdue findings | '.($summary['finding_counts']['overdue'] ?? 0).' |';
-        $lines[] = '| False positives | '.($summary['finding_counts']['false_positive'] ?? 0).' |';
-        $lines[] = '| Accepted risks | '.($summary['finding_counts']['accepted_risk'] ?? 0).' |';
-        $lines[] = '| Active risk acceptances | '.($summary['risk_acceptances']['summary']['active'] ?? 0).' |';
-        $lines[] = '| Expired risk acceptances | '.($summary['risk_acceptances']['summary']['expired'] ?? 0).' |';
-        $lines[] = '| Accepted risks without expiry | '.($summary['risk_acceptances']['summary']['without_expiry'] ?? 0).' |';
-        $lines[] = '| Regression status | '.$this->md($summary['regression']['label']).' |';
-        $lines[] = '';
+        $evaluation = $this->evaluate($project);
 
-        $this->appendBlindSpotMarkdownSummary($lines, $summary['blind_spots']);
+        return $project->releaseReadinessRuns()->create([
+            'generated_by_user_id' => $user?->id,
+            'status' => $evaluation['status'],
+            'score' => $evaluation['score'],
+            'grade' => $evaluation['grade'],
+            'blocker_count' => $evaluation['blocker_count'],
+            'warning_count' => $evaluation['warning_count'],
+            'check_count' => $evaluation['check_count'],
+            'passed_check_count' => $evaluation['passed_check_count'],
+            'metrics_json' => $evaluation['metrics'],
+            'checks_json' => $evaluation['checks'],
+            'rules_json' => $evaluation['rules'] ?? null,
+            'readiness_profile_key' => $evaluation['profile']['profile_key'] ?? null,
+            'rule_deviations_json' => $evaluation['profile']['deviations'] ?? null,
+            'summary_json' => $evaluation['summary'],
+            'retest_closure_json' => $evaluation['retest_closure'] ?? null,
+            'risk_acceptance_json' => $evaluation['risk_acceptance'] ?? null,
+            'contract_validation_json' => $evaluation['contract_validation'] ?? null,
+            'decision_note' => $decisionNote,
+            'generated_at' => now(),
+        ]);
+    }
 
-        $lines[] = '## Contract Reality Summary';
-        $lines[] = '';
-        $lines[] = '| Metric | Count |';
-        $lines[] = '|---|---:|';
-        $lines[] = '| Matches contract | '.($summary['contract_reality']['summary']['matches_contract'] ?? 0).' |';
-        $lines[] = '| Contract drift | '.($summary['contract_reality']['summary']['contract_drift'] ?? 0).' |';
-        $lines[] = '| Auth mismatches | '.($summary['contract_reality']['summary']['auth_contract_mismatch'] ?? 0).' |';
-        $lines[] = '| Undocumented response | '.($summary['contract_reality']['summary']['undocumented_response'] ?? 0).' |';
-        $lines[] = '| Breaking mismatches | '.($summary['contract_reality']['summary']['breaking_contract_mismatch'] ?? 0).' |';
-        $lines[] = '';
+    public function simulate(Project $project, array $ruleOverrides): array
+    {
+        $current = $this->evaluate($project);
+        $preview = $this->evaluate($project, $ruleOverrides);
 
-        $lines[] = '## Finding Lifecycle Status Summary';
-        $lines[] = '';
-        $lines[] = '| Status | Count | Release impact |';
-        $lines[] = '|---|---:|---|';
-        foreach (Finding::LIFECYCLE_STATUSES as $status) {
-            $impact = in_array($status, Finding::OPEN_STATUSES, true)
-                ? 'Counts as open release risk'
-                : 'Does not count as open release risk';
-            $lines[] = '| '.$this->md(__('messages.findings.statuses.'.$status)).' | '.($summary['finding_counts']['status_counts'][$status] ?? 0).' | '.$this->md($impact).' |';
-        }
-        $lines[] = '';
-        $lines[] = '## Finding Verification Summary';
-        $lines[] = '';
-        $lines[] = '| Metric | Count |';
-        $lines[] = '|---|---:|';
-        $lines[] = '| Ready for retest | '.($summary['finding_counts']['ready_for_retest'] ?? 0).' |';
-        $lines[] = '| Retest failed | '.($summary['finding_counts']['retest_failed'] ?? 0).' |';
-        $lines[] = '| Fixed but not verified | '.($summary['finding_counts']['fixed_unverified'] ?? 0).' |';
-        $lines[] = '| Verified | '.($summary['finding_counts']['verified'] ?? 0).' |';
-        $lines[] = '| Overdue | '.($summary['finding_counts']['overdue'] ?? 0).' |';
-        $lines[] = '';
+        return [
+            'current_status' => $current['status'],
+            'preview_status' => $preview['status'],
+            'current_score' => $current['score'],
+            'preview_score' => $preview['score'],
+            'score_delta' => $preview['score'] - $current['score'],
+            'current_blockers' => $current['blocker_count'],
+            'preview_blockers' => $preview['blocker_count'],
+            'blocker_delta' => $preview['blocker_count'] - $current['blocker_count'],
+            'current_warnings' => $current['warning_count'],
+            'preview_warnings' => $preview['warning_count'],
+            'warning_delta' => $preview['warning_count'] - $current['warning_count'],
+            'preview_checks' => $preview['checks'],
+        ];
+    }
 
-        $this->appendRiskAcceptanceMarkdownSummary($lines, $summary['risk_acceptances']);
+    private function metrics(Project $project): array
+    {
+        $endpointCount = Schema::hasTable('endpoints') ? $project->endpoints()->count() : 0;
+        $safeEndpointCount = Schema::hasTable('endpoints') ? $project->endpoints()->whereIn('method', ['GET', 'HEAD'])->where('is_active', true)->where('excluded_from_scan', false)->count() : 0;
+        $environmentCount = Schema::hasTable('environments') ? $project->environments()->count() : 0;
+        $defaultEnvironment = Schema::hasTable('environments') ? $project->defaultEnvironment() : null;
+        $authProfileCount = Schema::hasTable('auth_profiles') ? $project->authProfiles()->count() : 0;
+        $scanRunCount = Schema::hasTable('scan_runs') ? $project->scanRuns()->count() : 0;
+        $latestScan = Schema::hasTable('scan_runs') ? $project->scanRuns()->where('status', 'completed')->latest()->first() : null;
+        $scanSummary = is_array($latestScan?->summary_json) ? $latestScan->summary_json : [];
+        $failedResults = Schema::hasTable('scan_results') ? $project->scanResults()->where('status', 'failed')->count() : 0;
+        $warningResults = Schema::hasTable('scan_results') ? $project->scanResults()->where('status', 'warning')->count() : 0;
+        $findingCount = Schema::hasTable('findings') ? $project->findings()->count() : 0;
+        $openFindings = Schema::hasTable('findings') ? $project->findings()->whereNotIn('status', ['verified'])->count() : 0;
+        $acceptedFindingIds = Schema::hasTable('risk_acceptances') ? $project->riskAcceptances()
+            ->where('status', 'active')
+            ->where(function ($query): void {
+                $query->whereNull('accepted_until')->orWhereDate('accepted_until', '>=', now()->toDateString());
+            })
+            ->pluck('finding_id')
+            ->unique()
+            ->all() : [];
+        $criticalFindings = Schema::hasTable('findings') ? $project->findings()->where('severity', 'critical')->whereNotIn('status', ['verified'])->whereNotIn('id', $acceptedFindingIds ?: [0])->count() : 0;
+        $highFindings = Schema::hasTable('findings') ? $project->findings()->where('severity', 'high')->whereNotIn('status', ['verified'])->whereNotIn('id', $acceptedFindingIds ?: [0])->count() : 0;
+        $acceptedCriticalFindings = Schema::hasTable('findings') && $acceptedFindingIds ? $project->findings()->where('severity', 'critical')->whereNotIn('status', ['verified'])->whereIn('id', $acceptedFindingIds)->count() : 0;
+        $acceptedHighFindings = Schema::hasTable('findings') && $acceptedFindingIds ? $project->findings()->where('severity', 'high')->whereNotIn('status', ['verified'])->whereIn('id', $acceptedFindingIds)->count() : 0;
+        $evidenceCount = Schema::hasTable('finding_evidence') ? $project->evidence()->count() : 0;
+        $findingsMissingEvidence = Schema::hasTable('findings') ? $project->findings()
+            ->where('evidence_required', true)
+            ->whereNotIn('status', ['verified'])
+            ->whereDoesntHave('evidence')
+            ->count() : 0;
+        $retestNeeded = Schema::hasTable('findings') ? $project->findings()
+            ->where('retest_required', true)
+            ->whereNotIn('status', ['verified'])
+            ->count() : 0;
+        $retestReady = Schema::hasTable('findings') && Schema::hasColumn('findings', 'retest_status') ? $project->findings()
+            ->where('retest_status', 'ready_for_retest')
+            ->count() : 0;
+        $retestFailed = Schema::hasTable('findings') && Schema::hasColumn('findings', 'retest_status') ? $project->findings()
+            ->where('retest_status', 'failed')
+            ->whereNotIn('status', ['verified'])
+            ->count() : 0;
+        $retestMissingEvidence = Schema::hasTable('findings') && Schema::hasTable('finding_evidence') ? $project->findings()
+            ->where('retest_required', true)
+            ->whereNotIn('status', ['verified'])
+            ->whereDoesntHave('evidence', fn ($query) => $query->where('type', 'retest'))
+            ->count() : 0;
+        $endpointTestRunCount = Schema::hasTable('endpoint_test_runs') ? $project->endpointTestRuns()->count() : 0;
+        $latestEndpointTestRuns = Schema::hasTable('endpoint_test_runs')
+            ? $project->endpointTestRuns()->latest('checked_at')->latest()->take(100)->get()->unique('endpoint_id')
+            : collect();
+        $latestEndpointTestsFailed = $latestEndpointTestRuns->where('state', 'failed')->count();
+        $latestEndpointTestsWarning = $latestEndpointTestRuns->whereIn('state', ['warning', 'skipped'])->count();
+        $endpointTestBatchCount = Schema::hasTable('endpoint_test_batches') ? $project->endpointTestBatches()->count() : 0;
+        $latestEndpointTestBatch = Schema::hasTable('endpoint_test_batches') ? $project->endpointTestBatches()->latest('completed_at')->latest()->first() : null;
+        $endpointSnapshotCount = Schema::hasTable('endpoint_snapshots') ? $project->endpointSnapshots()->count() : 0;
+        $latestEndpointSnapshot = Schema::hasTable('endpoint_snapshots') ? $project->endpointSnapshots()->latest('captured_at')->latest()->first() : null;
+        $endpointSnapshotCompareCount = Schema::hasTable('endpoint_snapshot_compares') ? $project->endpointSnapshotCompares()->count() : 0;
+        $latestEndpointSnapshotCompare = Schema::hasTable('endpoint_snapshot_compares') ? $project->endpointSnapshotCompares()->latest('compared_at')->latest()->first() : null;
+        $latestEndpointSnapshotCompareFindingCount = (int) ($latestEndpointSnapshotCompare?->regression_finding_count ?? 0);
+        $latestEndpointSnapshotCompareNeedsTriage = $latestEndpointSnapshotCompare
+            && (((int) ($latestEndpointSnapshotCompare->regressed_count ?? 0) + (int) ($latestEndpointSnapshotCompare->removed_count ?? 0)) > 0)
+            && $latestEndpointSnapshotCompareFindingCount === 0;
 
-        $lines[] = '## Release Decision';
-        $lines[] = '';
-        if ($summary['latest_release_decision'] instanceof ReleaseDecision) {
-            $decision = $summary['latest_release_decision'];
-            $lines[] = '| Metric | Value |';
-            $lines[] = '|---|---|';
-            $lines[] = '| Decision | '.$this->md($decision->status_label).' |';
-            $lines[] = '| Release | '.$this->md($decision->release_name ?: 'n/a').' |';
-            $lines[] = '| Owner | '.$this->md($decision->owner?->name ?: 'n/a').' |';
-            $lines[] = '| Timestamp | '.$this->md($decision->decided_at?->format('Y-m-d H:i:s') ?: 'pending').' |';
-            $lines[] = '| Package checksum | '.$this->md($decision->package_checksum ?: 'n/a').' |';
-        } else {
-            $lines[] = 'No release decision package has been finalized yet.';
-        }
-        $lines[] = '';
+        return [
+            'endpoint_count' => $endpointCount,
+            'safe_endpoint_count' => $safeEndpointCount,
+            'environment_count' => $environmentCount,
+            'default_environment_name' => $defaultEnvironment?->name,
+            'auth_profile_count' => $authProfileCount,
+            'scan_run_count' => $scanRunCount,
+            'latest_scan_id' => $latestScan?->id,
+            'latest_scan_at' => $latestScan?->completed_at?->toDateTimeString(),
+            'latest_scan_passed' => (int) ($scanSummary['passed'] ?? 0),
+            'latest_scan_warning' => (int) ($scanSummary['warning'] ?? 0),
+            'latest_scan_failed' => (int) ($scanSummary['failed'] ?? 0),
+            'latest_scan_skipped' => (int) ($scanSummary['skipped'] ?? 0),
+            'failed_scan_results' => $failedResults,
+            'warning_scan_results' => $warningResults,
+            'finding_count' => $findingCount,
+            'open_findings' => $openFindings,
+            'critical_findings' => $criticalFindings,
+            'high_findings' => $highFindings,
+            'accepted_critical_findings' => $acceptedCriticalFindings,
+            'accepted_high_findings' => $acceptedHighFindings,
+            'evidence_count' => $evidenceCount,
+            'findings_missing_evidence' => $findingsMissingEvidence,
+            'retest_needed' => $retestNeeded,
+            'retest_ready' => $retestReady,
+            'retest_failed' => $retestFailed,
+            'retest_missing_evidence' => $retestMissingEvidence,
+            'release_goal_present' => filled($project->release_goal),
+            'endpoint_test_run_count' => $endpointTestRunCount,
+            'latest_endpoint_tests_failed' => $latestEndpointTestsFailed,
+            'latest_endpoint_tests_warning' => $latestEndpointTestsWarning,
+            'endpoint_test_batch_count' => $endpointTestBatchCount,
+            'latest_endpoint_test_batch_id' => $latestEndpointTestBatch?->id,
+            'latest_endpoint_test_batch_state' => $latestEndpointTestBatch?->state,
+            'latest_endpoint_test_batch_failed' => (int) ($latestEndpointTestBatch?->failed ?? 0),
+            'latest_endpoint_test_batch_warning' => (int) (($latestEndpointTestBatch?->warning ?? 0) + ($latestEndpointTestBatch?->skipped ?? 0)),
+            'latest_endpoint_test_batch_completed_at' => $latestEndpointTestBatch?->completed_at?->toDateTimeString(),
+            'endpoint_snapshot_count' => $endpointSnapshotCount,
+            'latest_endpoint_snapshot_id' => $latestEndpointSnapshot?->id,
+            'latest_endpoint_snapshot_checksum' => $latestEndpointSnapshot?->checksum,
+            'latest_endpoint_snapshot_captured_at' => $latestEndpointSnapshot?->captured_at?->toDateTimeString(),
+            'endpoint_snapshot_compare_count' => $endpointSnapshotCompareCount,
+            'latest_endpoint_snapshot_compare_id' => $latestEndpointSnapshotCompare?->id,
+            'latest_endpoint_snapshot_compare_status' => $latestEndpointSnapshotCompare?->status,
+            'latest_endpoint_snapshot_compare_regressions' => (int) ($latestEndpointSnapshotCompare?->regressed_count ?? 0),
+            'latest_endpoint_snapshot_compare_removed' => (int) ($latestEndpointSnapshotCompare?->removed_count ?? 0),
+            'latest_endpoint_snapshot_compare_regression_finding_count' => $latestEndpointSnapshotCompareFindingCount,
+            'latest_endpoint_snapshot_compare_needs_triage' => (bool) $latestEndpointSnapshotCompareNeedsTriage,
+        ];
+    }
 
-        $lines[] = '## Readiness Score Breakdown';
-        $lines[] = '';
-        $lines[] = '| Component | Points | Percent | Status |';
-        $lines[] = '|---|---:|---:|---|';
-        foreach ($summary['score_components'] as $component) {
-            $lines[] = '| '.$this->md((string) $component['label']).' | '.$component['earned_points'].' / '.$component['max_points'].' | '.$component['percent'].'% | '.$this->md((string) $component['status_label']).' |';
-        }
-        $lines[] = '';
-        $lines[] = '## Test Execution Summary';
-        $lines[] = '';
-        $lines[] = '| Status | Count |';
-        $lines[] = '|---|---:|';
-        foreach ($summary['test_execution']['run_counts'] as $status => $count) {
-            $lines[] = '| '.$this->md(__('messages.test_cases.run_statuses.'.$status)).' | '.$count.' |';
-        }
-        $lines[] = '| Executed | '.$summary['test_execution']['executed'].' |';
-        $lines[] = '| Execution coverage | '.$summary['test_execution']['execution_percent'].'% |';
-        $lines[] = '| Pass rate | '.$summary['test_execution']['pass_rate'].'% |';
-        $lines[] = '';
-        $lines[] = '## QA Coverage Summary';
-        $lines[] = '';
-        $lines[] = '| Metric | Count |';
-        $lines[] = '|---|---:|';
-        $lines[] = '| Full coverage | '.$summary['qa_coverage']['coverage_percent'].'% |';
-        $lines[] = '| Fully covered endpoints | '.$summary['qa_coverage']['fully_covered'].' |';
-        $lines[] = '| Needs attention | '.$summary['qa_coverage']['warning'].' |';
-        $lines[] = '| Blocked endpoints | '.$summary['qa_coverage']['blocked'].' |';
-        $lines[] = '| Missing test cases | '.$summary['qa_coverage']['missing_tests'].' |';
-        $lines[] = '| Missing assertions | '.$summary['qa_coverage']['missing_assertions'].' |';
-        $lines[] = '| Not scanned | '.$summary['qa_coverage']['not_scanned'].' |';
-        $lines[] = '| Missing contract result | '.$summary['qa_coverage']['missing_contract'].' |';
-        $lines[] = '';
+    private function checks(array $metrics, Project $project, ?array $ruleOverrides = null): array
+    {
+        $checks = [
+            $this->check('environment', 'server-cog', $metrics['environment_count'] > 0 && filled($metrics['default_environment_name']), 'blocker', __('messages.release_readiness.checks.environment'), __('messages.release_readiness.hints.environment')),
+            $this->check('endpoint_inventory', 'list-tree', $metrics['endpoint_count'] > 0, 'blocker', __('messages.release_readiness.checks.endpoint_inventory'), __('messages.release_readiness.hints.endpoint_inventory')),
+            $this->check('safe_endpoint_inventory', 'shield-check', $metrics['safe_endpoint_count'] > 0, 'blocker', __('messages.release_readiness.checks.safe_endpoint_inventory'), __('messages.release_readiness.hints.safe_endpoint_inventory')),
+            $this->check('safe_scan', 'radar', $metrics['latest_scan_id'] !== null, 'blocker', __('messages.release_readiness.checks.safe_scan'), __('messages.release_readiness.hints.safe_scan')),
+            $this->check('endpoint_quick_test_coverage', 'activity', $metrics['endpoint_test_run_count'] > 0, 'warning', __('messages.release_readiness.checks.endpoint_quick_test_coverage'), __('messages.release_readiness.hints.endpoint_quick_test_coverage')),
+            $this->check('endpoint_quick_test_failures', 'zap-off', $metrics['latest_endpoint_tests_failed'] === 0, 'warning', __('messages.release_readiness.checks.endpoint_quick_test_failures'), __('messages.release_readiness.hints.endpoint_quick_test_failures')),
+            $this->check('endpoint_batch_evidence', 'layers', $metrics['endpoint_test_batch_count'] > 0, 'warning', __('messages.release_readiness.checks.endpoint_batch_evidence'), __('messages.release_readiness.hints.endpoint_batch_evidence')),
+            $this->check('endpoint_batch_failures', 'list-checks', $metrics['latest_endpoint_test_batch_failed'] === 0, 'warning', __('messages.release_readiness.checks.endpoint_batch_failures'), __('messages.release_readiness.hints.endpoint_batch_failures')),
+            $this->check('endpoint_snapshot_baseline', 'camera', $metrics['endpoint_snapshot_count'] > 0, 'warning', __('messages.release_readiness.checks.endpoint_snapshot_baseline'), __('messages.release_readiness.hints.endpoint_snapshot_baseline')),
+            $this->check('endpoint_regression_compare', 'arrows-diff', $metrics['endpoint_snapshot_compare_count'] > 0, 'warning', __('messages.release_readiness.checks.endpoint_regression_compare'), __('messages.release_readiness.hints.endpoint_regression_compare')),
+            $this->check('endpoint_regression_clean', 'git-compare', $metrics['latest_endpoint_snapshot_compare_regressions'] === 0, 'warning', __('messages.release_readiness.checks.endpoint_regression_clean'), __('messages.release_readiness.hints.endpoint_regression_clean')),
+            $this->check('endpoint_regression_triage', 'bug', ! $metrics['latest_endpoint_snapshot_compare_needs_triage'], 'warning', __('messages.release_readiness.checks.endpoint_regression_triage'), __('messages.release_readiness.hints.endpoint_regression_triage')),
+            $this->check('scan_failures', 'circle-alert', $metrics['latest_scan_failed'] === 0 && $metrics['failed_scan_results'] === 0, 'blocker', __('messages.release_readiness.checks.scan_failures'), __('messages.release_readiness.hints.scan_failures')),
+            $this->check('critical_findings', 'bug', $metrics['critical_findings'] === 0, 'blocker', __('messages.release_readiness.checks.critical_findings'), __('messages.release_readiness.hints.critical_findings')),
+            $this->check('high_findings', 'triangle-alert', $metrics['high_findings'] === 0, 'warning', __('messages.release_readiness.checks.high_findings'), __('messages.release_readiness.hints.high_findings')),
+            $this->check('evidence_repository', 'archive', $metrics['evidence_count'] > 0, 'warning', __('messages.release_readiness.checks.evidence_repository'), __('messages.release_readiness.hints.evidence_repository')),
+            $this->check('missing_evidence', 'file-warning', $metrics['findings_missing_evidence'] === 0, 'warning', __('messages.release_readiness.checks.missing_evidence'), __('messages.release_readiness.hints.missing_evidence')),
+            $this->check('retest_queue', 'rotate-ccw', $metrics['retest_needed'] === 0, 'blocker', __('messages.release_readiness.checks.retest_queue'), __('messages.release_readiness.hints.retest_queue')),
+            $this->check('retest_failures', 'shield-x', $metrics['retest_failed'] === 0, 'blocker', __('messages.release_readiness.checks.retest_failures'), __('messages.release_readiness.hints.retest_failures')),
+            $this->check('retest_evidence', 'test-tube', $metrics['retest_missing_evidence'] === 0, 'warning', __('messages.release_readiness.checks.retest_evidence'), __('messages.release_readiness.hints.retest_evidence')),
+            $this->check('retest_closure_clean', 'shield-check', $metrics['retest_closure_open'] === 0, 'blocker', __('messages.release_readiness.checks.retest_closure_clean'), __('messages.release_readiness.hints.retest_closure_clean')),
+            $this->check('retest_closure_evidence', 'certificate', $metrics['retest_closure_missing_evidence'] === 0, 'warning', __('messages.release_readiness.checks.retest_closure_evidence'), __('messages.release_readiness.hints.retest_closure_evidence')),
+            $this->check('regression_retest_closure', 'git-pull-request-closed', $metrics['retest_closure_regression_retest_open'] === 0, 'blocker', __('messages.release_readiness.checks.regression_retest_closure'), __('messages.release_readiness.hints.regression_retest_closure')),
+            $this->check('accepted_risk_expiry', 'shield-alert', $metrics['risk_acceptance_expired'] === 0, 'blocker', __('messages.release_readiness.checks.accepted_risk_expiry'), __('messages.release_readiness.hints.accepted_risk_expiry')),
+            $this->check('accepted_risk_renewal_window', 'calendar-clock', $metrics['risk_acceptance_expiring_soon'] === 0, 'warning', __('messages.release_readiness.checks.accepted_risk_renewal_window'), __('messages.release_readiness.hints.accepted_risk_renewal_window')),
+            $this->check('accepted_risk_ledger', 'shield-check', $metrics['risk_acceptance_unaccepted_high_critical'] === 0, 'warning', __('messages.release_readiness.checks.accepted_risk_ledger'), __('messages.release_readiness.hints.accepted_risk_ledger')),
+            $this->check('contract_validation_present', 'file-check-2', $metrics['contract_validation_has_run'], 'warning', __('messages.release_readiness.checks.contract_validation_present'), __('messages.release_readiness.hints.contract_validation_present')),
+            $this->check('contract_validation_blockers', 'file-warning', $metrics['contract_validation_blockers'] === 0, 'blocker', __('messages.release_readiness.checks.contract_validation_blockers'), __('messages.release_readiness.hints.contract_validation_blockers')),
+            $this->check('contract_validation_clean', 'file-search', $metrics['contract_validation_warnings'] === 0, 'warning', __('messages.release_readiness.checks.contract_validation_clean'), __('messages.release_readiness.hints.contract_validation_clean')),
+            $this->check('external_qa_import_present', 'brackets-contain', $metrics['external_import_has_run'], 'warning', __('messages.release_readiness.checks.external_qa_import_present'), __('messages.release_readiness.hints.external_qa_import_present')),
+            $this->check('external_qa_import_applied', 'save', $metrics['external_import_status'] === 'applied', 'warning', __('messages.release_readiness.checks.external_qa_import_applied'), __('messages.release_readiness.hints.external_qa_import_applied')),
+            $this->check('external_qa_import_blockers', 'file-warning', $metrics['external_import_blockers'] === 0, 'warning', __('messages.release_readiness.checks.external_qa_import_blockers'), __('messages.release_readiness.hints.external_qa_import_blockers')),
+            $this->check('external_qa_import_conflicts', 'shield-alert', $metrics['external_import_conflicts'] === 0, 'blocker', __('messages.release_readiness.checks.external_qa_import_conflicts'), __('messages.release_readiness.hints.external_qa_import_conflicts')),
+            $this->check('release_goal', 'target', $metrics['release_goal_present'], 'warning', __('messages.release_readiness.checks.release_goal'), __('messages.release_readiness.hints.release_goal')),
+        ];
 
-        $lines[] = '## Assertion Summary';
-        $lines[] = '';
-        $lines[] = '| Status | Count |';
-        $lines[] = '|---|---:|';
-        foreach ($summary['assertion_counts'] as $status => $count) {
-            $lines[] = '| '.$this->md(__('messages.assertions.statuses.'.$status)).' | '.$count.' |';
-        }
-        $lines[] = '';
-        $lines[] = '## Contract Validation Summary';
-        $lines[] = '';
-        if ($summary['latest_contract_validation']) {
-            $contract = $summary['latest_contract_validation'];
-            $lines[] = '| Metric | Count |';
-            $lines[] = '|---|---:|';
-            $lines[] = '| Total checks | '.$contract->total_checks.' |';
-            $lines[] = '| Breaking issues | '.$contract->breaking_count.' |';
-            $lines[] = '| Failed checks | '.$contract->failed_count.' |';
-            $lines[] = '| Warnings | '.$contract->warning_count.' |';
-            $lines[] = '| Missing endpoints | '.$contract->missing_endpoint_count.' |';
-            $lines[] = '| Undocumented endpoints | '.$contract->undocumented_endpoint_count.' |';
-        } else {
-            $lines[] = 'No contract validation has been recorded yet.';
-        }
-        $lines[] = '';
+        return $this->applyRuleBuilder($project, $checks, $ruleOverrides);
+    }
 
-        $lines[] = '## Risk Summary';
-        $lines[] = '';
-        $lines[] = '| Risk | Count |';
-        $lines[] = '|---|---:|';
-        foreach ($summary['risk_counts'] as $risk => $count) {
-            $lines[] = '| '.$this->md(__('messages.endpoints.risks.'.$risk)).' | '.$count.' |';
+
+    private function applyRuleBuilder(Project $project, array $checks, ?array $ruleOverrides = null): array
+    {
+        if (! Schema::hasTable('release_readiness_rules')) {
+            return $checks;
         }
-        $lines[] = '';
-        $lines[] = '## Open Findings';
-        $lines[] = '';
-        if ($summary['open_findings']->isEmpty()) {
-            $lines[] = 'No open findings.';
-        } else {
-            $lines[] = '| Severity | Status | Finding | Endpoint | Evidence | Attachments |';
-            $lines[] = '|---|---|---|---|---:|---:|';
-            foreach ($summary['open_findings'] as $finding) {
-                $endpoint = $finding->endpoint ? $finding->endpoint->method.' '.$finding->endpoint->path : 'n/a';
-                $attachmentCount = $finding->evidence->filter(fn ($evidence): bool => $evidence->has_attachment)->count();
-                $lines[] = '| '.$this->md($finding->severity_label).' | '.$this->md($finding->status_label).' | '.$this->md($finding->title).' | '.$this->md($endpoint).' | '.$finding->evidence->count().' | '.$attachmentCount.' |';
+
+        ReleaseReadinessRule::syncDefaults($project);
+        $rules = $project->releaseReadinessRules()->get()->keyBy('rule_key');
+
+        return collect($checks)->map(function (array $check) use ($rules, $ruleOverrides): ?array {
+            /** @var ReleaseReadinessRule|null $rule */
+            $rule = $rules->get($check['key'] ?? '');
+            if (! $rule) {
+                return $check;
             }
-        }
-        $lines[] = '';
-        $lines[] = '## Blocking Issues';
-        $lines[] = '';
-        $lines = array_merge($lines, $this->bulletList($summary['blocking_issues'], 'No blocking issues detected.'));
-        $lines[] = '';
-        $lines[] = '## Warnings';
-        $lines[] = '';
-        $lines = array_merge($lines, $this->bulletList($summary['warnings'], 'No warnings detected.'));
-        $lines[] = '';
-        $lines[] = '## Top Failing Endpoints';
-        $lines[] = '';
-        $lines = array_merge($lines, $this->endpointTable($summary['failed_endpoints']));
-        $lines[] = '';
-        $lines[] = '## Top Slow Endpoints';
-        $lines[] = '';
-        $lines = array_merge($lines, $this->endpointTable($summary['top_slow_endpoints']));
-        $lines[] = '';
-        $lines[] = '## Security Header Issues';
-        $lines[] = '';
-        $lines = array_merge($lines, $this->endpointTable($summary['security_header_issues']));
-        $lines[] = '';
-        $lines[] = '## Recommended Actions';
-        $lines[] = '';
-        $lines = array_merge($lines, $this->bulletList($summary['recommended_actions'], 'No immediate action required.'));
-        $lines[] = '';
-        $lines[] = '_This report uses stored safe GET/HEAD probe, snapshot and compare evidence. It does not execute new HTTP requests._';
-        $lines[] = '';
-        $this->credits->appendMarkdownFooter($lines, 'release_readiness_report', $project);
+            $override = $ruleOverrides[$rule->id] ?? $ruleOverrides[$rule->rule_key] ?? null;
+            $enabled = array_key_exists('enabled', (array) $override) ? (bool) $override['enabled'] : (bool) $rule->enabled;
+            $failureLevel = (string) ($override['failure_level'] ?? $rule->failure_level ?? $check['level']);
+            if (! $enabled) {
+                return null;
+            }
+            if (! ($check['passed'] ?? false)) {
+                $check['level'] = $failureLevel ?: $check['level'];
+                $check['tone'] = $check['level'] === 'blocker' ? 'danger' : 'warning';
+            }
+            $check['rule_level'] = $failureLevel;
+            $check['rule_category'] = $rule->category;
+            $check['rule_enabled'] = $enabled;
 
-        return implode("\n", $lines)."\n";
+            return $check;
+        })->filter()->values()->all();
+    }
+
+    private function ruleSummary(Project $project): array
+    {
+        if (! Schema::hasTable('release_readiness_rules')) {
+            return [];
+        }
+
+        ReleaseReadinessRule::syncDefaults($project);
+        $rules = $project->releaseReadinessRules()->orderBy('sort_order')->get();
+
+        return [
+            'enabled_count' => $rules->where('enabled', true)->count(),
+            'disabled_count' => $rules->where('enabled', false)->count(),
+            'blocker_count' => $rules->where('enabled', true)->where('failure_level', 'blocker')->count(),
+            'warning_count' => $rules->where('enabled', true)->where('failure_level', 'warning')->count(),
+            'captured_at' => now()->toDateTimeString(),
+            'profile' => $this->profileService->summary($project),
+            'rules' => $rules->map(fn (ReleaseReadinessRule $rule): array => [
+                'key' => $rule->rule_key,
+                'enabled' => $rule->enabled,
+                'failure_level' => $rule->failure_level,
+                'category' => $rule->category,
+            ])->values()->all(),
+        ];
+    }
+
+    private function retestClosureMetrics(array $closure): array
+    {
+        return [
+            'retest_closure_status' => (string) ($closure['status'] ?? 'closed'),
+            'retest_closure_rate' => (int) ($closure['closure_rate'] ?? 100),
+            'retest_closure_total' => (int) ($closure['total'] ?? 0),
+            'retest_closure_open' => (int) ($closure['open'] ?? 0),
+            'retest_closure_pending' => (int) ($closure['pending'] ?? 0),
+            'retest_closure_failed' => (int) ($closure['failed'] ?? 0),
+            'retest_closure_missing_evidence' => (int) ($closure['missing_evidence'] ?? 0),
+            'retest_closure_stale_ready' => (int) ($closure['stale_ready'] ?? 0),
+            'retest_closure_regression_open' => (int) ($closure['regression_open'] ?? 0),
+            'retest_closure_regression_retest_open' => (int) ($closure['regression_retest_open'] ?? 0),
+        ];
+    }
+
+    private function riskAcceptanceMetrics(array $acceptance): array
+    {
+        return [
+            'risk_acceptance_active' => (int) ($acceptance['active'] ?? 0),
+            'risk_acceptance_expiring_soon' => (int) ($acceptance['expiring_soon'] ?? 0),
+            'risk_acceptance_expired' => (int) ($acceptance['expired'] ?? 0),
+            'risk_acceptance_revoked' => (int) ($acceptance['revoked'] ?? 0),
+            'risk_acceptance_renewed' => (int) ($acceptance['renewed'] ?? 0),
+            'risk_acceptance_accepted_high_critical' => (int) ($acceptance['open_high_critical_accepted'] ?? 0),
+            'risk_acceptance_unaccepted_high_critical' => (int) ($acceptance['open_high_critical_unaccepted'] ?? 0),
+            'risk_acceptance_next_expiry_at' => $acceptance['next_expiry_at'] ?? null,
+        ];
+    }
+
+    private function contractValidationMetrics(array $contract): array
+    {
+        return [
+            'contract_validation_has_run' => (bool) ($contract['has_run'] ?? false),
+            'contract_validation_latest_run_id' => $contract['latest_run_id'] ?? null,
+            'contract_validation_status' => (string) ($contract['latest_status'] ?? 'missing'),
+            'contract_validation_documented_operations' => (int) ($contract['documented_operations'] ?? 0),
+            'contract_validation_inventory_operations' => (int) ($contract['inventory_operations'] ?? 0),
+            'contract_validation_matched_operations' => (int) ($contract['matched_operations'] ?? 0),
+            'contract_validation_undocumented' => (int) ($contract['undocumented_inventory_operations'] ?? 0),
+            'contract_validation_missing_inventory' => (int) ($contract['missing_inventory_operations'] ?? 0),
+            'contract_validation_blockers' => (int) ($contract['blocker_count'] ?? 0),
+            'contract_validation_warnings' => (int) ($contract['warning_count'] ?? 0),
+            'contract_validation_validated_at' => $contract['validated_at'] ?? null,
+        ];
     }
 
 
-    /**
-     * @param Collection<int, Endpoint> $endpoints
-     * @return array<int, array<string, mixed>>
-     */
-    private function scoreComponents(Project $project, Collection $endpoints, $latestScan, $latestSnapshot, $latestCompare, $latestContractValidation, array $findingCounts, array $testExecution, array $qaCoverage, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, array $blindSpotSummary, array $riskAcceptanceSummary): array
+    private function externalImportMetrics(array $import): array
     {
-        $latestScanResults = $latestScan?->results ?? collect();
-        $evidenceCount = $project->findingEvidence()->count();
-        $releaseGateCount = $project->qaReleaseGates()->count();
-        $authRequired = $endpoints->filter(fn (Endpoint $endpoint): bool => (bool) $endpoint->auth_required);
-        $authConfigured = $authRequired->filter(fn (Endpoint $endpoint): bool => $endpoint->auth_profile_id !== null);
-        $securityEvents = (int) $latestScanResults->filter(fn (ScanResult $result): bool => (bool) $result->sensitive_data_detected || (bool) $result->broken_auth_detected || (bool) $result->schema_drift_detected)->count();
-
-        $components = [];
-        $components[] = $this->scoreComponent('evidence', 10, min(10, ($latestScan && $latestScan->status === \App\Models\ScanRun::STATUS_COMPLETED ? 4 : 0) + ($latestSnapshot ? 2 : 0) + ($latestCompare ? 2 : 0) + min(2, $evidenceCount > 0 ? 2 : 0)), [
-            __('messages.release_readiness.score_checks.latest_scan').': '.($latestScan ? $latestScan->status_label : __('messages.common.not_available')),
-            __('messages.release_readiness.score_checks.snapshot').': '.($latestSnapshot ? $latestSnapshot->name : __('messages.common.not_available')),
-            __('messages.release_readiness.score_checks.evidence_count').': '.$evidenceCount,
-        ]);
-        $components[] = $this->scoreComponent('endpoint_coverage', 15, (int) round(15 * ($coveragePercent / 100)), [
-            __('messages.release_readiness.covered_endpoints').': '.$coveragePercent.'%',
-        ]);
-        $components[] = $this->scoreComponent('qa_coverage', 10, (int) round(10 * (($qaCoverage['coverage_percent'] ?? 0) / 100)), [
-            __('messages.qa_coverage.coverage_percent').': '.($qaCoverage['coverage_percent'] ?? 0).'%',
-            __('messages.qa_coverage.gap_filters.not_scanned').': '.($qaCoverage['not_scanned'] ?? 0),
-        ]);
-        $endpointCount = max(1, (int) $project->endpoints_count);
-        $assertionQuality = (($assertionCounts[AssertionEvaluationService::STATUS_PASS] ?? 0) + (($assertionCounts[AssertionEvaluationService::STATUS_WARNING] ?? 0) * 0.5)) / $endpointCount;
-        $components[] = $this->scoreComponent('assertions', 10, (int) round(10 * max(0, min(1, $assertionQuality))), [
-            __('messages.assertions.statuses.pass').': '.($assertionCounts[AssertionEvaluationService::STATUS_PASS] ?? 0),
-            __('messages.assertions.statuses.fail').': '.($assertionCounts[AssertionEvaluationService::STATUS_FAIL] ?? 0),
-            __('messages.assertions.statuses.not_configured').': '.($assertionCounts[AssertionEvaluationService::STATUS_NOT_CONFIGURED] ?? 0),
-        ]);
-        $testScore = ($testExecution['total'] ?? 0) > 0
-            ? ((($testExecution['execution_percent'] ?? 0) * 0.45) + (($testExecution['pass_rate'] ?? 0) * 0.55)) / 100
-            : 0;
-        $components[] = $this->scoreComponent('test_execution', 10, (int) round(10 * max(0, min(1, $testScore))), [
-            __('messages.test_execution.execution_coverage').': '.($testExecution['execution_percent'] ?? 0).'%',
-            __('messages.test_execution.pass_rate').': '.($testExecution['pass_rate'] ?? 0).'%',
-        ]);
-        $regressionPenalty = min(10, (($regression['detected_count'] ?? 0) * 5) + (($regression['warning_count'] ?? 0) * 2));
-        $components[] = $this->scoreComponent('regression', 10, max(0, 10 - $regressionPenalty), [
-            __('messages.regressions.regression_status').': '.$regression['label'],
-            __('messages.release_readiness.score_checks.regressions').': '.($regression['detected_count'] ?? 0),
-        ]);
-        $securityPenalty = min(15, ($securityEvents * 5) + (($riskCounts[Endpoint::RISK_CRITICAL] ?? 0) * 5) + (($riskCounts[Endpoint::RISK_HIGH] ?? 0) * 2) + max(0, $authRequired->count() - $authConfigured->count()) * 3);
-        $components[] = $this->scoreComponent('security', 15, max(0, 15 - $securityPenalty), [
-            __('messages.release_readiness.score_checks.security_events').': '.$securityEvents,
-            __('messages.release_readiness.score_checks.auth_ready').': '.$authConfigured->count().' / '.$authRequired->count(),
-        ]);
-        $riskAcceptanceCounts = $riskAcceptanceSummary['summary'] ?? [];
-        $findingPenalty = min(10, (($findingCounts['critical_open'] ?? 0) * 5) + (($findingCounts['high_open'] ?? 0) * 3) + (($findingCounts['medium_open'] ?? 0) * 1) + (($findingCounts['retest_failed'] ?? 0) * 4) + (($findingCounts['fixed_unverified'] ?? 0) * 2) + (($findingCounts['overdue'] ?? 0) * 2) + (($riskAcceptanceCounts['expired'] ?? 0) * 4) + (($riskAcceptanceCounts['without_expiry'] ?? 0) * 1));
-        $components[] = $this->scoreComponent('findings', 10, max(0, 10 - $findingPenalty), [
-            __('messages.findings.open_findings').': '.($findingCounts['open'] ?? 0),
-            __('messages.findings.severities.critical').': '.($findingCounts['critical_open'] ?? 0),
-            __('messages.findings.severities.high').': '.($findingCounts['high_open'] ?? 0),
-            __('messages.findings.statuses.reopened').': '.($findingCounts['reopened'] ?? 0),
-            __('messages.findings.statuses.accepted_risk').': '.($findingCounts['accepted_risk'] ?? 0),
-            __('messages.findings.statuses.false_positive').': '.($findingCounts['false_positive'] ?? 0),
-            __('messages.findings.statuses.fixed').': '.($findingCounts['fixed'] ?? 0),
-            __('messages.release_readiness.score_checks.retest_failed_findings').': '.($findingCounts['retest_failed'] ?? 0),
-            __('messages.release_readiness.score_checks.fixed_unverified_findings').': '.($findingCounts['fixed_unverified'] ?? 0),
-            __('messages.release_readiness.score_checks.overdue_findings').': '.($findingCounts['overdue'] ?? 0),
-            __('messages.risk_acceptances.expired').': '.($riskAcceptanceCounts['expired'] ?? 0),
-            __('messages.risk_acceptances.without_expiry').': '.($riskAcceptanceCounts['without_expiry'] ?? 0),
-        ]);
-        if ($latestContractValidation) {
-            $contractPenalty = min(5, (($latestContractValidation->breaking_count ?? 0) * 3) + (($latestContractValidation->failed_count ?? 0) * 2) + (($latestContractValidation->warning_count ?? 0) * 1));
-            $contractEarned = max(0, 5 - $contractPenalty);
-        } else {
-            $contractEarned = 1;
-        }
-        $components[] = $this->scoreComponent('contract', 5, $contractEarned, [
-            __('messages.contract_validations.short_title').': '.($latestContractValidation ? $latestContractValidation->health_label : __('messages.common.not_available')),
-        ]);
-        $blindSpotCounts = $blindSpotSummary['summary'] ?? [];
-        $blindSpotPenalty = min(5, (($blindSpotCounts['release_blockers'] ?? 0) * 2) + (($blindSpotCounts['high'] ?? 0) * 1) + (($blindSpotCounts['medium'] ?? 0) > 0 ? 1 : 0));
-        $components[] = $this->scoreComponent('report_signoff', 5, max(0, min(5, ($releaseGateCount > 0 ? 3 : 0) + ($project->apiMonitors()->where('is_enabled', true)->exists() ? 1 : 0) + ($project->is_active ? 1 : 0)) - $blindSpotPenalty), [
-            __('messages.release_readiness.score_checks.release_gates').': '.$releaseGateCount,
-            __('messages.release_readiness.score_checks.enabled_monitors').': '.$project->apiMonitors()->where('is_enabled', true)->count(),
-            __('messages.release_readiness.score_checks.blind_spots').': '.($blindSpotCounts['total'] ?? 0),
-            __('messages.risk_acceptances.active').': '.($riskAcceptanceCounts['active'] ?? 0),
-        ]);
-
-        return $components;
+        return [
+            'external_import_has_run' => (bool) ($import['has_run'] ?? false),
+            'external_import_latest_run_id' => $import['latest_run_id'] ?? null,
+            'external_import_source_type' => $import['source_type'] ?? null,
+            'external_import_status' => (string) ($import['status'] ?? 'missing'),
+            'external_import_items' => (int) ($import['item_count'] ?? 0),
+            'external_import_endpoints' => (int) ($import['endpoint_count'] ?? 0),
+            'external_import_assertions' => (int) ($import['assertion_count'] ?? 0),
+            'external_import_findings' => (int) ($import['finding_count'] ?? 0),
+            'external_import_evidence' => (int) ($import['evidence_count'] ?? 0),
+            'external_import_warnings' => (int) ($import['warning_count'] ?? 0),
+            'external_import_blockers' => (int) ($import['blocker_count'] ?? 0),
+            'external_import_new' => (int) ($import['new_count'] ?? 0),
+            'external_import_updates' => (int) ($import['update_count'] ?? 0),
+            'external_import_duplicates' => (int) ($import['duplicate_count'] ?? 0),
+            'external_import_conflicts' => (int) ($import['conflict_count'] ?? 0),
+            'external_import_needs_review' => (int) ($import['needs_review_count'] ?? 0),
+            'external_import_applied_at' => $import['applied_at'] ?? null,
+        ];
     }
 
-    /** @return array<string, mixed> */
-    private function scoreComponent(string $key, int $maxPoints, int $earnedPoints, array $checks = []): array
+    private function check(string $key, string $icon, bool $passed, string $failureLevel, string $label, string $hint): array
     {
-        $earnedPoints = max(0, min($maxPoints, $earnedPoints));
-        $percent = $maxPoints > 0 ? (int) round(($earnedPoints / $maxPoints) * 100) : 0;
-        $status = match (true) {
-            $percent >= 85 => 'strong',
-            $percent >= 55 => 'review',
-            default => 'weak',
-        };
-
         return [
             'key' => $key,
-            'label' => __('messages.release_readiness.score_components.'.$key),
-            'earned_points' => $earnedPoints,
-            'max_points' => $maxPoints,
-            'percent' => $percent,
-            'status' => $status,
-            'status_label' => __('messages.release_readiness.score_statuses.'.$status),
-            'css' => match ($status) {
-                'strong' => 'success',
-                'review' => 'warning',
-                default => 'danger',
-            },
-            'checks' => array_values(array_filter($checks)),
+            'icon' => $icon,
+            'label' => $label,
+            'hint' => $hint,
+            'passed' => $passed,
+            'level' => $passed ? 'pass' : $failureLevel,
+            'tone' => $passed ? 'success' : ($failureLevel === 'blocker' ? 'danger' : 'warning'),
         ];
     }
 
-    /** @param array<int, array<string, mixed>> $components */
-    private function componentScore(array $components): int
+    private function score(array $checks): int
     {
-        $max = array_sum(array_map(fn (array $component): int => (int) $component['max_points'], $components));
-        $earned = array_sum(array_map(fn (array $component): int => (int) $component['earned_points'], $components));
-
-        return $max > 0 ? (int) round(($earned / $max) * 100) : 0;
-    }
-
-    /** @return array<int, string> */
-    private function blockingIssues(Project $project, $latestScan, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, $latestContractValidation, array $findingCounts, array $testExecution, array $blindSpotSummary, array $riskAcceptanceSummary): array
-    {
-        $issues = [];
-
-        if (! $project->is_active) {
-            $issues[] = __('messages.release_readiness.issues.project_inactive');
-        }
-        if ($this->settings->boolean('release.minimum_successful_scan_required', true)) {
-            if (! $latestScan) {
-                $issues[] = __('messages.release_readiness.issues.no_scan');
-            } elseif ($latestScan->status !== \App\Models\ScanRun::STATUS_COMPLETED) {
-                $issues[] = __('messages.release_readiness.issues.latest_scan_failed');
-            }
-        }
-        if (($latestScan?->error_count ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.scan_errors', ['count' => $latestScan->error_count]);
-        }
-        if ($this->settings->boolean('release.failed_assertions_block_release', true) && ($assertionCounts[AssertionEvaluationService::STATUS_FAIL] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.assertion_failures', ['count' => $assertionCounts[AssertionEvaluationService::STATUS_FAIL]]);
-        }
-        if ($this->settings->boolean('release.regressions_block_release', true) && ($regression['detected_count'] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.regression_detected', ['count' => $regression['detected_count']]);
-        }
-        if ($this->settings->boolean('assertions.treat_regression_as_failure', true) && ($regression['warning_count'] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.warnings.regression_warnings', ['count' => $regression['warning_count']]);
-        }
-        if ($this->settings->boolean('release.critical_findings_block_release', true) && ($riskCounts[Endpoint::RISK_CRITICAL] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.critical_risk', ['count' => $riskCounts[Endpoint::RISK_CRITICAL]]);
-        }
-        if ($project->endpoints_count > 0 && $coveragePercent < max(0, min(100, $this->settings->integer('release.minimum_coverage_percent', 80)))) {
-            $issues[] = __('messages.release_readiness.issues.low_coverage', ['percent' => $coveragePercent]);
-        }
-        if (($latestContractValidation?->breaking_count ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.contract_breaking', ['count' => $latestContractValidation->breaking_count]);
-        }
-        if (($latestContractValidation?->failed_count ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.contract_failed', ['count' => $latestContractValidation->failed_count]);
-        }
-        if ($this->settings->boolean('release.critical_findings_block_release', true) && ($findingCounts['critical_open'] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.critical_findings', ['count' => $findingCounts['critical_open']]);
-        }
-        if (($testExecution['run_counts'][TestCase::RUN_FAIL] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.failed_tests', ['count' => $testExecution['run_counts'][TestCase::RUN_FAIL]]);
-        }
-        if (($findingCounts['retest_failed'] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.retest_failed_findings', ['count' => $findingCounts['retest_failed']]);
-        }
-        if ($this->settings->boolean('release.required_evidence_before_release', true) && $project->findingEvidence()->count() === 0) {
-            $issues[] = 'No QA evidence has been recorded for this project.';
-        }
-        if ($this->settings->boolean('release.required_snapshot_before_release', false) && $project->snapshots()->count() === 0) {
-            $issues[] = 'No baseline snapshot has been saved for this project.';
-        }
-        if ($this->settings->boolean('release.required_report_before_release', true) && $project->qaReleaseGates()->count() === 0) {
-            $issues[] = 'No release gate/report snapshot has been generated for this project.';
-        }
-        if (($blindSpotSummary['summary']['release_blockers'] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.release_blocking_blind_spots', ['count' => $blindSpotSummary['summary']['release_blockers']]);
-        }
-        if (($riskAcceptanceSummary['summary']['expired'] ?? 0) > 0) {
-            $issues[] = __('messages.release_readiness.issues.expired_risk_acceptances', ['count' => $riskAcceptanceSummary['summary']['expired']]);
-        }
-
-        return array_values(array_unique($issues));
-    }
-
-    /** @return array<int, string> */
-    private function warnings($latestScan, array $assertionCounts, array $regression, array $riskCounts, int $coveragePercent, Project $project, $latestContractValidation, array $findingCounts, array $testExecution, array $blindSpotSummary, array $riskAcceptanceSummary): array
-    {
-        $warnings = [];
-
-        if (($assertionCounts[AssertionEvaluationService::STATUS_WARNING] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.assertion_warnings', ['count' => $assertionCounts[AssertionEvaluationService::STATUS_WARNING]]);
-        }
-        if (($assertionCounts[AssertionEvaluationService::STATUS_NOT_CONFIGURED] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.assertions_not_configured', ['count' => $assertionCounts[AssertionEvaluationService::STATUS_NOT_CONFIGURED]]);
-        }
-        if (($latestScan?->warning_count ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.scan_warnings', ['count' => $latestScan->warning_count]);
-        }
-        if (! $this->settings->boolean('assertions.treat_regression_as_failure', true) && ($regression['warning_count'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.regression_warnings', ['count' => $regression['warning_count']]);
-        }
-        if ($this->settings->boolean('release.high_findings_require_review', true) && ($riskCounts[Endpoint::RISK_HIGH] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.high_risk', ['count' => $riskCounts[Endpoint::RISK_HIGH]]);
-        }
-        if ($project->endpoints_count > 0 && $coveragePercent < max(0, min(100, $this->settings->integer('release.minimum_coverage_percent', 80)))) {
-            $warnings[] = __('messages.release_readiness.warnings.coverage_warning', ['percent' => $coveragePercent]);
-        }
-        if ($project->apiMonitors()->where('is_enabled', true)->count() === 0) {
-            $warnings[] = __('messages.release_readiness.warnings.no_monitor');
-        }
-        if (! $latestContractValidation) {
-            $warnings[] = __('messages.release_readiness.warnings.no_contract_validation');
-        } elseif (($latestContractValidation->warning_count ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.contract_warnings', ['count' => $latestContractValidation->warning_count]);
-        }
-        if (($findingCounts['high_open'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.high_findings', ['count' => $findingCounts['high_open']]);
-        }
-        if (($findingCounts['medium_open'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.medium_findings', ['count' => $findingCounts['medium_open']]);
-        }
-        if (($testExecution['run_counts'][TestCase::RUN_BLOCKED] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.blocked_tests', ['count' => $testExecution['run_counts'][TestCase::RUN_BLOCKED]]);
-        }
-        if (($findingCounts['fixed_unverified'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.fixed_unverified_findings', ['count' => $findingCounts['fixed_unverified']]);
-        }
-        if (($findingCounts['ready_for_retest'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.ready_for_retest_findings', ['count' => $findingCounts['ready_for_retest']]);
-        }
-        if (($findingCounts['overdue'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.overdue_findings', ['count' => $findingCounts['overdue']]);
-        }
-        if (($testExecution['total'] ?? 0) > 0 && ($testExecution['execution_percent'] ?? 0) < 80) {
-            $warnings[] = __('messages.release_readiness.warnings.low_test_execution', ['percent' => $testExecution['execution_percent']]);
-        }
-        if (($riskAcceptanceSummary['summary']['without_expiry'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.risk_acceptance_without_expiry', ['count' => $riskAcceptanceSummary['summary']['without_expiry']]);
-        }
-        if (($riskAcceptanceSummary['summary']['expiring_soon'] ?? 0) > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.risk_acceptance_expiring_soon', ['count' => $riskAcceptanceSummary['summary']['expiring_soon']]);
-        }
-        $nonBlockingBlindSpots = max(0, (int) ($blindSpotSummary['summary']['total'] ?? 0) - (int) ($blindSpotSummary['summary']['release_blockers'] ?? 0));
-        if ($nonBlockingBlindSpots > 0) {
-            $warnings[] = __('messages.release_readiness.warnings.blind_spots', ['count' => $nonBlockingBlindSpots]);
-        }
-
-        return array_values(array_unique($warnings));
-    }
-
-    private function score(int $endpointCount, int $coveragePercent, array $assertionCounts, array $regression, array $riskCounts, $latestScan, Project $project, $latestContractValidation, array $findingCounts, array $testExecution): int
-    {
-        if ($endpointCount === 0 || ! $latestScan) {
-            return 0;
-        }
-
         $score = 100;
-        $score -= max(0, $this->settings->integer('release.minimum_coverage_percent', 80) - $coveragePercent) * 0.40;
-        $score -= ($assertionCounts[AssertionEvaluationService::STATUS_FAIL] ?? 0) * 12;
-        $score -= ($assertionCounts[AssertionEvaluationService::STATUS_WARNING] ?? 0) * 5;
-        $score -= ($assertionCounts[AssertionEvaluationService::STATUS_NOT_CONFIGURED] ?? 0) * 2;
-        $score -= ($latestScan->error_count ?? 0) * 10;
-        $score -= ($latestScan->warning_count ?? 0) * 4;
-        $score -= ($regression['detected_count'] ?? 0) * 15;
-        $score -= ($regression['warning_count'] ?? 0) * 7;
-        $score -= ($riskCounts[Endpoint::RISK_CRITICAL] ?? 0) * 10;
-        $score -= ($riskCounts[Endpoint::RISK_HIGH] ?? 0) * 5;
-        $score -= ($latestContractValidation?->breaking_count ?? 0) * 15;
-        $score -= ($latestContractValidation?->failed_count ?? 0) * 8;
-        $score -= ($latestContractValidation?->warning_count ?? 0) * 3;
-        $score -= ($findingCounts['critical_open'] ?? 0) * 18;
-        $score -= ($findingCounts['high_open'] ?? 0) * 10;
-        $score -= ($findingCounts['medium_open'] ?? 0) * 4;
-        $score -= ($testExecution['run_counts'][TestCase::RUN_FAIL] ?? 0) * 12;
-        $score -= ($testExecution['run_counts'][TestCase::RUN_BLOCKED] ?? 0) * 6;
-        if (($testExecution['total'] ?? 0) > 0) {
-            $score -= max(0, 100 - ($testExecution['execution_percent'] ?? 0)) * 0.15;
-        }
-        $score += min(5, ($regression['recovered_count'] ?? 0));
-        $score += min(5, ($regression['improved_count'] ?? 0));
-
-        if (! $project->is_active) {
-            $score -= 30;
-        }
-
-        return (int) max(0, min(100, round($score)));
-    }
-
-    /** @param array<int, string> $blockingIssues @param array<int, string> $warnings */
-    private function status(Project $project, $latestScan, array $blockingIssues, array $warnings, int $score): string
-    {
-        if (! $latestScan || $project->endpoints_count === 0) {
-            return self::STATUS_IDLE;
-        }
-        $failScore = $this->settings->boolean('release.security_audit_must_pass', true) ? 70 : 60;
-        if ($blockingIssues !== [] || $score < $failScore) {
-            return self::STATUS_FAIL;
-        }
-        if ($warnings !== [] || $score < 90) {
-            return self::STATUS_WARNING;
-        }
-
-        return self::STATUS_PASS;
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    private function riskTrend(Project $project): array
-    {
-        return $project->scanRuns()
-            ->with('results.endpoint')
-            ->latest()
-            ->limit(7)
-            ->get()
-            ->reverse()
-            ->values()
-            ->map(function ($scanRun): array {
-                $scores = $scanRun->results
-                    ->filter(fn (ScanResult $result): bool => $result->endpoint !== null)
-                    ->map(fn (ScanResult $result): int => (int) $this->riskAnalyzer->analyze($result->endpoint, $result)['score']);
-
-                return [
-                    'label' => $scanRun->started_at?->format('m-d H:i') ?: $scanRun->created_at->format('m-d H:i'),
-                    'value' => $scores->count() > 0 ? (int) round($scores->avg()) : 0,
-                ];
-            })
-            ->all();
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    private function regressionTrend(Project $project): array
-    {
-        return $project->compareRuns()
-            ->with('items')
-            ->latest()
-            ->limit(7)
-            ->get()
-            ->reverse()
-            ->values()
-            ->map(function ($compareRun): array {
-                $regression = $this->regressions->evaluateCompare($compareRun);
-
-                return [
-                    'label' => $compareRun->created_at->format('m-d H:i'),
-                    'value' => (int) (($regression['detected_count'] ?? 0) + ($regression['warning_count'] ?? 0)),
-                ];
-            })
-            ->all();
-    }
-
-    /** @return array<int, string> */
-    private function recommendedActions(array $blockingIssues, array $warnings, array $regression, array $assertionCounts, int $coveragePercent, array $findingCounts, array $blindSpotSummary, array $riskAcceptanceSummary): array
-    {
-        $actions = [];
-        if ($blockingIssues !== []) {
-            $actions[] = __('messages.release_readiness.actions.fix_blockers');
-        }
-        if (($assertionCounts[AssertionEvaluationService::STATUS_FAIL] ?? 0) > 0 || ($assertionCounts[AssertionEvaluationService::STATUS_WARNING] ?? 0) > 0) {
-            $actions[] = __('messages.release_readiness.actions.review_assertions');
-        }
-        if (($regression['detected_count'] ?? 0) > 0 || ($regression['warning_count'] ?? 0) > 0) {
-            $actions[] = __('messages.release_readiness.actions.review_regressions');
-        }
-        if ($coveragePercent < 80) {
-            $actions[] = __('messages.release_readiness.actions.increase_coverage');
-        }
-        if (($findingCounts['open'] ?? 0) > 0) {
-            $actions[] = __('messages.release_readiness.actions.review_findings');
-        }
-        if (($findingCounts['fixed_unverified'] ?? 0) > 0 || ($findingCounts['ready_for_retest'] ?? 0) > 0 || ($findingCounts['retest_failed'] ?? 0) > 0) {
-            $actions[] = __('messages.release_readiness.actions.verify_findings');
-        }
-        if (($blindSpotSummary['summary']['total'] ?? 0) > 0) {
-            $actions[] = __('messages.release_readiness.actions.close_blind_spots');
-        }
-        if (($riskAcceptanceSummary['summary']['expired'] ?? 0) > 0 || ($riskAcceptanceSummary['summary']['without_expiry'] ?? 0) > 0 || ($riskAcceptanceSummary['summary']['expiring_soon'] ?? 0) > 0) {
-            $actions[] = __('messages.release_readiness.actions.review_risk_acceptances');
-        }
-        if ($warnings !== []) {
-            $actions[] = __('messages.release_readiness.actions.review_warnings');
-        }
-        $actions[] = __('messages.release_readiness.actions.save_clean_baseline');
-
-        return array_values(array_unique($actions));
-    }
-
-
-
-    /** @param array<int, string> $lines @param array<string, mixed> $blindSpots */
-    private function appendBlindSpotMarkdownSummary(array &$lines, array $blindSpots): void
-    {
-        $counts = $blindSpots['summary'] ?? [];
-        $lines[] = '## '.$this->md(__('messages.blind_spots.report_summary_title'));
-        $lines[] = '';
-        $lines[] = '| Metric | Count |';
-        $lines[] = '|---|---:|';
-        $lines[] = '| Total blind spots | '.($counts['total'] ?? 0).' |';
-        $lines[] = '| Critical blind spots | '.($counts['critical'] ?? 0).' |';
-        $lines[] = '| High blind spots | '.($counts['high'] ?? 0).' |';
-        $lines[] = '| Stale evidence | '.($counts['stale_evidence'] ?? 0).' |';
-        $lines[] = '| Untested endpoints | '.($counts['untested_endpoints'] ?? 0).' |';
-        $lines[] = '| Missing assertions | '.($counts['missing_assertions'] ?? 0).' |';
-        $lines[] = '| Missing auth comparisons | '.($counts['missing_auth_comparisons'] ?? 0).' |';
-        $lines[] = '| Unverified fixes | '.($counts['unverified_fixes'] ?? 0).' |';
-        $lines[] = '| Risk expiry issues | '.(($counts['risk_without_expiry'] ?? 0) + ($counts['expired_accepted_risks'] ?? 0)).' |';
-        $lines[] = '| Missing recent reports | '.($counts['missing_recent_reports'] ?? 0).' |';
-        $lines[] = '| Release blockers | '.($counts['release_blockers'] ?? 0).' |';
-        $lines[] = '';
-
-        $items = $blindSpots['top_items'] ?? $blindSpots['items'] ?? collect();
-        if (is_array($items)) {
-            $items = collect($items);
-        }
-
-        if ($items instanceof Collection && $items->isNotEmpty()) {
-            $lines[] = '| Severity | Module | Type | Affected item | Release blocker | Suggested action |';
-            $lines[] = '|---|---|---|---|---|---|';
-            foreach ($items->take(10) as $item) {
-                if (! is_array($item)) {
-                    continue;
-                }
-
-                $lines[] = '| '
-                    .$this->md((string) ($item['severity_label'] ?? $item['severity'] ?? 'n/a')).' | '
-                    .$this->md((string) ($item['module_label'] ?? $item['module'] ?? 'n/a')).' | '
-                    .$this->md((string) ($item['type_label'] ?? $item['category_label'] ?? $item['category'] ?? 'n/a')).' | '
-                    .$this->md((string) ($item['related_label'] ?? 'n/a')).' | '
-                    .(($item['release_blocker'] ?? false) ? 'Yes' : 'No').' | '
-                    .$this->md((string) ($item['suggested_action'] ?? 'n/a')).' |';
+        foreach ($checks as $check) {
+            if ($check['level'] === 'blocker') {
+                $score -= 15;
+            } elseif ($check['level'] === 'warning') {
+                $score -= 7;
             }
-            $lines[] = '';
         }
+
+        return max(0, min(100, $score));
     }
 
-
-
-    /** @param array<int, string> $lines @param array<string, mixed> $riskAcceptances */
-    private function appendRiskAcceptanceMarkdownSummary(array &$lines, array $riskAcceptances): void
+    private function grade(int $score, string $status): string
     {
-        $counts = $riskAcceptances['summary'] ?? [];
-        $lines[] = '## Risk Acceptance Ledger Summary';
-        $lines[] = '';
-        $lines[] = '| Metric | Count |';
-        $lines[] = '|---|---:|';
-        $lines[] = '| Total accepted risks | '.($counts['total'] ?? 0).' |';
-        $lines[] = '| Active accepted risks | '.($counts['active'] ?? 0).' |';
-        $lines[] = '| High or critical active accepted risks | '.($counts['active_high_or_critical'] ?? 0).' |';
-        $lines[] = '| Without expiry | '.($counts['without_expiry'] ?? 0).' |';
-        $lines[] = '| Expiring soon | '.($counts['expiring_soon'] ?? 0).' |';
-        $lines[] = '| Expired | '.($counts['expired'] ?? 0).' |';
-        $lines[] = '';
-
-        $items = $riskAcceptances['active_items'] ?? collect();
-        if ($items instanceof Collection && $items->isNotEmpty()) {
-            $lines[] = '| Finding | Severity | Accepted by | Accepted until | Scope | Expiry action | Reason |';
-            $lines[] = '|---|---|---|---|---|---|---|';
-            foreach ($items->take(10) as $acceptance) {
-                $lines[] = '| '.$this->md((string) $acceptance->finding?->title).' | '.$this->md((string) $acceptance->finding?->severity_label).' | '.$this->md((string) ($acceptance->acceptedBy?->name ?: 'n/a')).' | '.$this->md((string) ($acceptance->accepted_until?->format('Y-m-d') ?: 'n/a')).' | '.$this->md((string) ($acceptance->release_scope ?: 'n/a')).' | '.$this->md((string) $acceptance->expiry_action_label).' | '.$this->md((string) $acceptance->reason).' |';
-            }
-            $lines[] = '';
+        if ($status === 'blocked') {
+            return $score >= 70 ? 'C' : 'D';
         }
-    }
 
-    /** @return array<string, mixed> */
-    private function releasePolicy(): array
-    {
-        return [
-            'minimum_successful_scan_required' => $this->settings->boolean('release.minimum_successful_scan_required', true),
-            'failed_assertions_block_release' => $this->settings->boolean('release.failed_assertions_block_release', true),
-            'critical_findings_block_release' => $this->settings->boolean('release.critical_findings_block_release', true),
-            'high_findings_require_review' => $this->settings->boolean('release.high_findings_require_review', true),
-            'regressions_block_release' => $this->settings->boolean('release.regressions_block_release', true),
-            'treat_regression_as_failure' => $this->settings->boolean('assertions.treat_regression_as_failure', true),
-            'security_audit_must_pass' => $this->settings->boolean('release.security_audit_must_pass', true),
-            'required_evidence_before_release' => $this->settings->boolean('release.required_evidence_before_release', true),
-            'required_snapshot_before_release' => $this->settings->boolean('release.required_snapshot_before_release', false),
-            'required_report_before_release' => $this->settings->boolean('release.required_report_before_release', true),
-            'minimum_coverage_percent' => $this->settings->integer('release.minimum_coverage_percent', 80),
-        ];
-    }
-
-    private function statusCss(string $status): string
-    {
-        return match ($status) {
-            self::STATUS_PASS => 'success',
-            self::STATUS_WARNING => 'warning',
-            self::STATUS_FAIL => 'danger',
-            default => 'default',
-        };
-    }
-
-    private function grade(int $score): string
-    {
         return match (true) {
             $score >= 95 => 'A+',
-            $score >= 90 => 'A',
-            $score >= 80 => 'B',
-            $score >= 70 => 'C',
-            $score >= 60 => 'D',
-            default => 'F',
+            $score >= 85 => 'A',
+            $score >= 75 => 'B',
+            $score >= 65 => 'C',
+            default => 'D',
         };
-    }
-
-    /** @return array<string, mixed> */
-    private function emptyRegression(): array
-    {
-        return [
-            'status' => RegressionEvaluationService::STATUS_NONE,
-            'label' => __('messages.regressions.statuses.none'),
-            'css' => 'success',
-            'detected_count' => 0,
-            'warning_count' => 0,
-            'recovered_count' => 0,
-            'improved_count' => 0,
-        ];
-    }
-
-    /** @param array<int, string> $items @return array<int, string> */
-    private function bulletList(array $items, string $empty): array
-    {
-        if ($items === []) {
-            return [$empty];
-        }
-
-        return array_map(fn (string $item): string => '- '.$item, $items);
-    }
-
-    /** @param Collection<int, array<string, mixed>> $rows @return array<int, string> */
-    private function endpointTable(Collection $rows): array
-    {
-        if ($rows->isEmpty()) {
-            return ['No endpoints in this section.'];
-        }
-
-        $lines = [];
-        $lines[] = '| Method | Endpoint | HTTP | Time | Risk | Assertion |';
-        $lines[] = '|---|---|---:|---:|---|---|';
-        foreach ($rows as $row) {
-            $endpoint = $row['endpoint'];
-            $latest = $row['latest'];
-            $lines[] = '| '.$this->md($endpoint->method).' | '.$this->md($endpoint->path).' | '.$this->md($latest?->status_code ?: 'n/a').' | '.$this->md($latest?->response_time_ms !== null ? $latest->response_time_ms.' ms' : 'n/a').' | '.$this->md($row['analysis']['final_label'] ?? 'n/a').' | '.$this->md($row['assertion']['label'] ?? 'n/a').' |';
-        }
-
-        return $lines;
-    }
-
-    private function mdBrandingLine(string $line): string
-    {
-        if (! str_contains($line, ':** ')) {
-            return $this->md($line);
-        }
-
-        [$label, $value] = explode(':** ', $line, 2);
-
-        return $label.':** '.$this->md($value);
-    }
-
-    private function md(?string $value): string
-    {
-        return str_replace('|', '\\|', (string) ($value ?? ''));
     }
 }

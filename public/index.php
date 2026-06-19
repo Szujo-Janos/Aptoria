@@ -4,6 +4,11 @@ define('LARAVEL_START', microtime(true));
 
 $basePath = dirname(__DIR__);
 
+$aptoriaSetupBootTarget = aptoria_setup_boot_loader_target($basePath);
+if ($aptoriaSetupBootTarget !== null) {
+    aptoria_render_setup_boot_loader($aptoriaSetupBootTarget);
+}
+
 aptoria_first_run_preflight($basePath);
 
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
@@ -15,6 +20,174 @@ require __DIR__.'/../vendor/autoload.php';
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $app->handleRequest(Illuminate\Http\Request::capture());
+
+function aptoria_setup_boot_loader_target(string $basePath): ?string
+{
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+        return null;
+    }
+
+    if ((string) ($_GET['aptoria_preload'] ?? '') === '1') {
+        return null;
+    }
+
+    $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+    if ($accept !== '' && ! str_contains($accept, 'text/html') && ! str_contains($accept, '*/*')) {
+        return null;
+    }
+
+    $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = (string) parse_url($requestUri, PHP_URL_PATH);
+    $path = rtrim(str_replace('\\', '/', $path), '/');
+
+    if ($path === '/setup' || str_ends_with($path, '/setup')) {
+        return aptoria_add_preload_flag($requestUri);
+    }
+
+    if (aptoria_is_setup_locked($basePath)) {
+        return null;
+    }
+
+    if ($path === '' || $path === '/' || str_ends_with($path, '/public') || str_ends_with($path, '/public/index.php')) {
+        $setupPath = $path === '' || $path === '/' ? '/setup' : preg_replace('~/index\.php$~', '', $path).'/setup';
+
+        return aptoria_add_preload_flag($setupPath ?: '/setup');
+    }
+
+    return null;
+}
+
+function aptoria_add_preload_flag(string $uri): string
+{
+    return $uri.(str_contains($uri, '?') ? '&' : '?').'aptoria_preload=1';
+}
+
+function aptoria_render_setup_boot_loader(string $target): void
+{
+    $assetBase = aptoria_public_asset_base_path();
+    $logoSrc = htmlspecialchars($assetBase.'/assets/aptoria-ui/assets/images/logo-color.svg', ENT_QUOTES, 'UTF-8');
+    $escapedTarget = htmlspecialchars($target, ENT_QUOTES, 'UTF-8');
+    $targetJson = json_encode($target, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+    if (! is_string($targetJson)) {
+        $targetJson = '"/setup?aptoria_preload=1"';
+    }
+
+    header('Content-Type: text/html; charset=UTF-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+
+    echo <<<HTML
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="2;url={$escapedTarget}">
+    <title>Aptoria setup is loading</title>
+    <style>
+        * { box-sizing: border-box; }
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #ffffff;
+            color: #2f4050;
+            font-family: Roboto, Arial, "Helvetica Neue", Helvetica, sans-serif;
+        }
+        .aptoria-setup-boot-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            display: grid;
+            place-items: center;
+            width: 100vw;
+            min-height: 100vh;
+            padding: 24px;
+            background: #ffffff;
+        }
+        .aptoria-setup-page-loader {
+            width: min(520px, calc(100vw - 48px));
+            padding: 34px 32px;
+            border: 1px solid #e4e9ee;
+            border-radius: 6px;
+            background: #ffffff;
+            box-shadow: 0 18px 46px rgba(31,45,61,.10);
+            text-align: center;
+            transform: translateZ(0);
+        }
+        .aptoria-setup-loader-logo {
+            width: min(260px, calc(100vw - 96px));
+            max-height: 90px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 18px;
+        }
+        .aptoria-setup-loader-mark {
+            width: 54px;
+            height: 54px;
+            margin: 0 auto 16px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #62cb31;
+            background: #f0f8ed;
+            border: 1px solid #dce9d6;
+        }
+        .aptoria-setup-loader-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(98,203,49,.22);
+            border-top-color: #62cb31;
+            border-radius: 999px;
+            animation: aptoriaSetupLoaderSpin .85s linear infinite;
+        }
+        .aptoria-setup-page-loader strong {
+            display: block;
+            font-size: 18px;
+            line-height: 1.3;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #2f4050;
+        }
+        .aptoria-setup-page-loader span {
+            display: block;
+            color: #6a6c6f;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+        @keyframes aptoriaSetupLoaderSpin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <main class="aptoria-setup-boot-screen" role="status" aria-live="polite">
+        <section class="aptoria-setup-page-loader">
+            <img class="aptoria-setup-loader-logo" src="{$logoSrc}" alt="Aptoria">
+            <div class="aptoria-setup-loader-mark" aria-hidden="true"><div class="aptoria-setup-loader-spinner"></div></div>
+            <strong>Aptoria setup is loading</strong>
+            <span>Aptoria telepítő betöltése. Az oldal előkészíti a telepítési felületet.</span>
+        </section>
+    </main>
+    <script>
+        (function () {
+            var target = {$targetJson};
+            function go() { window.location.replace(target); }
+            if ('requestAnimationFrame' in window) {
+                requestAnimationFrame(function () { window.setTimeout(go, 120); });
+            } else {
+                window.setTimeout(go, 120);
+            }
+        })();
+    </script>
+</body>
+</html>
+HTML;
+    exit;
+}
 
 function aptoria_first_run_preflight(string $basePath): void
 {
@@ -296,6 +469,16 @@ function aptoria_detect_app_url(): string
     return $scheme.'://'.$host.$base;
 }
 
+
+function aptoria_public_asset_base_path(): string
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $base = rtrim(str_replace('/public/index.php', '', $script), '/');
+    $base = rtrim(str_replace('/index.php', '', $base), '/');
+
+    return $base === '' ? '' : $base;
+}
+
 function aptoria_current_url_without_query(): string
 {
     $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
@@ -370,8 +553,8 @@ function aptoria_install_sections(string $basePath): array
 
     $linuxCommands = [
         'cd '.escapeshellarg($basePath),
-        'chmod +x scripts/install-linux.sh',
-        'bash scripts/install-linux.sh',
+        'chmod +x scripts/update-linux.sh',
+        'bash scripts/update-linux.sh',
     ];
 
     $composerPharCommands = [
@@ -379,14 +562,14 @@ function aptoria_install_sections(string $basePath): array
         'php -r "copy(\'https://getcomposer.org/installer\', \'composer-setup.php\');"',
         'php composer-setup.php --install-dir=. --filename=composer.phar',
         'rm -f composer-setup.php',
-        'COMPOSER_BIN="php composer.phar" bash scripts/install-linux.sh',
+        'COMPOSER_BIN="php composer.phar" bash scripts/update-linux.sh',
     ];
 
     $windowsPath = str_replace('/', '\\', $basePath);
     $windowsCommands = [
         'cd "'.$windowsPath.'"',
         'Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass',
-        '.\\scripts\\install-windows-xampp.ps1',
+        '.\\scripts\\update-windows-xampp.ps1',
         'C:\\xampp\\php\\php.exe artisan serve',
     ];
 
@@ -409,7 +592,7 @@ function aptoria_install_sections(string $basePath): array
         [
             'title' => 'Online Linux hosting / VPS / cPanel SSH',
             'commands' => $linuxCommands,
-            'note' => 'Use this on primafarm.hu or any normal Linux web host. This is the correct block for online hosting.',
+            'note' => 'Use this on normal Linux hosting. Composer must be available on the server.',
         ],
         [
             'title' => 'Online hosting without global Composer',

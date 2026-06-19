@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement for Aptoria
+about: Suggest an Aptoria workflow improvement
 title: "[Feature]: "
 labels: enhancement
 assignees: ""
@@ -8,16 +8,12 @@ assignees: ""
 
 ## Problem
 
-What workflow problem would this solve?
+What QA/evidence/release-decision problem would this solve?
 
 ## Proposed solution
 
 Describe the desired behavior.
 
-## Alternatives considered
+## Why this belongs in Aptoria
 
-Any simpler workaround or alternative?
-
-## Notes
-
-Add screenshots, examples or QA context if useful.
+Explain how this supports the evidence-first product direction instead of cloning another tool.

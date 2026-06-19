@@ -1,19 +1,9 @@
 @extends('layouts.app')
-
-@section('title', __('messages.projects.edit_title'))
-
+@section('title', __('messages.projects.edit'))
+@section('page_title', __('messages.projects.edit'))
 @section('content')
-<div class="row">
-    <div class="col-lg-8">
-        <div class="hpanel">
-            <div class="panel-heading hbuilt">{{ __('messages.projects.edit_title') }}</div>
-            <div class="panel-body">
-                <form method="POST" action="{{ route('projects.update', $project) }}" enctype="multipart/form-data">
-                    @method('PUT')
-                    @include('projects._form')
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<form method="POST" action="{{ route('projects.update', $project) }}" data-aptoria-form-scope="project" data-aptoria-form-plugin>
+    @method('PUT')
+    @include('projects._form')
+</form>
 @endsection

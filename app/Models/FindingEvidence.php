@@ -2,91 +2,62 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FindingEvidence extends Model
 {
     use HasFactory;
 
-    public const TYPE_NOTE = 'note';
-    public const TYPE_SCREENSHOT = 'screenshot';
-    public const TYPE_JSON_RESPONSE = 'json_response';
-    public const TYPE_CURL_COMMAND = 'curl_command';
-    public const TYPE_REQUEST_RESPONSE = 'request_response';
-    public const TYPE_FILE = 'file';
-    public const TYPE_LINK = 'link';
-    public const TYPE_RETEST = 'retest';
-
-    /** Legacy evidence types are kept readable for older records. */
-    public const TYPE_HTTP = 'http';
-    public const TYPE_LOG = 'log';
-    public const TYPE_CONTRACT = 'contract';
-
-    public const ACTIVE_TYPES = [
-        self::TYPE_NOTE,
-        self::TYPE_SCREENSHOT,
-        self::TYPE_JSON_RESPONSE,
-        self::TYPE_CURL_COMMAND,
-        self::TYPE_REQUEST_RESPONSE,
-        self::TYPE_FILE,
-        self::TYPE_LINK,
-        self::TYPE_RETEST,
-    ];
-
-    public const TYPES = [
-        self::TYPE_NOTE,
-        self::TYPE_SCREENSHOT,
-        self::TYPE_JSON_RESPONSE,
-        self::TYPE_CURL_COMMAND,
-        self::TYPE_REQUEST_RESPONSE,
-        self::TYPE_FILE,
-        self::TYPE_LINK,
-        self::TYPE_RETEST,
-        self::TYPE_HTTP,
-        self::TYPE_LOG,
-        self::TYPE_CONTRACT,
-    ];
+    public const TYPES = ['note', 'http', 'json_response', 'request_response', 'log', 'link', 'retest', 'contract', 'test_result'];
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_VERIFIED = 'verified';
+    public const STATUS_ARCHIVED = 'archived';
+    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_VERIFIED, self::STATUS_ARCHIVED];
+    public const INTEGRITY_CURRENT = 'current';
+    public const INTEGRITY_CHANGED = 'changed';
+    public const CHECKSUM_ALGORITHM = 'sha256-v1';
 
     protected $table = 'finding_evidence';
 
     protected $fillable = [
-        'finding_id',
         'project_id',
+        'finding_id',
+        'endpoint_id',
+        'scan_result_id',
+        'test_case_id',
+        'test_run_id',
         'type',
+        'title',
         'source_label',
         'content',
+        'url',
         'request_excerpt',
         'response_excerpt',
-        'curl_command',
-        'url',
-        'attachment_disk',
-        'attachment_path',
-        'attachment_original_name',
-        'attachment_mime_type',
-        'attachment_size',
-        'attachment_sha256',
-        'metadata_json',
         'captured_at',
         'captured_by_user_id',
+        'sha256',
+        'checksum_algorithm',
+        'repository_status',
+        'integrity_status',
+        'repository_notes',
+        'reviewed_by_user_id',
+        'reviewed_at',
+        'archived_by_user_id',
+        'archived_at',
+        'metadata_json',
     ];
 
     protected function casts(): array
     {
         return [
-            'metadata_json' => 'array',
             'captured_at' => 'datetime',
-            'attachment_size' => 'integer',
+            'reviewed_at' => 'datetime',
+            'archived_at' => 'datetime',
+            'metadata_json' => 'array',
         ];
-    }
-
-    public function finding(): BelongsTo
-    {
-        return $this->belongsTo(Finding::class);
     }
 
     public function project(): BelongsTo
@@ -94,59 +65,114 @@ class FindingEvidence extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function finding(): BelongsTo
+    {
+        return $this->belongsTo(Finding::class);
+    }
+
+    public function endpoint(): BelongsTo
+    {
+        return $this->belongsTo(Endpoint::class);
+    }
+
+    public function scanResult(): BelongsTo
+    {
+        return $this->belongsTo(ScanResult::class);
+    }
+
+    public function testCase(): BelongsTo
+    {
+        return $this->belongsTo(TestCase::class);
+    }
+
+    public function testRun(): BelongsTo
+    {
+        return $this->belongsTo(TestRun::class);
+    }
+
     public function capturedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'captured_by_user_id');
     }
 
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+
+    public function archivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by_user_id');
+    }
+
+    public function lifecycleEvents(): HasMany
+    {
+        return $this->hasMany(EvidenceLifecycleEvent::class)->latest('occurred_at');
+    }
+
     public function getTypeLabelAttribute(): string
     {
-        return __('messages.findings.evidence_types.'.$this->type);
+        return __('messages.evidence.types.'.($this->type ?: 'note'));
     }
 
-    public function getHasAttachmentAttribute(): bool
+    public function getTypeToneAttribute(): string
     {
-        return filled($this->attachment_path);
+        return match ($this->type) {
+            'http', 'request_response', 'json_response' => 'primary',
+            'retest' => 'success',
+            'log' => 'warning',
+            'contract' => 'info',
+            'test_result' => 'success',
+            'link' => 'secondary',
+            default => 'light',
+        };
     }
 
-    public function getAttachmentSizeLabelAttribute(): string
+    public function getRepositoryStatusLabelAttribute(): string
     {
-        $bytes = (int) ($this->attachment_size ?? 0);
-
-        if ($bytes <= 0) {
-            return __('messages.common.not_available');
-        }
-
-        if ($bytes >= 1048576) {
-            return number_format($bytes / 1048576, 2).' MB';
-        }
-
-        if ($bytes >= 1024) {
-            return number_format($bytes / 1024, 1).' KB';
-        }
-
-        return $bytes.' B';
+        return __('messages.evidence.statuses.'.($this->repository_status ?: self::STATUS_ACTIVE));
     }
 
-    protected function summary(): Attribute
+    public function getRepositoryStatusToneAttribute(): string
     {
-        return Attribute::get(function (): string {
-            foreach ([$this->content, $this->request_excerpt, $this->response_excerpt, $this->curl_command, $this->url, $this->attachment_original_name] as $value) {
-                if (filled($value)) {
-                    return Str::limit(trim((string) $value), 260);
-                }
-            }
-
-            return __('messages.common.not_available');
-        });
+        return match ($this->repository_status) {
+            self::STATUS_VERIFIED => 'success',
+            self::STATUS_ARCHIVED => 'secondary',
+            default => 'primary',
+        };
     }
 
-    public function deleteAttachmentFile(): void
+    public function getRepositoryStatusIconAttribute(): string
     {
-        if (! $this->attachment_path) {
-            return;
-        }
+        return match ($this->repository_status) {
+            self::STATUS_VERIFIED => 'badge-check',
+            self::STATUS_ARCHIVED => 'archive',
+            default => 'folder-check',
+        };
+    }
 
-        Storage::disk($this->attachment_disk ?: 'local')->delete($this->attachment_path);
+    public function getIntegrityStatusLabelAttribute(): string
+    {
+        return __('messages.evidence.integrity.'.($this->integrity_status ?: self::INTEGRITY_CURRENT));
+    }
+
+    public function getIntegrityStatusToneAttribute(): string
+    {
+        return $this->integrity_status === self::INTEGRITY_CHANGED ? 'danger' : 'success';
+    }
+
+    public function getTypeIconAttribute(): string
+    {
+        return match ($this->type) {
+            'http' => 'globe',
+            'json_response' => 'braces',
+            'request_response' => 'file-delta',
+            'log' => 'scroll-text',
+            'link' => 'external-link',
+            'retest' => 'rotate-ccw',
+            'contract' => 'file-check-2',
+            'test_result' => 'test-tube',
+            default => 'file-text',
+        };
     }
 }

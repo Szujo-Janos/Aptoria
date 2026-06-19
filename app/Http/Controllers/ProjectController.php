@@ -2,208 +2,162 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProjectRequest;
 use App\Models\Project;
-use App\Models\ProjectMembership;
-use App\Models\CalendarEvent;
+use App\Models\ProjectSetting;
+use App\Services\AuditLogger;
+use App\Services\ProjectAccessService;
+use App\Services\ProjectWorkspaceService;
 use Illuminate\Http\RedirectResponse;
-use App\Services\Access\ProjectAccessService;
-use App\Services\ProjectHealthService;
-use App\Services\QaCoverageMatrixService;
-use App\Services\ReleaseReadinessService;
-use App\Services\Settings\ProjectSettingService;
-use App\Services\Settings\SettingService;
-use App\Services\Settings\SettingsRuntimeService;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
-    public function index(SettingService $settings, ProjectAccessService $access): View
+    public function index(Request $request, ProjectAccessService $projectAccess): View
     {
-        $projects = $access->scopeVisibleProjects(Project::query(), Auth::user())
-            ->withCount(['environments', 'authProfiles', 'endpoints', 'scanRuns', 'snapshots'])
-            ->latest()
-            ->paginate($settings->integer('app.items_per_page', 25));
+        $status = $request->query('status');
+        $status = in_array($status, ['active', 'draft', 'paused'], true) ? $status : null;
 
-        return view('projects.index', compact('projects'));
-    }
+        $projectsQuery = $projectAccess->visibleProjectsQuery($request->user())->with(['owner', 'memberships.user'])->withCount('auditLogs')->latest();
 
-    public function create(ProjectAccessService $access): View
-    {
-        abort_unless($access->isSystemAdmin(Auth::user()), 403);
+        if ($status) {
+            $projectsQuery->where('status', $status);
+        }
 
-        return view('projects.create', ['project' => new Project(['is_active' => true])]);
-    }
-
-    public function store(ProjectRequest $request, ProjectSettingService $projectSettings, SettingsRuntimeService $runtime, ProjectAccessService $access): RedirectResponse
-    {
-        abort_unless($access->isSystemAdmin($request->user()), 403);
-
-        $project = Project::query()->create([
-            ...$this->projectPayload($request),
-            'user_id' => Auth::id(),
-            'is_active' => $request->boolean('is_active'),
+        return view('projects.index', [
+            'projects' => $projectsQuery->paginate(12)->withQueryString(),
+            'projectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->count(),
+            'activeProjectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->where('status', 'active')->count(),
+            'draftProjectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->where('status', 'draft')->count(),
+            'pausedProjectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->where('status', 'paused')->count(),
+            'statusFilter' => $status,
+            'projectAccess' => $projectAccess,
         ]);
-
-        $this->persistReportLogo($request, $project);
-
-        $project->memberships()->updateOrCreate(
-            ['user_id' => $request->user()?->id],
-            [
-                'role' => ProjectMembership::ROLE_PROJECT_ADMIN,
-                'invited_by_user_id' => $request->user()?->id,
-                'joined_at' => now(),
-            ]
-        );
-
-        Model::withoutEvents(function () use ($project, $projectSettings): void {
-            $project->environments()->create([
-                'name' => 'staging',
-                'base_url' => $project->base_url,
-                'environment_type' => \App\Models\Environment::TYPE_STAGING,
-                'is_production' => false,
-            ]);
-
-            $project->authProfiles()->create([
-                'name' => 'No Auth',
-                'type' => 'none',
-                'is_default' => true,
-                'notes' => __('messages.auth_profiles.no_auth_summary'),
-            ]);
-
-            $projectSettings->seedDefaults($project);
-        });
-
-        return redirect()->route($runtime->defaultProjectViewRouteName(), $project)->with('success', __('messages.projects.created'));
     }
 
-    public function show(Project $project, ProjectSettingService $projectSettings, ProjectHealthService $projectHealthService, ReleaseReadinessService $releaseReadinessService, QaCoverageMatrixService $qaCoverageMatrixService, SettingService $settings): View
+    public function create(): View
     {
-        $project->load([
-            'environments.authProfile',
-            'authProfiles',
-            'endpoints' => fn ($query) => $query->with(['environment', 'authProfile', 'latestScanResult'])->latest()->limit(10),
-            'scanRuns' => fn ($query) => $query->with('environment')->latest()->limit(5),
-            'snapshots' => fn ($query) => $query->with(['environment', 'scanRun'])->latest()->limit(5),
-            'apiMonitors' => fn ($query) => $query->with(['environment', 'baselineSnapshot', 'lastScanRun', 'lastCompareRun'])->latest()->limit(5),
-            'testSuites' => fn ($query) => $query->withCount('testCases')->latest()->limit(5),
-            'testCases' => fn ($query) => $query->with(['testSuite', 'endpoint', 'latestResult'])->latest()->limit(8),
-            'contractValidationRuns' => fn ($query) => $query->with('scanRun.environment')->latest()->limit(5),
-            'findings' => fn ($query) => $query->with(['endpoint', 'evidence'])->latest('detected_at')->limit(8),
-            'qaReleaseGates' => fn ($query) => $query->latest()->limit(5),
+        return view('projects.create', ['project' => new Project(['status' => 'draft'])]);
+    }
+
+    public function store(Request $request, AuditLogger $auditLogger, ProjectAccessService $projectAccess): RedirectResponse
+    {
+        $data = $this->validated($request);
+        $data['user_id'] = $request->user()->id;
+        $data['slug'] = $this->uniqueSlug($data['name']);
+        $data['is_active'] = $data['status'] !== 'paused';
+
+        $project = Project::create($data);
+        $projectAccess->ensureOwnerMembership($project);
+        $this->bootstrapDefaultEnvironment($project);
+        $request->session()->put('current_project_id', $project->id);
+        $auditLogger->record('created', __('messages.audit_messages.project_created'), $project, [
+            'base_url' => $project->base_url,
+            'status' => $project->status,
+        ], 'workspace');
+
+        return redirect()->route('projects.show', $project)->with('status', __('messages.projects.created'));
+    }
+
+    public function show(Project $project, ProjectWorkspaceService $workspaceService, ProjectAccessService $projectAccess, Request $request): View
+    {
+        return view('projects.show', [
+            'project' => $project->load(['owner', 'memberships.user']),
+            'workspaceSummary' => $workspaceService->summary($project),
+            'currentProjectRole' => $projectAccess->roleLabel($projectAccess->roleFor($request->user(), $project)),
+            'canManageProject' => $projectAccess->can($request->user(), $project, 'project.manage'),
+            'canManageMembers' => $projectAccess->can($request->user(), $project, 'members.manage'),
         ]);
-        $project->loadCount(['endpoints', 'scanRuns', 'snapshots', 'apiMonitors', 'testSuites', 'testCases', 'contractValidationRuns', 'findings', 'qaReleaseGates']);
-        Model::withoutEvents(fn () => $projectSettings->seedDefaults($project));
-        $projectSettingSummary = $projectSettings->grouped($project);
-        $defaultEnvironmentId = (string) $projectSettings->get($project, 'scan.default_environment_id', '');
-        $defaultAuthProfileId = (string) $projectSettings->get($project, 'scan.default_auth_profile_id', '');
-        $projectNotes = (string) $projectSettings->get($project, 'project.notes', '');
-        $projectHealth = $projectHealthService->summarize($project);
-        $releaseReadiness = $releaseReadinessService->summarize($project);
-        $qaCoverage = $qaCoverageMatrixService->summarize($project)['summary'];
-        $projectCalendarPreviewStartsAt = now()->startOfDay();
-        $projectCalendarPreviewEndsAt = now()->addDays(14)->endOfDay();
-        $projectCalendarEvents = CalendarEvent::query()
-            ->with(['project', 'monitor'])
-            ->where('project_id', $project->id)
-            ->where('starts_at', '<=', $projectCalendarPreviewEndsAt)
-            ->where(function ($query) use ($projectCalendarPreviewStartsAt): void {
-                $query->where(function ($inner) use ($projectCalendarPreviewStartsAt): void {
-                    $inner->whereNull('ends_at')->where('starts_at', '>=', $projectCalendarPreviewStartsAt);
-                })->orWhere('ends_at', '>=', $projectCalendarPreviewStartsAt);
-            })
-            ->orderBy('starts_at')
-            ->limit(6)
-            ->get();
-        $projectCalendarSummary = [
-            'open' => CalendarEvent::query()->where('project_id', $project->id)->whereNull('completed_at')->whereIn('status', [CalendarEvent::STATUS_PLANNED, CalendarEvent::STATUS_IN_PROGRESS])->count(),
-            'due_today' => CalendarEvent::query()->where('project_id', $project->id)->whereDate('starts_at', now()->toDateString())->whereIn('status', [CalendarEvent::STATUS_PLANNED, CalendarEvent::STATUS_IN_PROGRESS])->count(),
-            'overdue' => CalendarEvent::query()->where('project_id', $project->id)->where('starts_at', '<', now())->whereIn('status', [CalendarEvent::STATUS_PLANNED, CalendarEvent::STATUS_IN_PROGRESS])->count(),
-        ];
-
-        $showProjectCalendarPreview = $settings->boolean('ui.show_project_calendar_preview', true);
-
-        return view('projects.show', compact('project', 'projectSettingSummary', 'defaultEnvironmentId', 'defaultAuthProfileId', 'projectNotes', 'projectHealth', 'releaseReadiness', 'qaCoverage', 'projectCalendarEvents', 'projectCalendarSummary', 'showProjectCalendarPreview')); 
     }
 
-    public function edit(Project $project, ProjectAccessService $access): View
+    public function edit(Project $project): View
     {
-        $access->authorize($project, Auth::user(), 'project.manage');
-
-        return view('projects.edit', compact('project'));
+        return view('projects.edit', ['project' => $project]);
     }
 
-    public function update(ProjectRequest $request, Project $project, ProjectAccessService $access): RedirectResponse
+    public function update(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        $access->authorize($project, $request->user(), 'project.manage');
+        $before = $project->only(['name', 'base_url', 'environment_label', 'status', 'qa_owner', 'release_goal']);
+        $data = $this->validated($request);
+        $data['is_active'] = $data['status'] !== 'paused';
+        $project->update($data);
 
-        $project->update([
-            ...$this->projectPayload($request),
-            'is_active' => $request->boolean('is_active'),
-        ]);
+        $auditLogger->record('updated', __('messages.audit_messages.project_updated'), $project, [
+            'before' => $before,
+            'after' => $project->only(['name', 'base_url', 'environment_label', 'status', 'qa_owner', 'release_goal']),
+        ], 'workspace');
 
-        $this->persistReportLogo($request, $project);
-
-        return redirect()->route('projects.show', $project)->with('success', __('messages.projects.updated'));
+        return redirect()->route('projects.show', $project)->with('status', __('messages.projects.updated'));
     }
 
-    /** @return array<string, mixed> */
-    private function projectPayload(ProjectRequest $request): array
+    public function destroy(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        return collect($request->validated())
-            ->except(['report_logo', 'remove_report_logo'])
-            ->map(fn ($value) => is_string($value) ? trim($value) : $value)
-            ->all();
-    }
-
-    private function persistReportLogo(ProjectRequest $request, Project $project): void
-    {
-        if ($request->boolean('remove_report_logo')) {
-            $this->deleteReportLogo($project);
+        if ((int) $request->session()->get('current_project_id') === (int) $project->id) {
+            $request->session()->forget('current_project_id');
         }
 
-        if (! $request->hasFile('report_logo')) {
-            return;
-        }
-
-        $this->deleteReportLogo($project);
-
-        $file = $request->file('report_logo');
-        if ($file === null || ! $file->isValid()) {
-            return;
-        }
-
-        $path = $file->store('report-branding/projects/'.$project->id);
-
-        $project->forceFill([
-            'report_logo_path' => $path,
-            'report_logo_original_name' => $file->getClientOriginalName(),
-        ])->save();
-    }
-
-    private function deleteReportLogo(Project $project): void
-    {
-        if ($project->report_logo_path) {
-            Storage::delete((string) $project->report_logo_path);
-        }
-
-        $project->forceFill([
-            'report_logo_path' => null,
-            'report_logo_original_name' => null,
-        ])->saveQuietly();
-    }
-
-    public function destroy(Project $project, ProjectAccessService $access): RedirectResponse
-    {
-        abort_unless($access->isSystemAdmin(Auth::user()), 403);
-
-        $this->deleteReportLogo($project);
-
+        $auditLogger->record('deleted', __('messages.audit_messages.project_deleted'), $project, [
+            'name' => $project->name,
+            'base_url' => $project->base_url,
+        ], 'workspace', 'warning');
         $project->delete();
 
-        return redirect()->route('projects.index')->with('success', __('messages.projects.deleted'));
+        return redirect()->route('projects.index')->with('status', __('messages.projects.deleted'));
+    }
+
+
+    private function bootstrapDefaultEnvironment(Project $project): void
+    {
+        if (! Schema::hasTable('environments') || blank($project->base_url)) {
+            return;
+        }
+
+        $label = filled($project->environment_label) ? $project->environment_label : 'Default API';
+        $type = str_contains(strtolower($label), 'prod') ? 'production' : 'dev';
+
+        $environment = $project->environments()->create([
+            'name' => $label,
+            'base_url' => $project->base_url,
+            'environment_type' => $type,
+            'is_production' => $type === 'production',
+            'is_default' => true,
+            'notes' => 'Created from project base URL during workspace setup.',
+        ]);
+
+        if (Schema::hasTable('project_settings')) {
+            ProjectSetting::set($project, 'scan.default_environment_id', $environment->id);
+            ProjectSetting::set($project, 'scan.require_confirmation', true);
+            ProjectSetting::set($project, 'scan.safe_methods_only', true);
+            ProjectSetting::set($project, 'scan.allow_private_networks', false);
+        }
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:160'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'base_url' => ['nullable', 'url', 'max:500'],
+            'environment_label' => ['nullable', 'string', 'max:80'],
+            'status' => ['required', 'in:draft,active,paused'],
+            'qa_owner' => ['nullable', 'string', 'max:160'],
+            'release_goal' => ['nullable', 'string', 'max:2000'],
+        ]);
+    }
+
+    private function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'project';
+        $slug = $base;
+        $counter = 2;
+
+        while (Project::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$counter;
+            $counter++;
+        }
+
+        return $slug;
     }
 }

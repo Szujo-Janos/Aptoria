@@ -16,92 +16,39 @@ class ProjectMembership extends Model
     public const ROLE_RELEASE_APPROVER = 'release_approver';
     public const ROLE_READ_ONLY_VIEWER = 'read_only_viewer';
 
-    public const ROLES = [
-        self::ROLE_PROJECT_ADMIN,
-        self::ROLE_QA_ENGINEER,
-        self::ROLE_REVIEWER,
-        self::ROLE_RELEASE_APPROVER,
-        self::ROLE_READ_ONLY_VIEWER,
-    ];
-
-    public const ROLE_LABELS = [
-        self::ROLE_PROJECT_ADMIN => 'Project admin',
-        self::ROLE_QA_ENGINEER => 'QA engineer',
-        self::ROLE_REVIEWER => 'Reviewer',
-        self::ROLE_RELEASE_APPROVER => 'Release approver',
-        self::ROLE_READ_ONLY_VIEWER => 'Read-only viewer',
-    ];
-
-    /** @var array<string, array<int, string>> */
-    public const ROLE_PERMISSIONS = [
-        self::ROLE_PROJECT_ADMIN => [
-            'project.view',
-            'project.manage',
-            'members.manage',
-            'settings.manage',
-            'endpoints.manage',
-            'scans.run',
-            'monitors.manage',
-            'tests.manage',
-            'findings.manage',
-            'findings.review',
-            'evidence.manage',
-            'risk.accept',
-            'release.finalize',
-            'report.generate',
-            'report.review',
-            'report.approve',
-            'portal.manage',
-            'exports.download',
-        ],
-        self::ROLE_QA_ENGINEER => [
-            'project.view',
-            'endpoints.manage',
-            'scans.run',
-            'tests.manage',
-            'findings.manage',
-            'findings.review',
-            'evidence.manage',
-            'report.generate',
-            'exports.download',
-        ],
-        self::ROLE_REVIEWER => [
-            'project.view',
-            'findings.review',
-            'evidence.manage',
-            'risk.accept',
-            'report.generate',
-            'report.review',
-            'exports.download',
-        ],
-        self::ROLE_RELEASE_APPROVER => [
-            'project.view',
-            'risk.accept',
-            'release.finalize',
-            'report.review',
-            'report.approve',
-            'portal.manage',
-            'exports.download',
-        ],
-        self::ROLE_READ_ONLY_VIEWER => [
-            'project.view',
-        ],
-    ];
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_DISABLED = 'disabled';
 
     protected $fillable = [
         'project_id',
         'user_id',
-        'invited_by_user_id',
         'role',
-        'notes',
-        'joined_at',
+        'status',
+        'invited_by_user_id',
+        'added_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'joined_at' => 'datetime',
+            'added_at' => 'datetime',
         ];
+    }
+
+    public static function roles(): array
+    {
+        return [
+            self::ROLE_PROJECT_ADMIN,
+            self::ROLE_QA_ENGINEER,
+            self::ROLE_REVIEWER,
+            self::ROLE_RELEASE_APPROVER,
+            self::ROLE_READ_ONLY_VIEWER,
+        ];
+    }
+
+    public static function statuses(): array
+    {
+        return [self::STATUS_ACTIVE, self::STATUS_DISABLED];
     }
 
     public function project(): BelongsTo
@@ -121,52 +68,27 @@ class ProjectMembership extends Model
 
     public function getRoleLabelAttribute(): string
     {
-        return self::translatedRoleLabel((string) $this->role);
+        return __('messages.project_members.roles.'.($this->role ?: self::ROLE_READ_ONLY_VIEWER));
     }
 
-    public function grants(string $ability): bool
+    public function getStatusLabelAttribute(): string
     {
-        return in_array($ability, self::ROLE_PERMISSIONS[$this->role] ?? [], true);
+        return __('messages.project_members.statuses.'.($this->status ?: self::STATUS_ACTIVE));
     }
 
-    public static function translatedRoleLabel(string $role): string
+    public function getStatusToneAttribute(): string
     {
-        $key = 'messages.project_members.roles.'.$role;
-        $label = __($key);
-
-        return $label === $key ? (self::ROLE_LABELS[$role] ?? ucfirst(str_replace('_', ' ', $role))) : $label;
+        return $this->status === self::STATUS_ACTIVE ? 'success' : 'secondary';
     }
 
-    public static function translatedPermissionLabel(string $ability): string
+    public function getRoleToneAttribute(): string
     {
-        $key = 'messages.project_members.permission_labels.'.$ability;
-        $label = __($key);
-
-        return $label === $key ? ucfirst(str_replace(['.', '_'], [' / ', ' '], $ability)) : $label;
-    }
-
-    /** @return array<string, string> */
-    public static function translatedRoleOptions(): array
-    {
-        return collect(self::ROLES)
-            ->mapWithKeys(fn (string $role): array => [$role => self::translatedRoleLabel($role)])
-            ->all();
-    }
-
-    public function getTranslatedRoleLabelAttribute(): string
-    {
-        return self::translatedRoleLabel((string) $this->role);
-    }
-
-    /** @return array<string, string> */
-    public static function roleOptions(): array
-    {
-        return self::ROLE_LABELS;
-    }
-
-    /** @return array<int, string> */
-    public function permissions(): array
-    {
-        return self::ROLE_PERMISSIONS[$this->role] ?? [];
+        return match ($this->role) {
+            self::ROLE_PROJECT_ADMIN => 'primary',
+            self::ROLE_QA_ENGINEER => 'success',
+            self::ROLE_RELEASE_APPROVER => 'info',
+            self::ROLE_REVIEWER => 'warning',
+            default => 'secondary',
+        };
     }
 }

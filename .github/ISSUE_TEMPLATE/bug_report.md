@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in Aptoria
+about: Report a reproducible Aptoria problem
 title: "[Bug]: "
 labels: bug
 assignees: ""
@@ -34,4 +34,4 @@ What happened instead?
 
 ## Notes / screenshots
 
-Do not include secrets, tokens, production credentials or private API keys.
+Do not include secrets, tokens, production credentials, customer data or private API keys.

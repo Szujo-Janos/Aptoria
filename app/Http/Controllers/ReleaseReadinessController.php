@@ -3,72 +3,72 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Services\Access\ProjectAccessService;
+use App\Models\ReleaseReadinessRun;
+use App\Services\AuditLogger;
 use App\Services\ReleaseReadinessService;
-use App\Services\Reports\ReportPresentationService;
-use App\Services\Settings\SettingService;
-use Illuminate\Http\Response;
+use App\Services\ReleaseDecisionSnapshotService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Support\Str;
 
 class ReleaseReadinessController extends Controller
 {
-    public function index(ReleaseReadinessService $readiness, SettingService $settings, ProjectAccessService $access): View
+    public function index(Project $project, ReleaseReadinessService $service, ReleaseDecisionSnapshotService $decisionService): View
     {
-        $projects = $access->scopeVisibleProjects(Project::query(), auth()->user())
-            ->with(['endpoints.latestScanResult', 'scanRuns', 'snapshots', 'compareRuns.items', 'apiMonitors'])
-            ->withCount(['endpoints', 'scanRuns', 'snapshots', 'compareRuns', 'apiMonitors'])
+        $evaluation = $service->evaluate($project);
+        $runs = $project->releaseReadinessRuns()->with('generatedBy')->latest()->limit(25)->get();
+        $decisionSummary = $decisionService->currentSummary($project, $evaluation);
+        $decisionSnapshots = $project->releaseDecisionSnapshots()
+            ->with(['decidedBy', 'releaseReadinessRun', 'reportVersions'])
+            ->latest('decided_at')
             ->latest()
-            ->paginate($settings->integer('app.items_per_page', 25));
+            ->limit(12)
+            ->get();
 
-        $summaries = $projects->getCollection()
-            ->mapWithKeys(fn (Project $project): array => [$project->id => $readiness->summarize($project)]);
-
-        return view('reports.release-readiness-index', compact('projects', 'summaries'));
-    }
-
-    public function show(Project $project, ReleaseReadinessService $readiness): View
-    {
-        $summary = $readiness->summarize($project);
-
-        return view('reports.release-readiness', compact('project', 'summary'));
-    }
-
-    public function markdown(Project $project, ReleaseReadinessService $readiness): Response
-    {
-        $filename = Str::slug((string) ($project->slug ?: $project->id))
-            .'-release-readiness-'.now()->format('Ymd-His').'.md';
-
-        return response($readiness->markdown($project), 200, [
-            'Content-Type' => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-            'X-Content-Type-Options' => 'nosniff',
+        return view('release_readiness.index', [
+            'project' => $project,
+            'evaluation' => $evaluation,
+            'runs' => $runs,
+            'latestRun' => $runs->first(),
+            'decisionSummary' => $decisionSummary,
+            'decisionSnapshots' => $decisionSnapshots,
+            'latestDecisionSnapshot' => $decisionSnapshots->first(),
         ]);
     }
 
-    public function html(Project $project, ReleaseReadinessService $readiness, ReportPresentationService $presentation): Response
+    public function store(Request $request, Project $project, ReleaseReadinessService $service, AuditLogger $auditLogger): RedirectResponse
     {
-        $filename = Str::slug((string) ($project->slug ?: $project->id))
-            .'-release-readiness-'.now()->format('Ymd-His').'.html';
-        $markdown = $readiness->markdown($project);
-
-        return response($presentation->htmlFromMarkdown($markdown, 'Release Readiness Report', $project), 200, [
-            'Content-Type' => 'text/html; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-            'X-Content-Type-Options' => 'nosniff',
+        $data = $request->validate([
+            'decision_note' => ['nullable', 'string', 'max:2000'],
+            'confirm_evaluation' => ['accepted'],
         ]);
+
+        $run = $service->createRun($project, $request->user(), $data['decision_note'] ?? null);
+
+        $auditLogger->record('release_readiness_evaluated', __('messages.audit_messages.release_readiness_evaluated'), $project, [
+            'release_readiness_run_id' => $run->id,
+            'status' => $run->status,
+            'score' => $run->score,
+            'blockers' => $run->blocker_count,
+            'warnings' => $run->warning_count,
+        ], 'release', $run->status === 'blocked' ? 'warning' : 'info');
+
+        return redirect()->route('projects.release-readiness.show', [$project, $run])->with('status', __('messages.release_readiness.snapshot_created'));
     }
 
-    public function pdf(Project $project, ReleaseReadinessService $readiness, ReportPresentationService $presentation): Response
+    public function show(Project $project, ReleaseReadinessRun $releaseReadinessRun): View
     {
-        $filename = Str::slug((string) ($project->slug ?: $project->id))
-            .'-release-readiness-'.now()->format('Ymd-His').'.pdf';
-        $markdown = $readiness->markdown($project);
+        abort_unless((int) $releaseReadinessRun->project_id === (int) $project->id, 404);
+        $releaseReadinessRun->load('generatedBy');
 
-        return response($presentation->pdfFromMarkdown($markdown, 'Release Readiness Report', $project), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-            'X-Content-Type-Options' => 'nosniff',
+        return view('release_readiness.show', [
+            'project' => $project,
+            'run' => $releaseReadinessRun,
+            'checks' => $releaseReadinessRun->checks,
+            'metrics' => $releaseReadinessRun->metrics,
+            'summary' => $releaseReadinessRun->summary,
+            'riskAcceptance' => $releaseReadinessRun->risk_acceptance,
+            'contractValidation' => $releaseReadinessRun->contract_validation,
         ]);
     }
 }

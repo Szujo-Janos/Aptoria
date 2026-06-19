@@ -1,20 +1,20 @@
 # Security Policy
 
-Aptoria is a self-hosted QA evidence and regression monitoring tool. It is currently post-MVP / early beta and should be deployed carefully.
+Aptoria is a self-hosted QA evidence and release decision tool. The current public replacement line is **v0.0.53** and should be treated as an active MVP / foundation release, not a hardened enterprise product.
 
 ## Supported version
 
-Security review and fixes currently target the latest release line:
+Security review and fixes currently target the latest 0.0.x package.
 
 ```text
-v1.0.49
+v0.0.53
 ```
 
-Older ZIPs should be treated as historical development packages.
+The legacy `v1.1.34` package is archived and replaced. It should not be used as the active deployment baseline.
 
 ## Do not publish secrets
 
-Never post the following in public GitHub issues, discussions, pull requests or screenshots:
+Never commit or publish:
 
 ```text
 .env
@@ -28,15 +28,15 @@ storage/app/setup-token.txt
 storage/app/installed.lock
 ```
 
-## Reporting a security issue
-
-For private/internal use, report security concerns directly to the repository owner or through a private channel. If the repository is public, do not include live credentials, tokens, production request samples or exploitable target details in public issues.
-
 ## Deployment notes
 
 - Keep `APP_DEBUG=false` outside local development.
 - Use HTTPS in production.
-- Run `C:\xampp\php\php.exe artisan aptoria:security-audit` before exposing the app.
-- Restrict `/setup` with a strong setup token on non-local hosts.
-- Change default admin credentials immediately after first setup.
-- Keep dependency updates under review.
+- Change temporary/default credentials immediately.
+- Do not expose `/setup` publicly without a strong setup token.
+- Keep `vendor/` out of the repository and install Composer dependencies locally.
+- Treat generated report/evidence exports as potentially sensitive project data.
+
+## Reporting a security issue
+
+Report private security concerns directly to the repository owner. Do not include live credentials, API tokens, production request samples or exploitable target details in public issues.

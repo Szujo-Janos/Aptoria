@@ -2,149 +2,131 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\EnvironmentRequest;
 use App\Models\Environment;
 use App\Models\Project;
-use App\Services\Settings\ProjectSettingService;
+use App\Models\ProjectSetting;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class EnvironmentController extends Controller
 {
-    public function index(Project $project, ProjectSettingService $settings): View
+    public function index(Project $project): View
     {
-        $project->load([
-            'authProfiles',
-            'environments' => fn ($query) => $query
-                ->with('authProfile')
-                ->withCount(['endpoints', 'scanRuns', 'snapshots'])
-                ->orderByRaw("CASE environment_type WHEN 'local' THEN 1 WHEN 'dev' THEN 2 WHEN 'staging' THEN 3 WHEN 'production' THEN 4 ELSE 5 END")
-                ->orderBy('name'),
-        ]);
-
-        $settings->seedDefaults($project);
-
         return view('environments.index', [
             'project' => $project,
-            'defaultEnvironmentId' => (string) $settings->get($project, 'scan.default_environment_id', ''),
-            'defaultAuthProfileId' => (string) $settings->get($project, 'scan.default_auth_profile_id', ''),
-            'typeOptions' => Environment::typeOptions(),
+            'environments' => $project->environments()->latest()->get(),
+            'defaultEnvironment' => $project->defaultEnvironment(),
         ]);
     }
 
-    public function create(Project $project, ProjectSettingService $settings): View
+    public function store(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        $project->load('authProfiles');
-        $settings->seedDefaults($project);
+        $data = $this->validated($request);
+        $data['is_production'] = $request->boolean('is_production') || $data['environment_type'] === 'production';
+        $data['is_default'] = $request->boolean('is_default') || ! $project->environments()->exists();
 
-        return view('environments.create', [
-            'project' => $project,
-            'environment' => new Environment([
-                'base_url' => $project->base_url,
-                'environment_type' => Environment::TYPE_STAGING,
-            ]),
-            'authProfiles' => $project->authProfiles,
-            'typeOptions' => Environment::typeOptions(),
-            'isDefaultEnvironment' => false,
-        ]);
-    }
-
-    public function store(EnvironmentRequest $request, Project $project, ProjectSettingService $settings): RedirectResponse
-    {
-        $validated = $request->validated();
-        $type = (string) $validated['environment_type'];
-        unset($validated['make_default']);
-
-        $environment = $project->environments()->create([
-            ...$validated,
-            'is_production' => $type === Environment::TYPE_PRODUCTION || $request->boolean('is_production'),
-        ]);
-
-        $settings->seedDefaults($project);
-        if ($request->boolean('make_default') || $project->environments()->count() === 1) {
-            $settings->set($project, 'scan.default_environment_id', (string) $environment->id);
-            if ($environment->auth_profile_id) {
-                $settings->set($project, 'scan.default_auth_profile_id', (string) $environment->auth_profile_id);
-            }
+        if ($data['is_default']) {
+            $project->environments()->update(['is_default' => false]);
         }
 
-        return redirect()->route('projects.environments.index', $project)->with('success', __('messages.environments.created'));
-    }
+        $environment = $project->environments()->create($data);
 
-    public function edit(Project $project, Environment $environment, ProjectSettingService $settings): View
-    {
-        $this->ensureEnvironmentBelongsToProject($project, $environment);
-
-        $project->load('authProfiles');
-        $settings->seedDefaults($project);
-
-        return view('environments.edit', [
-            'project' => $project,
-            'environment' => $environment,
-            'authProfiles' => $project->authProfiles,
-            'typeOptions' => Environment::typeOptions(),
-            'isDefaultEnvironment' => (string) $settings->get($project, 'scan.default_environment_id', '') === (string) $environment->id,
-        ]);
-    }
-
-    public function update(EnvironmentRequest $request, Project $project, Environment $environment, ProjectSettingService $settings): RedirectResponse
-    {
-        $this->ensureEnvironmentBelongsToProject($project, $environment);
-
-        $validated = $request->validated();
-        $type = (string) $validated['environment_type'];
-        unset($validated['make_default']);
-
-        $environment->update([
-            ...$validated,
-            'is_production' => $type === Environment::TYPE_PRODUCTION || $request->boolean('is_production'),
-        ]);
-
-        if ($request->boolean('make_default')) {
-            $settings->set($project, 'scan.default_environment_id', (string) $environment->id);
-            if ($environment->auth_profile_id) {
-                $settings->set($project, 'scan.default_auth_profile_id', (string) $environment->auth_profile_id);
-            }
+        if ($environment->is_default) {
+            ProjectSetting::set($project, 'scan.default_environment_id', $environment->id);
         }
 
-        return redirect()->route('projects.environments.index', $project)->with('success', __('messages.environments.updated'));
+        $auditLogger->record('created', __('messages.audit_messages.environment_created'), $project, [
+            'environment_id' => $environment->id,
+            'name' => $environment->name,
+            'type' => $environment->environment_type,
+            'is_default' => $environment->is_default,
+        ], 'environment');
+
+        return redirect()->route('projects.environments.index', $project)->with('status', __('messages.environments.created'));
     }
 
-    public function setDefault(Project $project, Environment $environment, ProjectSettingService $settings): RedirectResponse
+    public function update(Request $request, Project $project, Environment $environment, AuditLogger $auditLogger): RedirectResponse
     {
-        $this->ensureEnvironmentBelongsToProject($project, $environment);
+        $this->ensureBelongsToProject($project, $environment);
+        $before = $environment->only(['name', 'base_url', 'environment_type', 'is_production', 'is_default']);
+        $data = $this->validated($request);
+        $data['is_production'] = $request->boolean('is_production') || $data['environment_type'] === 'production';
+        $data['is_default'] = $request->boolean('is_default');
 
-        $settings->seedDefaults($project);
-        $settings->set($project, 'scan.default_environment_id', (string) $environment->id);
-        if ($environment->auth_profile_id) {
-            $settings->set($project, 'scan.default_auth_profile_id', (string) $environment->auth_profile_id);
+        if ($data['is_default']) {
+            $project->environments()->where('id', '!=', $environment->id)->update(['is_default' => false]);
         }
 
-        return redirect()->route('projects.environments.index', $project)->with('success', __('messages.environments.default_updated'));
+        $environment->update($data);
+
+        if ($environment->is_default) {
+            ProjectSetting::set($project, 'scan.default_environment_id', $environment->id);
+        }
+
+        $auditLogger->record('updated', __('messages.audit_messages.environment_updated'), $project, [
+            'environment_id' => $environment->id,
+            'before' => $before,
+            'after' => $environment->only(['name', 'base_url', 'environment_type', 'is_production', 'is_default']),
+        ], 'environment');
+
+        return redirect()->route('projects.environments.index', $project)->with('status', __('messages.environments.updated'));
     }
 
-    public function destroy(Project $project, Environment $environment, ProjectSettingService $settings): RedirectResponse
+    public function destroy(Project $project, Environment $environment, AuditLogger $auditLogger): RedirectResponse
     {
-        $this->ensureEnvironmentBelongsToProject($project, $environment);
+        $this->ensureBelongsToProject($project, $environment);
+        $wasDefault = $environment->is_default;
 
-        if ($project->environments()->count() <= 1) {
-            return redirect()->route('projects.environments.index', $project)->withErrors(__('messages.environments.must_keep_one'));
-        }
+        $auditLogger->record('deleted', __('messages.audit_messages.environment_deleted'), $project, [
+            'environment_id' => $environment->id,
+            'name' => $environment->name,
+            'type' => $environment->environment_type,
+        ], 'environment', 'warning');
 
-        $wasDefault = (string) $settings->get($project, 'scan.default_environment_id', '') === (string) $environment->id;
         $environment->delete();
 
         if ($wasDefault) {
-            $fallback = $project->environments()->where('is_production', false)->orderBy('name')->first()
-                ?: $project->environments()->orderBy('name')->first();
-            $settings->set($project, 'scan.default_environment_id', (string) ($fallback?->id ?? ''));
+            $next = $project->environments()->oldest()->first();
+            if ($next) {
+                $next->update(['is_default' => true]);
+                ProjectSetting::set($project, 'scan.default_environment_id', $next->id);
+            } else {
+                ProjectSetting::set($project, 'scan.default_environment_id', '');
+            }
         }
 
-        return redirect()->route('projects.environments.index', $project)->with('success', __('messages.environments.deleted'));
+        return redirect()->route('projects.environments.index', $project)->with('status', __('messages.environments.deleted'));
     }
 
-    private function ensureEnvironmentBelongsToProject(Project $project, Environment $environment): void
+    public function makeDefault(Project $project, Environment $environment, AuditLogger $auditLogger): RedirectResponse
     {
-        abort_unless($environment->project_id === $project->id, 404);
+        $this->ensureBelongsToProject($project, $environment);
+        $project->environments()->where('id', '!=', $environment->id)->update(['is_default' => false]);
+        $environment->update(['is_default' => true]);
+        ProjectSetting::set($project, 'scan.default_environment_id', $environment->id);
+
+        $auditLogger->record('updated', __('messages.audit_messages.default_environment_changed'), $project, [
+            'environment_id' => $environment->id,
+            'name' => $environment->name,
+        ], 'environment');
+
+        return redirect()->route('projects.environments.index', $project)->with('status', __('messages.environments.default_changed'));
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'base_url' => ['required', 'url', 'max:500'],
+            'environment_type' => ['required', 'in:'.implode(',', Environment::TYPES)],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+    }
+
+    private function ensureBelongsToProject(Project $project, Environment $environment): void
+    {
+        abort_unless((int) $environment->project_id === (int) $project->id, 404);
     }
 }

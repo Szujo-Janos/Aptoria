@@ -1,0 +1,30 @@
+/* Aptoria optional Tabler icon font integration.
+   The font files are intentionally not shipped in the release ZIP.
+   scripts/update-windows-xampp.ps1 can copy them from the local user-owned font folder during install. */
+@font-face {
+    font-family: "tabler-icons";
+    src:
+        url("../fonts/tabler/tabler-icons8aff.woff2") format("woff2"),
+        url("../fonts/tabler/tabler-iconsd41d.woff") format("woff"),
+        url("../fonts/tabler/tabler-icons8aff.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
+
+.aptoria-tabler-fonts-enabled .ti {
+    font-family: "tabler-icons" !important;
+    speak: never;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    vertical-align: -0.125em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.aptoria-tabler-fonts-enabled .ti.aptoria-icon-ready {
+    display: inline-block;
+}

@@ -2,483 +2,344 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ApiMonitor;
+use App\Models\AuditLog;
 use App\Models\CalendarEvent;
-use App\Services\Exports\ExportCreditService;
-use App\Models\Endpoint;
-use App\Models\MonitorAlertEvent;
 use App\Models\Project;
-use App\Models\QaReleaseGate;
-use App\Services\Settings\SettingService;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Collection;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class CalendarController extends Controller
 {
-    public function index(Request $request, SettingService $settings): View
+    public function index(Request $request, Project $project): View
     {
-        [$startsAt, $endsAt] = $this->range($request);
-        $projectId = $request->integer('project_id') ?: null;
-        $status = trim((string) $request->input('status', ''));
-        $eventType = trim((string) $request->input('event_type', ''));
-        $gridStartsAt = $startsAt->copy()->startOfMonth()->startOfWeek();
-        $gridEndsAt = $endsAt->copy()->endOfMonth()->endOfWeek();
-
-        $events = $this->calendarEventQuery($projectId, $status, $eventType)
-            ->where(function (Builder $query) use ($startsAt, $endsAt): void {
-                $this->overlaps($query, $startsAt, $endsAt);
-            })
-            ->orderBy('starts_at')
-            ->paginate($settings->integer('app.items_per_page', 25))
-            ->withQueryString();
-
-        $calendarRangeEvents = $this->calendarEventQuery($projectId, $status, $eventType)
-            ->where(function (Builder $query) use ($gridStartsAt, $gridEndsAt): void {
-                $this->overlaps($query, $gridStartsAt, $gridEndsAt);
-            })
-            ->orderBy('starts_at')
-            ->get();
-
-        $calendarEvents = $this->eventsByDay($calendarRangeEvents, $gridStartsAt, $gridEndsAt);
-
-        $monitorRuns = ApiMonitor::query()
-            ->with(['project', 'environment'])
-            ->where('is_enabled', true)
-            ->whereBetween('next_run_at', [$startsAt, $endsAt])
-            ->when($projectId, fn ($query) => $query->where('project_id', $projectId))
-            ->orderBy('next_run_at')
-            ->limit(100)
-            ->get();
-
-        $projects = Project::query()->orderBy('name')->get();
-        $days = collect(CarbonPeriod::create($gridStartsAt, $gridEndsAt))
-            ->map(fn (Carbon $day) => $day->copy());
-
-        $summary = [
-            'open' => CalendarEvent::query()->whereNull('completed_at')->whereIn('status', [CalendarEvent::STATUS_PLANNED, CalendarEvent::STATUS_IN_PROGRESS])->count(),
-            'due_today' => CalendarEvent::query()->whereDate('starts_at', now()->toDateString())->whereIn('status', [CalendarEvent::STATUS_PLANNED, CalendarEvent::STATUS_IN_PROGRESS])->count(),
-            'overdue' => CalendarEvent::query()->where('starts_at', '<', now())->whereIn('status', [CalendarEvent::STATUS_PLANNED, CalendarEvent::STATUS_IN_PROGRESS])->count(),
-            'monitor_runs' => $monitorRuns->count(),
-        ];
-
-        return view('calendar.index', compact('events', 'calendarEvents', 'monitorRuns', 'projects', 'days', 'summary', 'startsAt', 'endsAt', 'projectId', 'status', 'eventType'));
-    }
-
-    public function project(Project $project, Request $request, SettingService $settings): View
-    {
-        $request->merge(['project_id' => $project->id]);
-
-        return $this->index($request, $settings);
-    }
-
-    public function day(Request $request): View
-    {
-        try {
-            $day = $request->filled('date') ? Carbon::parse($request->input('date'))->startOfDay() : now()->startOfDay();
-        } catch (\Throwable) {
-            $day = now()->startOfDay();
-        }
-
-        $projectId = $request->integer('project_id') ?: null;
-        $status = trim((string) $request->input('status', ''));
-        $eventType = trim((string) $request->input('event_type', ''));
-        $dayEndsAt = $day->copy()->endOfDay();
-
-        $events = $this->calendarEventQuery($projectId, $status, $eventType)
-            ->where(function (Builder $query) use ($day, $dayEndsAt): void {
-                $this->overlaps($query, $day, $dayEndsAt);
-            })
-            ->orderBy('starts_at')
-            ->get();
-
-        $monitorRuns = ApiMonitor::query()
-            ->with(['project', 'environment'])
-            ->where('is_enabled', true)
-            ->whereBetween('next_run_at', [$day, $dayEndsAt])
-            ->when($projectId, fn ($query) => $query->where('project_id', $projectId))
-            ->orderBy('next_run_at')
-            ->get();
-
-        $projects = Project::query()->orderBy('name')->get();
-        $month = $day->format('Y-m');
-
-        return view('calendar.day', compact('day', 'events', 'monitorRuns', 'projects', 'projectId', 'status', 'eventType', 'month'));
-    }
-
-    public function create(Request $request): View
-    {
-        try {
-            $defaultStartsAt = $request->filled('starts_at') ? Carbon::parse($request->input('starts_at')) : now()->addDay()->minute(0)->second(0);
-        } catch (\Throwable) {
-            $defaultStartsAt = now()->addDay()->minute(0)->second(0);
-        }
-
-        return view('calendar.create', $this->formData(new CalendarEvent([
-            'project_id' => $request->integer('project_id') ?: null,
-            'api_monitor_id' => $request->integer('api_monitor_id') ?: null,
-            'monitor_alert_event_id' => $request->integer('monitor_alert_event_id') ?: null,
-            'event_type' => $request->input('event_type', CalendarEvent::TYPE_MANUAL_QA_TASK),
-            'status' => CalendarEvent::STATUS_PLANNED,
-            'priority' => $request->input('priority', CalendarEvent::PRIORITY_NORMAL),
-            'starts_at' => $defaultStartsAt,
-            'all_day' => false,
-        ])));
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $payload = $this->payload($request);
-        $payload['created_by'] = $request->user()?->id;
-
-        $event = CalendarEvent::query()->create($payload);
-
-        return redirect()
-            ->route('calendar.index', ['project_id' => $event->project_id])
-            ->with('success', __('messages.calendar.created'));
-    }
-
-    public function edit(CalendarEvent $calendarEvent): View
-    {
-        abort_if($calendarEvent->is_system_locked, 403);
-
-        return view('calendar.edit', $this->formData($calendarEvent));
-    }
-
-    public function update(Request $request, CalendarEvent $calendarEvent): RedirectResponse
-    {
-        abort_if($calendarEvent->is_system_locked, 403);
-
-        $calendarEvent->update($this->payload($request));
-
-        return redirect()
-            ->route('calendar.index', ['project_id' => $calendarEvent->project_id])
-            ->with('success', __('messages.calendar.updated'));
-    }
-
-    public function destroy(CalendarEvent $calendarEvent): RedirectResponse
-    {
-        if ($calendarEvent->is_system_locked) {
-            return redirect()
-                ->route('calendar.index', ['project_id' => $calendarEvent->project_id])
-                ->with('error', __('messages.calendar.activity_locked'));
-        }
-
-        $projectId = $calendarEvent->project_id;
-        $calendarEvent->delete();
-
-        return redirect()
-            ->route('calendar.index', ['project_id' => $projectId])
-            ->with('success', __('messages.calendar.deleted'));
-    }
-
-    public function complete(CalendarEvent $calendarEvent): RedirectResponse
-    {
-        abort_if($calendarEvent->is_system_locked, 403);
-
-        $calendarEvent->update([
-            'status' => CalendarEvent::STATUS_COMPLETED,
-            'completed_at' => now(),
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:160'],
+            'status' => ['nullable', 'in:'.implode(',', CalendarEvent::STATUSES)],
+            'event_type' => ['nullable', 'in:'.implode(',', CalendarEvent::TYPES)],
+            'priority' => ['nullable', 'in:'.implode(',', CalendarEvent::PRIORITIES)],
         ]);
 
-        return redirect()
-            ->route('calendar.index', ['project_id' => $calendarEvent->project_id])
-            ->with('success', __('messages.calendar.completed'));
+        $eventsQuery = $project->calendarEvents()->with('createdBy')->orderByRaw('start_at is null, start_at asc')->latest('id');
+
+        if (! empty($filters['q'])) {
+            $term = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $filters['q']) . '%';
+            $eventsQuery->where(function ($query) use ($term): void {
+                $query->where('title', 'like', $term)
+                    ->orWhere('description', 'like', $term)
+                    ->orWhere('location', 'like', $term);
+            });
+        }
+
+        if (! empty($filters['status'])) {
+            $eventsQuery->where('status', $filters['status']);
+        }
+
+        if (! empty($filters['event_type'])) {
+            $eventsQuery->where('event_type', $filters['event_type']);
+        }
+
+        if (! empty($filters['priority'])) {
+            $eventsQuery->where('priority', $filters['priority']);
+        }
+
+        $events = $eventsQuery->paginate(15)->withQueryString();
+        $upcoming = $project->calendarEvents()->whereNotIn('status', ['completed', 'cancelled'])->whereNotNull('start_at')->where('start_at', '>=', now()->subDay())->orderBy('start_at')->limit(6)->get();
+
+        return view('calendar.index', [
+            'project' => $project,
+            'events' => $events,
+            'upcoming' => $upcoming,
+            'filters' => $filters,
+            'metrics' => [
+                'total' => $project->calendarEvents()->count(),
+                'planned' => $project->calendarEvents()->where('status', 'planned')->count(),
+                'in_progress' => $project->calendarEvents()->where('status', 'in_progress')->count(),
+                'critical' => $project->calendarEvents()->where('priority', 'critical')->whereNotIn('status', ['completed', 'cancelled'])->count(),
+                'logs' => $project->auditLogs()->count(),
+            ],
+        ]);
     }
 
-    public function storeAlertFollowUp(Request $request, Project $project, ApiMonitor $monitor, MonitorAlertEvent $alert): RedirectResponse
+    public function events(Request $request, Project $project): JsonResponse
     {
-        abort_unless($monitor->project_id === $project->id, 404);
-        abort_unless($alert->api_monitor_id === $monitor->id && $alert->project_id === $project->id, 404);
+        $start = $request->date('start')?->startOfDay() ?? now()->startOfMonth()->startOfWeek();
+        $end = $request->date('end')?->endOfDay() ?? now()->endOfMonth()->endOfWeek();
 
-        $validated = $request->validate([
-            'starts_at' => ['required', 'date'],
-            'title' => ['nullable', 'string', 'max:220'],
-            'description' => ['nullable', 'string'],
-            'priority' => ['required', Rule::in(CalendarEvent::PRIORITIES)],
-        ]);
-
-        CalendarEvent::query()->create([
-            'project_id' => $project->id,
-            'api_monitor_id' => $monitor->id,
-            'monitor_alert_event_id' => $alert->id,
-            'created_by' => $request->user()?->id,
-            'title' => trim((string) ($validated['title'] ?? '')) ?: __('messages.calendar.default_alert_follow_up_title', ['monitor' => $monitor->name]),
-            'description' => trim((string) ($validated['description'] ?? '')) ?: $alert->message,
-            'event_type' => CalendarEvent::TYPE_ALERT_FOLLOW_UP,
-            'status' => CalendarEvent::STATUS_PLANNED,
-            'priority' => $validated['priority'],
-            'starts_at' => Carbon::parse($validated['starts_at']),
-            'all_day' => false,
-        ]);
-
-        return redirect()
-            ->route('projects.monitors.alerts', [$project, $monitor])
-            ->with('success', __('messages.calendar.follow_up_created'));
-    }
-
-    public function feed(Request $request): JsonResponse
-    {
-        [$startsAt, $endsAt] = $this->range($request);
-        $projectId = $request->integer('project_id') ?: null;
-
-        $events = CalendarEvent::query()
-            ->with(['project', 'monitor'])
-            ->when($projectId, fn ($query) => $query->where('project_id', $projectId))
-            ->where(function (Builder $query) use ($startsAt, $endsAt): void {
-                $this->overlaps($query, $startsAt, $endsAt);
+        $calendarEvents = $project->calendarEvents()
+            ->with('createdBy')
+            ->where(function ($query) use ($start, $end): void {
+                $query->whereBetween('start_at', [$start, $end])
+                    ->orWhereBetween('end_at', [$start, $end])
+                    ->orWhere(function ($nested) use ($start, $end): void {
+                        $nested->where('start_at', '<=', $start)->where('end_at', '>=', $end);
+                    });
             })
-            ->orderBy('starts_at')
+            ->get()
+            ->map(fn (CalendarEvent $event): array => $this->calendarEventPayload($event))
+            ->values();
+
+        $auditEvents = $project->auditLogs()
+            ->with('user')
+            ->whereBetween('created_at', [$start, $end])
+            ->latest('created_at')
+            ->limit(250)
+            ->get()
+            ->map(fn (AuditLog $log): array => $this->auditLogPayload($log))
+            ->values();
+
+        return response()->json($calendarEvents->merge($auditEvents)->values());
+    }
+
+    public function day(Request $request, Project $project): JsonResponse
+    {
+        $date = Carbon::parse((string) $request->query('date', now()->toDateString()));
+        $start = $date->copy()->startOfDay();
+        $end = $date->copy()->endOfDay();
+
+        $events = $project->calendarEvents()
+            ->where(function ($query) use ($start, $end): void {
+                $query->whereBetween('start_at', [$start, $end])
+                    ->orWhereBetween('end_at', [$start, $end])
+                    ->orWhere(function ($nested) use ($start, $end): void {
+                        $nested->where('start_at', '<=', $start)->where(function ($endQuery) use ($end): void {
+                            $endQuery->whereNull('end_at')->orWhere('end_at', '>=', $end);
+                        });
+                    });
+            })
+            ->orderByRaw('start_at is null, start_at asc')
             ->get()
             ->map(fn (CalendarEvent $event): array => [
-                'id' => $event->id,
-                'title' => $event->display_title,
-                'event_type' => $event->event_type,
-                'tone' => $event->tone_css,
-                'status' => $event->status,
-                'priority' => $event->priority,
-                'project' => $event->project?->name,
-                'starts_at' => $event->starts_at?->toIso8601String(),
-                'ends_at' => $event->ends_at?->toIso8601String(),
-                'all_day' => $event->all_day,
-                'url' => $event->is_system_locked ? null : route('calendar.edit', $event),
+                'id' => 'event-'.$event->id,
+                'title' => e($event->title),
+                'time' => $event->start_at?->format($event->is_all_day ? 'Y-m-d' : 'H:i') ?? '—',
+                'meta' => e($event->type_label.' · '.$event->status_label.' · '.$event->priority_label),
+                'summary' => e((string) ($event->description ?: $event->location ?: '')),
+                'tone' => $event->type_tone,
+                'icon' => 'calendar-stats',
+                'locked' => false,
             ]);
 
-        $monitorRuns = ApiMonitor::query()
-            ->with('project')
-            ->where('is_enabled', true)
-            ->whereBetween('next_run_at', [$startsAt, $endsAt])
-            ->when($projectId, fn ($query) => $query->where('project_id', $projectId))
-            ->orderBy('next_run_at')
+        $logs = $project->auditLogs()
+            ->with('user')
+            ->whereBetween('created_at', [$start, $end])
+            ->orderBy('created_at')
+            ->limit(150)
             ->get()
-            ->map(fn (ApiMonitor $monitor): array => [
-                'id' => 'monitor-'.$monitor->id,
-                'title' => __('messages.calendar.monitor_run_title', ['monitor' => $monitor->name]),
-                'event_type' => CalendarEvent::TYPE_MONITOR_RUN,
-                'tone' => 'monitor',
-                'status' => CalendarEvent::STATUS_PLANNED,
-                'priority' => CalendarEvent::PRIORITY_NORMAL,
-                'project' => $monitor->project?->name,
-                'starts_at' => $monitor->next_run_at?->toIso8601String(),
-                'ends_at' => null,
-                'all_day' => false,
-                'url' => $monitor->project ? route('projects.monitors.edit', [$monitor->project, $monitor]) : null,
+            ->map(fn (AuditLog $log): array => [
+                'id' => 'log-'.$log->id,
+                'title' => e(__('messages.calendar.system_log')),
+                'time' => $log->created_at?->format('H:i') ?? '—',
+                'meta' => e($this->auditActionLabel($log).' · '.$this->auditSeverityLabel($log)),
+                'summary' => e((string) $log->summary),
+                'tone' => $this->auditTone($log),
+                'icon' => 'shield-chevron',
+                'locked' => true,
             ]);
 
         return response()->json([
-            'range' => ['from' => $startsAt->toIso8601String(), 'to' => $endsAt->toIso8601String()],
-            'events' => $events->concat($monitorRuns)->values(),
+            'date' => $date->toDateString(),
+            'label' => $date->translatedFormat('Y. F j.'),
+            'items' => $events->merge($logs)->values(),
         ]);
     }
 
-    public function ics(Request $request, ExportCreditService $credits): Response
+    public function store(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        [$startsAt, $endsAt] = $this->range($request);
-        $projectId = $request->integer('project_id') ?: null;
+        $event = $project->calendarEvents()->create($this->validated($request) + [
+            'created_by_user_id' => Auth::id(),
+            'is_all_day' => $request->boolean('is_all_day'),
+            'metadata' => ['source' => 'manual'],
+        ]);
 
-        $events = CalendarEvent::query()
-            ->with(['project'])
-            ->when($projectId, fn ($query) => $query->where('project_id', $projectId))
-            ->where(function (Builder $query) use ($startsAt, $endsAt): void {
-                $this->overlaps($query, $startsAt, $endsAt);
-            })
-            ->orderBy('starts_at')
-            ->get();
+        $auditLogger->record('created', __('messages.audit_messages.calendar_event_created'), $project, [
+            'calendar_event_id' => $event->id,
+            'title' => $event->title,
+            'event_type' => $event->event_type,
+        ], 'calendar');
 
-        $lines = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//Aptoria//QA Operations Calendar//EN',
-            'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH',
-            'X-WR-CALNAME:Aptoria QA Operations Calendar',
-            'X-WR-CALDESC:'.$this->icsEscape($credits->shortLine()),
-        ];
+        return redirect()->route('projects.calendar.index', $project)->with('status', __('messages.calendar.created'));
+    }
 
-        foreach ($events as $event) {
-            $lines[] = 'BEGIN:VEVENT';
-            $lines[] = 'UID:aptoria-calendar-event-'.$event->id.'@aptoria.local';
-            $lines[] = 'DTSTAMP:'.now()->utc()->format('Ymd\\THis\\Z');
-            $lines[] = 'DTSTART:'.$this->icsDate($event->starts_at, $event->all_day);
-            if ($event->ends_at) {
-                $lines[] = 'DTEND:'.$this->icsDate($event->ends_at, $event->all_day);
-            }
-            $lines[] = 'SUMMARY:'.$this->icsEscape($event->display_title);
-            $description = trim(($event->display_description ?: '').($event->project ? "\nProject: ".$event->project->name : ''));
-            $description = trim($description."\n\n".$credits->shortLine());
-            $lines[] = 'DESCRIPTION:'.$this->icsEscape($description);
-            $lines[] = 'CATEGORIES:'.$this->icsEscape($event->event_type.','.$event->priority.','.$event->status.','.$event->tone_css);
-            $lines[] = 'END:VEVENT';
-        }
+    public function update(Request $request, Project $project, CalendarEvent $calendarEvent, AuditLogger $auditLogger): RedirectResponse
+    {
+        $this->ensureEditable($project, $calendarEvent);
+        $calendarEvent->update($this->validated($request) + ['is_all_day' => $request->boolean('is_all_day')]);
 
-        $lines[] = 'END:VCALENDAR';
+        $auditLogger->record('updated', __('messages.audit_messages.calendar_event_updated'), $project, [
+            'calendar_event_id' => $calendarEvent->id,
+            'title' => $calendarEvent->title,
+            'status' => $calendarEvent->status,
+        ], 'calendar');
 
-        return response(implode("\r\n", $lines)."\r\n", 200, [
-            'Content-Type' => 'text/calendar; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="aptoria-calendar.ics"',
+        return redirect()->route('projects.calendar.index', $project)->with('status', __('messages.calendar.updated'));
+    }
+
+    public function move(Request $request, Project $project, CalendarEvent $calendarEvent, AuditLogger $auditLogger): JsonResponse
+    {
+        $this->ensureEditable($project, $calendarEvent);
+
+        $data = $request->validate([
+            'start_at' => ['required', 'date'],
+            'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
+            'is_all_day' => ['nullable', 'boolean'],
+        ]);
+
+        $calendarEvent->update([
+            'start_at' => Carbon::parse($data['start_at']),
+            'end_at' => ! empty($data['end_at']) ? Carbon::parse($data['end_at']) : null,
+            'is_all_day' => (bool) ($data['is_all_day'] ?? false),
+        ]);
+
+        $auditLogger->record('updated', __('messages.audit_messages.calendar_event_updated'), $project, [
+            'calendar_event_id' => $calendarEvent->id,
+            'title' => $calendarEvent->title,
+            'moved_from_calendar' => true,
+        ], 'calendar');
+
+        return response()->json(['ok' => true, 'event' => $this->calendarEventPayload($calendarEvent->fresh())]);
+    }
+
+    public function complete(Project $project, CalendarEvent $calendarEvent, AuditLogger $auditLogger): RedirectResponse
+    {
+        $this->ensureEditable($project, $calendarEvent);
+        $calendarEvent->update(['status' => 'completed']);
+
+        $auditLogger->record('completed', __('messages.audit_messages.calendar_event_completed'), $project, [
+            'calendar_event_id' => $calendarEvent->id,
+            'title' => $calendarEvent->title,
+        ], 'calendar');
+
+        return redirect()->route('projects.calendar.index', $project)->with('status', __('messages.calendar.completed'));
+    }
+
+    public function destroy(Project $project, CalendarEvent $calendarEvent, AuditLogger $auditLogger): RedirectResponse
+    {
+        $this->ensureEditable($project, $calendarEvent);
+        $title = $calendarEvent->title;
+        $calendarEvent->delete();
+
+        $auditLogger->record('deleted', __('messages.audit_messages.calendar_event_deleted'), $project, [
+            'title' => $title,
+        ], 'calendar', 'warning');
+
+        return redirect()->route('projects.calendar.index', $project)->with('status', __('messages.calendar.deleted'));
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'title' => ['required', 'string', 'max:180'],
+            'description' => ['nullable', 'string', 'max:3000'],
+            'event_type' => ['required', 'in:'.implode(',', CalendarEvent::TYPES)],
+            'status' => ['required', 'in:'.implode(',', CalendarEvent::STATUSES)],
+            'priority' => ['required', 'in:'.implode(',', CalendarEvent::PRIORITIES)],
+            'start_at' => ['nullable', 'date'],
+            'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
+            'location' => ['nullable', 'string', 'max:180'],
         ]);
     }
 
-    /** @return array{0: Carbon, 1: Carbon} */
-    private function range(Request $request): array
+    private function ensureEditable(Project $project, CalendarEvent $calendarEvent): void
     {
-        $month = trim((string) $request->input('month', '')) ?: now()->format('Y-m');
-
-        try {
-            $startsAt = $request->filled('from')
-                ? Carbon::parse($request->input('from'))->startOfDay()
-                : Carbon::createFromFormat('Y-m-d', $month.'-01')->startOfMonth();
-        } catch (\Throwable) {
-            $startsAt = now()->startOfMonth();
-        }
-
-        try {
-            $endsAt = $request->filled('to')
-                ? Carbon::parse($request->input('to'))->endOfDay()
-                : $startsAt->copy()->endOfMonth();
-        } catch (\Throwable) {
-            $endsAt = $startsAt->copy()->endOfMonth();
-        }
-
-        return [$startsAt, $endsAt];
+        abort_unless((int) $calendarEvent->project_id === (int) $project->id, 404);
+        abort_if(($calendarEvent->metadata['source'] ?? null) === 'system_log' || ($calendarEvent->metadata['locked'] ?? false), 403, __('messages.calendar.system_locked'));
     }
 
-    /** @return array<string, mixed> */
-    private function payload(Request $request): array
-    {
-        $validated = $request->validate([
-            'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'endpoint_id' => ['nullable', 'integer', 'exists:endpoints,id'],
-            'api_monitor_id' => ['nullable', 'integer', 'exists:api_monitors,id'],
-            'monitor_alert_event_id' => ['nullable', 'integer', 'exists:monitor_alert_events,id'],
-            'qa_release_gate_id' => ['nullable', 'integer', 'exists:qa_release_gates,id'],
-            'title' => ['required', 'string', 'max:220'],
-            'description' => ['nullable', 'string'],
-            'event_type' => ['required', Rule::in(CalendarEvent::MANUAL_TYPES)],
-            'status' => ['required', Rule::in(CalendarEvent::STATUSES)],
-            'priority' => ['required', Rule::in(CalendarEvent::PRIORITIES)],
-            'starts_at' => ['required', 'date'],
-            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'all_day' => ['nullable', 'boolean'],
-        ]);
-
-        $projectId = $validated['project_id'] ?? null;
-        $this->assertBelongsToProject($projectId, $validated);
-
-        return [
-            'project_id' => $projectId,
-            'endpoint_id' => $validated['endpoint_id'] ?? null,
-            'api_monitor_id' => $validated['api_monitor_id'] ?? null,
-            'monitor_alert_event_id' => $validated['monitor_alert_event_id'] ?? null,
-            'qa_release_gate_id' => $validated['qa_release_gate_id'] ?? null,
-            'title' => $validated['title'],
-            'description' => trim((string) ($validated['description'] ?? '')) ?: null,
-            'event_type' => $validated['event_type'],
-            'status' => $validated['status'],
-            'priority' => $validated['priority'],
-            'starts_at' => Carbon::parse($validated['starts_at']),
-            'ends_at' => ! empty($validated['ends_at']) ? Carbon::parse($validated['ends_at']) : null,
-            'all_day' => $request->boolean('all_day'),
-        ];
-    }
-
-    /** @param array<string, mixed> $validated */
-    private function assertBelongsToProject(?int $projectId, array $validated): void
-    {
-        if ($projectId === null) {
-            return;
-        }
-
-        foreach ([
-            Endpoint::class => 'endpoint_id',
-            ApiMonitor::class => 'api_monitor_id',
-            MonitorAlertEvent::class => 'monitor_alert_event_id',
-            QaReleaseGate::class => 'qa_release_gate_id',
-        ] as $class => $key) {
-            if (empty($validated[$key])) {
-                continue;
-            }
-
-            $record = $class::query()->find((int) $validated[$key]);
-            abort_unless($record && (int) $record->project_id === $projectId, 422);
-        }
-    }
-
-    /** @return array<string, mixed> */
-    private function formData(CalendarEvent $calendarEvent): array
+    private function calendarEventPayload(CalendarEvent $event): array
     {
         return [
-            'calendarEvent' => $calendarEvent,
-            'projects' => Project::query()->orderBy('name')->get(),
-            'endpoints' => Endpoint::query()->with('project')->orderBy('method')->orderBy('path')->limit(500)->get(),
-            'monitors' => ApiMonitor::query()->with('project')->orderBy('name')->limit(500)->get(),
-            'alerts' => MonitorAlertEvent::query()->with(['project', 'monitor'])->latest()->limit(200)->get(),
-            'releaseGates' => QaReleaseGate::query()->with('project')->latest()->limit(200)->get(),
+            'id' => 'event-'.$event->id,
+            'title' => $event->title,
+            'start' => $event->start_at?->toIso8601String(),
+            'end' => $event->end_at?->toIso8601String(),
+            'allDay' => (bool) $event->is_all_day,
+            'classNames' => $this->calendarClassNames($event),
+            'editable' => true,
+            'durationEditable' => true,
+            'startEditable' => true,
+            'extendedProps' => [
+                'numericId' => $event->id,
+                'source' => 'manual',
+                'event_type' => $event->event_type,
+                'type_label' => $event->type_label,
+                'status' => $event->status,
+                'status_label' => $event->status_label,
+                'priority' => $event->priority,
+                'priority_label' => $event->priority_label,
+                'description' => $event->description,
+                'location' => $event->location,
+                'tone' => $event->type_tone,
+                'locked' => false,
+            ],
         ];
     }
 
-    private function calendarEventQuery(?int $projectId, string $status = '', string $eventType = ''): Builder
+    private function auditLogPayload(AuditLog $log): array
     {
-        return CalendarEvent::query()
-            ->with(['project', 'endpoint', 'monitor', 'alertEvent', 'releaseGate'])
-            ->when($projectId, fn (Builder $query) => $query->where('project_id', $projectId))
-            ->when($status !== '', fn (Builder $query) => $query->where('status', $status))
-            ->when($eventType !== '', fn (Builder $query) => $query->where('event_type', $eventType));
+        return [
+            'id' => 'log-'.$log->id,
+            'title' => __('messages.calendar.system_log_short').': '.$this->auditActionLabel($log),
+            'start' => $log->created_at?->toIso8601String(),
+            'allDay' => false,
+            'classNames' => ['aptoria-system-log-event', 'bg-'.$this->auditTone($log).'-subtle', 'text-'.$this->auditTone($log), 'border-start', 'border-3', 'border-'.$this->auditTone($log)],
+            'editable' => false,
+            'durationEditable' => false,
+            'startEditable' => false,
+            'extendedProps' => [
+                'numericId' => $log->id,
+                'source' => 'system_log',
+                'locked' => true,
+                'summary' => $log->summary,
+                'severity' => $log->severity,
+                'severity_label' => $this->auditSeverityLabel($log),
+                'action' => $log->action,
+                'action_label' => $this->auditActionLabel($log),
+                'event_type' => $log->event_type,
+                'user' => $log->user?->name,
+                'created_at' => $log->created_at?->format('Y-m-d H:i'),
+                'tone' => $this->auditTone($log),
+            ],
+        ];
     }
 
-    private function overlaps(Builder $query, Carbon $startsAt, Carbon $endsAt): void
+    private function calendarClassNames(CalendarEvent $event): array
     {
-        $query->where('starts_at', '<=', $endsAt)
-            ->where(function (Builder $query) use ($startsAt): void {
-                $query->whereNull('ends_at')
-                    ->orWhere('ends_at', '>=', $startsAt);
-            });
+        $tone = match ($event->event_type) {
+            'regression_retest' => 'warning',
+            'release_checkpoint' => 'primary',
+            'maintenance_window' => 'secondary',
+            'alert_follow_up' => 'danger',
+            'security_review' => 'info',
+            'monitor_run' => 'success',
+            'activity_log' => 'dark',
+            default => 'success',
+        };
+
+        return ['aptoria-calendar-event', 'bg-'.$tone.'-subtle', 'text-'.$tone, 'border-start', 'border-3', 'border-'.$tone];
     }
 
-    /**
-     * @param Collection<int, CalendarEvent> $events
-     * @return Collection<string, Collection<int, CalendarEvent>>
-     */
-    private function eventsByDay(Collection $events, Carbon $gridStartsAt, Carbon $gridEndsAt): Collection
+    private function auditTone(AuditLog $log): string
     {
-        $byDay = collect();
-
-        foreach ($events as $event) {
-            $eventStart = $event->starts_at?->copy()->startOfDay() ?: $gridStartsAt->copy();
-            $eventEnd = ($event->ends_at ?: $event->starts_at)?->copy()->startOfDay() ?: $eventStart->copy();
-            $from = $eventStart->greaterThan($gridStartsAt) ? $eventStart : $gridStartsAt->copy();
-            $to = $eventEnd->lessThan($gridEndsAt) ? $eventEnd : $gridEndsAt->copy();
-
-            foreach (CarbonPeriod::create($from, $to) as $day) {
-                $key = $day->format('Y-m-d');
-                if (! $byDay->has($key)) {
-                    $byDay->put($key, collect());
-                }
-                $byDay->get($key)->push($event);
-            }
-        }
-
-        return $byDay;
+        return match ($log->severity) {
+            'critical', 'error' => 'danger',
+            'warning' => 'warning',
+            'success' => 'success',
+            default => 'secondary',
+        };
     }
 
-    private function icsDate(?Carbon $date, bool $allDay): string
+    private function auditSeverityLabel(AuditLog $log): string
     {
-        if (! $date) {
-            return now()->utc()->format('Ymd\\THis\\Z');
-        }
-
-        return $allDay ? 'VALUE=DATE:'.$date->format('Ymd') : $date->copy()->utc()->format('Ymd\\THis\\Z');
+        return __('messages.audit.severities.'.($log->severity ?: 'info'));
     }
 
-    private function icsEscape(string $value): string
+    private function auditActionLabel(AuditLog $log): string
     {
-        return str_replace(["\\", ";", ",", "\n", "\r"], ["\\\\", "\\;", "\\,", "\\n", ''], $value);
+        return str($log->action ?: 'system')->replace('_', ' ')->headline()->toString();
     }
 }

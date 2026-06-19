@@ -1,0 +1,81 @@
+name: Aptoria Public Hygiene
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  public-hygiene:
+    name: Public repository hygiene
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify forbidden runtime files are not committed
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden_paths=(
+            ".env"
+            "vendor"
+            "node_modules"
+            "database/database.sqlite"
+            "storage/app/installed.lock"
+            "storage/app/setup-token.txt"
+            "public/storage"
+            "bootstrap/cache"
+          )
+          for path in "${forbidden_paths[@]}"; do
+            if [ -e "$path" ]; then
+              echo "Forbidden runtime/local path is committed: $path"
+              exit 1
+            fi
+          done
+
+      - name: Verify required public files
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_files=(
+            "README.md"
+            "LICENSE"
+            "NOTICE.md"
+            "CREDITS.md"
+            "THIRD_PARTY_NOTICES.md"
+            "SECURITY.md"
+            ".env.example"
+            "composer.json"
+            "artisan"
+            "VERSION"
+            "docs/UPGRADE_FROM_1.1.34_TO_0.0.53.md"
+            "docs/LEGACY_1.1.34_VS_0.0.53_COMPARISON.md"
+          )
+          for path in "${required_files[@]}"; do
+            if [ ! -f "$path" ]; then
+              echo "Required public repository file is missing: $path"
+              exit 1
+            fi
+          done
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, sqlite, pdo_sqlite, fileinfo, openssl, xml, ctype, tokenizer
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --no-check-publish --no-check-lock
+
+      - name: Run PHP syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app bootstrap config database public resources routes tests -name '*.php' -print0 | xargs -0 -n1 php -l

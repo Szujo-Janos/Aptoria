@@ -11,35 +11,39 @@ class ContractValidationRun extends Model
 {
     use HasFactory;
 
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_FAILED = 'failed';
+    public const STATUSES = ['passed', 'warning', 'blocked'];
 
     protected $fillable = [
         'project_id',
-        'scan_run_id',
+        'validated_by_user_id',
         'source_name',
-        'contract_hash',
+        'source_version',
+        'openapi_version',
         'status',
-        'total_checks',
-        'passed_count',
+        'documented_operations',
+        'inventory_operations',
+        'matched_operations',
+        'undocumented_inventory_operations',
+        'missing_inventory_operations',
+        'blocker_count',
         'warning_count',
-        'failed_count',
-        'breaking_count',
-        'missing_endpoint_count',
-        'undocumented_endpoint_count',
-        'schema_checked_count',
-        'started_at',
-        'finished_at',
-        'error_message',
         'summary_json',
+        'contract_json',
+        'validated_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'started_at' => 'datetime',
-            'finished_at' => 'datetime',
+            'documented_operations' => 'integer',
+            'inventory_operations' => 'integer',
+            'matched_operations' => 'integer',
+            'undocumented_inventory_operations' => 'integer',
+            'missing_inventory_operations' => 'integer',
+            'blocker_count' => 'integer',
+            'warning_count' => 'integer',
             'summary_json' => 'array',
+            'validated_at' => 'datetime',
         ];
     }
 
@@ -48,9 +52,9 @@ class ContractValidationRun extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function scanRun(): BelongsTo
+    public function validatedBy(): BelongsTo
     {
-        return $this->belongsTo(ScanRun::class);
+        return $this->belongsTo(User::class, 'validated_by_user_id');
     }
 
     public function results(): HasMany
@@ -58,42 +62,22 @@ class ContractValidationRun extends Model
         return $this->hasMany(ContractValidationResult::class);
     }
 
-    public function getStatusCssAttribute(): string
-    {
-        if ($this->status === self::STATUS_FAILED || $this->failed_count > 0 || $this->breaking_count > 0) {
-            return 'danger';
-        }
-
-        if ($this->warning_count > 0) {
-            return 'warning';
-        }
-
-        return 'success';
-    }
-
     public function getStatusLabelAttribute(): string
     {
-        return __('messages.contract_validations.run_statuses.'.$this->status);
+        return __('messages.contract_validation.statuses.'.($this->status ?: 'warning'));
     }
 
-    public function getHealthLabelAttribute(): string
+    public function getStatusToneAttribute(): string
     {
-        if ($this->status === self::STATUS_FAILED) {
-            return __('messages.contract_validations.health.failed');
-        }
+        return match ($this->status) {
+            'passed' => 'success',
+            'blocked' => 'danger',
+            default => 'warning',
+        };
+    }
 
-        if ($this->breaking_count > 0) {
-            return __('messages.contract_validations.health.breaking');
-        }
-
-        if ($this->failed_count > 0) {
-            return __('messages.contract_validations.health.failed_checks');
-        }
-
-        if ($this->warning_count > 0) {
-            return __('messages.contract_validations.health.warnings');
-        }
-
-        return __('messages.contract_validations.health.pass');
+    public function getSummaryAttribute(): array
+    {
+        return is_array($this->summary_json) ? $this->summary_json : [];
     }
 }

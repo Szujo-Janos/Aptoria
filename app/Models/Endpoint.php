@@ -2,63 +2,18 @@
 
 namespace App\Models;
 
-use App\Services\Risk\RiskAnalyzer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Str;
 
 class Endpoint extends Model
 {
     use HasFactory;
 
-    public const METHOD_GET = 'GET';
-    public const METHOD_POST = 'POST';
-    public const METHOD_PUT = 'PUT';
-    public const METHOD_PATCH = 'PATCH';
-    public const METHOD_DELETE = 'DELETE';
-    public const METHOD_HEAD = 'HEAD';
-    public const METHOD_OPTIONS = 'OPTIONS';
-
-    public const METHODS = [
-        self::METHOD_GET,
-        self::METHOD_POST,
-        self::METHOD_PUT,
-        self::METHOD_PATCH,
-        self::METHOD_DELETE,
-        self::METHOD_HEAD,
-        self::METHOD_OPTIONS,
-    ];
-
-    public const RISK_CRITICAL = 'critical';
-    public const RISK_HIGH = 'high';
-    public const RISK_REVIEW = 'review';
-    public const RISK_PUBLIC = 'public';
-    public const RISK_LOW = 'low';
-
-    public const RISKS = [
-        self::RISK_CRITICAL,
-        self::RISK_HIGH,
-        self::RISK_REVIEW,
-        self::RISK_PUBLIC,
-        self::RISK_LOW,
-    ];
-
-    public const BEHAVIOR_ROLE_PRODUCER = 'producer';
-    public const BEHAVIOR_ROLE_CONSUMER = 'consumer';
-    public const BEHAVIOR_ROLE_PRODUCER_CONSUMER = 'producer_consumer';
-    public const BEHAVIOR_ROLE_DESTRUCTIVE = 'destructive';
-    public const BEHAVIOR_ROLE_REFERENCE = 'reference';
-
-    public const BEHAVIOR_ROLES = [
-        self::BEHAVIOR_ROLE_PRODUCER,
-        self::BEHAVIOR_ROLE_CONSUMER,
-        self::BEHAVIOR_ROLE_PRODUCER_CONSUMER,
-        self::BEHAVIOR_ROLE_DESTRUCTIVE,
-        self::BEHAVIOR_ROLE_REFERENCE,
-    ];
+    public const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+    public const RISK_LEVELS = ['low', 'public', 'review', 'high', 'critical'];
 
     protected $fillable = [
         'project_id',
@@ -72,73 +27,20 @@ class Endpoint extends Model
         'auth_required',
         'expected_status',
         'expected_content_type',
-        'request_headers',
-        'request_body_type',
-        'request_body_preview',
-        'behavior_role',
-        'behavior_resource',
-        'destructive_action',
-        'auth_boundary',
-        'sequence_candidate',
-        'behavior_notes',
         'risk_level',
-        'risk_reason',
-        'qa_notes',
         'is_active',
         'excluded_from_scan',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'auth_required' => 'boolean',
+            'expected_status' => 'integer',
             'is_active' => 'boolean',
             'excluded_from_scan' => 'boolean',
-            'expected_status' => 'integer',
-            'request_headers' => 'array',
-            'destructive_action' => 'boolean',
-            'auth_boundary' => 'boolean',
-            'sequence_candidate' => 'boolean',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::saving(function (Endpoint $endpoint): void {
-            $endpoint->method = strtoupper((string) $endpoint->method);
-            $endpoint->path = self::normalizePath((string) $endpoint->path);
-
-            if (! $endpoint->risk_level) {
-                $endpoint->risk_level = self::RISK_REVIEW;
-            }
-
-            if (! $endpoint->risk_reason) {
-                $endpoint->risk_reason = $endpoint->buildRiskExplanation();
-            }
-        });
-    }
-
-    public static function normalizePath(string $path): string
-    {
-        $path = trim($path);
-
-        if ($path === '') {
-            return '/';
-        }
-
-        if (Str::startsWith($path, ['http://', 'https://'])) {
-            $parts = parse_url($path);
-            $path = $parts['path'] ?? '/';
-            if (! empty($parts['query'])) {
-                $path .= '?'.$parts['query'];
-            }
-        }
-
-        if (! Str::startsWith($path, '/')) {
-            $path = '/'.$path;
-        }
-
-        return $path;
     }
 
     public function project(): BelongsTo
@@ -161,29 +63,19 @@ class Endpoint extends Model
         return $this->hasMany(ScanResult::class);
     }
 
+    public function testRuns(): HasMany
+    {
+        return $this->hasMany(EndpointTestRun::class);
+    }
+
     public function assertionRules(): HasMany
     {
         return $this->hasMany(EndpointAssertionRule::class);
     }
 
-    public function pathParameters(): HasMany
+    public function latestTestRun(): HasOne
     {
-        return $this->hasMany(EndpointPathParameter::class);
-    }
-
-    public function producedBehaviorLinks(): HasMany
-    {
-        return $this->hasMany(EndpointBehaviorLink::class, 'producer_endpoint_id');
-    }
-
-    public function consumedBehaviorLinks(): HasMany
-    {
-        return $this->hasMany(EndpointBehaviorLink::class, 'consumer_endpoint_id');
-    }
-
-    public function testCases(): HasMany
-    {
-        return $this->hasMany(TestCase::class);
+        return $this->hasOne(EndpointTestRun::class)->latestOfMany('checked_at');
     }
 
     public function findings(): HasMany
@@ -191,140 +83,63 @@ class Endpoint extends Model
         return $this->hasMany(Finding::class);
     }
 
-    public function contractValidationResults(): HasMany
+    public function evidence(): HasMany
     {
-        return $this->hasMany(ContractValidationResult::class);
+        return $this->hasMany(FindingEvidence::class);
     }
 
-    public function latestScanResult(): HasOne
+    public function getMethodToneAttribute(): string
     {
-        return $this->hasOne(ScanResult::class)->latestOfMany();
+        return match ($this->method) {
+            'GET', 'HEAD' => 'success',
+            'POST' => 'primary',
+            'PUT', 'PATCH' => 'warning',
+            'DELETE' => 'danger',
+            default => 'secondary',
+        };
     }
 
-    public function latestContractValidationResult(): HasOne
+    public function getRiskToneAttribute(): string
     {
-        return $this->hasOne(ContractValidationResult::class)->latestOfMany();
-    }
-
-    public function isProbeable(): bool
-    {
-        return in_array(strtoupper($this->method), [self::METHOD_GET, self::METHOD_HEAD], true)
-            && $this->is_active
-            && ! $this->excluded_from_scan;
+        return match ($this->risk_level) {
+            'critical' => 'danger',
+            'high' => 'warning',
+            'review' => 'info',
+            'public' => 'primary',
+            default => 'success',
+        };
     }
 
     public function getRiskLabelAttribute(): string
     {
-        return __('messages.endpoints.risks.'.$this->risk_level);
+        return __('messages.endpoints.risk_levels.'.$this->risk_level);
     }
 
-    public function getBehaviorRoleLabelAttribute(): string
+    public function getScanStatusLabelAttribute(): string
     {
-        return $this->behavior_role
-            ? __('messages.api_behavior.roles.'.$this->behavior_role)
-            : __('messages.api_behavior.roles.unknown');
+        if (! $this->is_active) {
+            return __('messages.endpoints.inactive');
+        }
+
+        if ($this->excluded_from_scan) {
+            return __('messages.endpoints.excluded');
+        }
+
+        return in_array($this->method, ['GET', 'HEAD'], true)
+            ? __('messages.endpoints.safe_scan_ready')
+            : __('messages.endpoints.manual_review');
     }
 
-    public function getBehaviorSummaryAttribute(): string
+    public function getScanStatusToneAttribute(): string
     {
-        $parts = [];
-
-        if ($this->behavior_role) {
-            $parts[] = $this->behavior_role_label;
+        if (! $this->is_active) {
+            return 'secondary';
         }
 
-        if ($this->behavior_resource) {
-            $parts[] = $this->behavior_resource;
+        if ($this->excluded_from_scan) {
+            return 'warning';
         }
 
-        if ($this->destructive_action) {
-            $parts[] = __('messages.api_behavior.flags.destructive');
-        }
-
-        if ($this->auth_boundary) {
-            $parts[] = __('messages.api_behavior.flags.auth_boundary');
-        }
-
-        return $parts === [] ? __('messages.api_behavior.no_behavior_detected') : implode(' · ', $parts);
-    }
-
-    public function getRiskCssAttribute(): string
-    {
-        return match ($this->risk_level) {
-            self::RISK_CRITICAL => 'danger',
-            self::RISK_HIGH => 'warning',
-            self::RISK_PUBLIC => 'info',
-            self::RISK_LOW => 'success',
-            default => 'default',
-        };
-    }
-
-    public function getFullUrlAttribute(): string
-    {
-        try {
-            if ($this->project instanceof Project) {
-                return app(\App\Services\Endpoints\PathParameterResolver::class)->buildUrl($this->project, $this);
-            }
-        } catch (\Throwable) {
-            // Fall back to the raw URL below when the container or DB is unavailable.
-        }
-
-        $base = $this->environment?->base_url ?: $this->project?->base_url;
-        if (! $base) {
-            return $this->path;
-        }
-
-        return rtrim($base, '/').'/'.ltrim($this->path, '/');
-    }
-
-    public function getTagListAttribute(): array
-    {
-        if (! $this->tags) {
-            return [];
-        }
-
-        return collect(explode(',', $this->tags))
-            ->map(fn (string $tag): string => trim($tag))
-            ->filter()
-            ->values()
-            ->all();
-    }
-
-    public function buildRiskExplanation(): string
-    {
-        $path = strtolower($this->path);
-        $method = strtoupper($this->method);
-
-        if ($this->risk_level === self::RISK_CRITICAL) {
-            return __('messages.endpoints.risk_reasons.critical_manual');
-        }
-
-        if (str_contains($path, 'admin') || str_contains($path, 'debug') || str_contains($path, 'internal')) {
-            return __('messages.endpoints.risk_reasons.admin_debug_internal');
-        }
-
-        if (! $this->auth_required && preg_match('/(user|users|order|orders|payment|payments|invoice|invoices|customer|customers|profile|account)/', $path)) {
-            return __('messages.endpoints.risk_reasons.public_sensitive_name');
-        }
-
-        if (in_array($method, [self::METHOD_POST, self::METHOD_PUT, self::METHOD_PATCH, self::METHOD_DELETE], true)) {
-            return __('messages.endpoints.risk_reasons.destructive_method_review');
-        }
-
-        if (! $this->auth_required && $this->risk_level === self::RISK_PUBLIC) {
-            return __('messages.endpoints.risk_reasons.documented_public');
-        }
-
-        return __('messages.endpoints.risk_reasons.manual_review');
-    }
-
-    public function getDeveloperFixSnippetAttribute(): string
-    {
-        return app(RiskAnalyzer::class)->buildDeveloperReviewSnippet($this, $this->latestScanResult);
-    }
-
-    public function getQaBugDraftAttribute(): string
-    {
-        return app(RiskAnalyzer::class)->buildQaBugReport($this, $this->latestScanResult);
+        return in_array($this->method, ['GET', 'HEAD'], true) ? 'success' : 'info';
     }
 }

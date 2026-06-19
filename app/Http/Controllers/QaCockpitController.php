@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
-use App\Services\Cockpit\QaCockpitService;
-use Illuminate\Contracts\View\View;
+use App\Services\QaCockpitService;
+use Illuminate\View\View;
 
 class QaCockpitController extends Controller
 {
-    public function __invoke(Project $project, QaCockpitService $cockpit): View
+    public function __construct(private readonly QaCockpitService $cockpit)
     {
-        return view('qa_cockpit.index', [
+    }
+
+    public function show(Project $project): View
+    {
+        return view('qa_cockpit.show', [
             'project' => $project,
-            ...$cockpit->summarize($project),
+            'cockpit' => $this->cockpit->snapshot($project),
         ]);
     }
 }

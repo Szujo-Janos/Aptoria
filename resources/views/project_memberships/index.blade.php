@@ -1,372 +1,292 @@
 @extends('layouts.app')
-
 @section('title', __('messages.project_members.title'))
-
+@section('page_title', __('messages.project_members.title'))
 @section('page_actions')
-    <a href="{{ route('projects.show', $project) }}" class="btn btn-default btn-sm"><i class="fa fa-arrow-left"></i> {{ __('messages.common.back') }}</a>
+    <a href="{{ route('projects.show', $project) }}" class="btn btn-light"><i data-lucide="arrow-left" class="me-1"></i>{{ __('messages.workspace.back_to_workspace') }}</a>
+    @if ($canManageMembers)
+        <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addProjectMemberModal"><i data-lucide="user-check" class="me-1"></i>{{ __('messages.project_members.add_existing_member') }}</button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createProjectUserModal"><i data-lucide="user-plus" class="me-1"></i>{{ __('messages.project_members.create_user_and_add') }}</button>
+    @endif
 @endsection
-
-@push('styles')
-<style>
-    .aptoria-members-hero .panel-body { padding: 24px 28px; }
-    .aptoria-members-eyebrow { display:inline-block; margin-bottom:8px; }
-    .aptoria-members-title { margin:0 0 6px; font-weight:400; }
-    .aptoria-members-subtitle { max-width:760px; }
-    .aptoria-members-stat { border-left:1px solid #e7edf3; padding:8px 10px; }
-    .aptoria-members-stat:first-child { border-left:0; }
-    .aptoria-members-stat strong { display:block; font-size:24px; line-height:1.1; font-weight:400; color:#34495e; }
-    .aptoria-members-stat small { color:#7b8794; }
-    .aptoria-access-flow { display:flex; gap:16px; flex-wrap:wrap; }
-    .aptoria-access-step { flex:1 1 210px; border:1px solid #e7edf3; border-radius:8px; padding:14px 16px; background:#fbfcfe; }
-    .aptoria-access-step .step-number { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#edf6ff; color:#3498db; margin-right:8px; font-weight:600; }
-    .aptoria-member-card { border:1px solid #e7edf3; border-radius:8px; padding:14px; margin-bottom:12px; background:#fff; }
-    .aptoria-member-card:hover { border-color:#c9d8e6; }
-    .aptoria-member-card-title { font-weight:600; color:#34495e; margin-bottom:2px; }
-    .aptoria-member-card-meta { color:#7b8794; font-size:12px; }
-    .aptoria-member-card-form { margin-top:12px; }
-    .aptoria-create-user-panel .form-group { margin-bottom:14px; }
-    .aptoria-role-chip { display:inline-block; border:1px solid #e7edf3; border-radius:16px; padding:4px 10px; margin:0 4px 6px 0; background:#fbfcfe; color:#52616f; font-size:12px; }
-    .aptoria-permission-list { columns:2; -webkit-columns:2; -moz-columns:2; }
-    .aptoria-permission-row { break-inside:avoid; margin-bottom:7px; }
-    .aptoria-muted-panel { background:#fbfcfe; border:1px solid #e7edf3; border-radius:8px; padding:12px 14px; }
-    @media (max-width: 991px) {
-        .aptoria-members-stat { border-left:0; border-top:1px solid #e7edf3; margin-top:10px; }
-        .aptoria-members-stat:first-child { border-top:0; }
-        .aptoria-permission-list { columns:1; -webkit-columns:1; -moz-columns:1; }
-    }
-</style>
-@endpush
-
 @section('content')
-@php
-    $defaultRole = \App\Models\ProjectMembership::ROLE_QA_ENGINEER;
-@endphp
-
-<div class="row">
-    <div class="col-lg-12">
-        <div class="hpanel hblue aptoria-members-hero">
-            <div class="panel-body">
-                <div class="row">
-                    <div class="col-md-7">
-                        <span class="label label-info aptoria-members-eyebrow"><i class="fa fa-users"></i> {{ __('messages.project_members.short_title') }}</span>
-                        <h2 class="aptoria-members-title">{{ __('messages.project_members.dashboard.title') }}</h2>
-                        <p class="text-muted aptoria-members-subtitle m-b-none">{{ __('messages.project_members.dashboard.subtitle') }}</p>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="row text-center">
-                            <div class="col-xs-4 aptoria-members-stat">
-                                <strong>{{ $memberCount }}</strong>
-                                <small>{{ __('messages.project_members.stats.project_members') }}</small>
-                            </div>
-                            <div class="col-xs-4 aptoria-members-stat">
-                                <strong>{{ $availableUsersCount }}</strong>
-                                <small>{{ __('messages.project_members.stats.available_users') }}</small>
-                            </div>
-                            <div class="col-xs-4 aptoria-members-stat">
-                                <strong>{{ $totalUsers }}</strong>
-                                <small>{{ __('messages.project_members.stats.internal_users') }}</small>
-                            </div>
-                        </div>
-                        <div class="m-t-md text-right">
-                            <span class="label label-default"><i class="fa fa-key"></i> {{ $currentProjectRoleLabel }}</span>
-                            <span class="label {{ $canManageMembers ? 'label-success' : 'label-default' }}">
-                                {{ $canManageMembers ? __('messages.project_members.stats.can_manage_yes') : __('messages.project_members.stats.can_manage_no') }}
-                            </span>
-                        </div>
-                    </div>
+@if (session('temporary_password'))
+    <div class="alert alert-warning d-flex align-items-start gap-3 mt-3" role="alert">
+        <span class="avatar avatar-sm rounded text-bg-warning"><span class="avatar-title"><i data-lucide="key-round"></i></span></span>
+        <div class="flex-grow-1">
+            <h5 class="alert-heading mb-1">{{ __('messages.users.temporary_password_title') }}</h5>
+            <p class="mb-2">{{ __('messages.users.temporary_password_copy', ['email' => session('temporary_user_email')]) }}</p>
+            <code class="d-inline-block p-2 rounded bg-body text-body border">{{ session('temporary_password') }}</code>
+            <div class="small text-muted mt-2">{{ __('messages.users.temporary_password_warning') }}</div>
+        </div>
+    </div>
+@endif
+<div class="card mb-3 aptoria-panel-card">
+    <div class="card-body">
+        <div class="row align-items-center g-3">
+            <div class="col-xl-8">
+                <span class="badge badge-soft-primary badge-label mb-2"><i class="ti ti-point-filled"></i>{{ __('messages.project_members.foundation_badge') }}</span>
+                <h3 class="mb-2 fw-normal">{{ __('messages.project_members.page_title') }}</h3>
+                <p class="text-muted mb-0">{{ __('messages.project_members.page_copy') }}</p>
+            </div>
+            <div class="col-xl-4">
+                <div class="d-flex flex-wrap justify-content-xl-end gap-2">
+                    <span class="aptoria-ui-chip"><i data-lucide="shield-check" class="fs-15"></i>{{ __('messages.project_members.your_role') }}: {{ $currentRole }}</span>
+                    <span class="aptoria-ui-chip"><i data-lucide="hierarchy" class="fs-15"></i>{{ $memberships->count() }} {{ __('messages.project_members.members') }}</span>
                 </div>
             </div>
         </div>
     </div>
+    <div class="card-footer text-muted text-center aptoria-card-footer-subtle">{{ __('messages.project_members.foundation_copy') }}</div>
 </div>
 
-<div class="row">
-    <div class="col-lg-12">
-        <div class="hpanel">
-            <div class="panel-heading hbuilt"><i class="fa fa-map-signs"></i> {{ __('messages.project_members.flow.title') }}</div>
-            <div class="panel-body">
-                <div class="aptoria-access-flow">
-                    <div class="aptoria-access-step">
-                        <h4><span class="step-number">1</span>{{ __('messages.project_members.flow.step_user_title') }}</h4>
-                        <p class="text-muted m-b-none">{{ __('messages.project_members.flow.step_user_body') }}</p>
+<div class="row row-cols-xxl-5 row-cols-md-2 row-cols-1 g-3 mb-3">
+    @foreach ([
+        ['project_admin', 'user-cog', 'primary'],
+        ['qa_engineer', 'test-tube', 'success'],
+        ['reviewer', 'clipboard-search', 'warning'],
+        ['release_approver', 'badge-check', 'info'],
+        ['read_only_viewer', 'eye', 'secondary'],
+    ] as [$roleKey, $icon, $tone])
+        <div class="col">
+            <div class="card card-h-100 aptoria-widget-card">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="fw-normal text-uppercase mb-3">{{ __('messages.project_members.roles.'.$roleKey) }}</h5>
+                        <h2 class="fw-light mb-0">{{ $memberships->where('role', $roleKey)->where('status', 'active')->count() }}</h2>
                     </div>
-                    <div class="aptoria-access-step">
-                        <h4><span class="step-number">2</span>{{ __('messages.project_members.flow.step_member_title') }}</h4>
-                        <p class="text-muted m-b-none">{{ __('messages.project_members.flow.step_member_body') }}</p>
-                    </div>
-                    <div class="aptoria-access-step">
-                        <h4><span class="step-number">3</span>{{ __('messages.project_members.flow.step_role_title') }}</h4>
-                        <p class="text-muted m-b-none">{{ __('messages.project_members.flow.step_role_body') }}</p>
-                    </div>
+                    <i data-lucide="{{ $icon }}" class="text-muted fs-42 svg-sw-10"></i>
                 </div>
+                <div class="card-footer text-muted text-center aptoria-card-footer-subtle">{{ __('messages.project_members.role_scope_'.$roleKey) }}</div>
             </div>
         </div>
-    </div>
+    @endforeach
 </div>
 
-@if($canManageMembers)
-<div class="row">
-    <div class="col-lg-8">
-        <div class="hpanel hgreen">
-            <div class="panel-heading hbuilt">
-                <i class="fa fa-user-plus"></i> {{ __('messages.project_members.existing_user.title') }}
-                <span class="pull-right text-muted">{{ __('messages.project_members.existing_user.count_label', ['count' => $availableUsersCount]) }}</span>
-            </div>
-            <div class="panel-body">
-                <p class="text-muted">{{ __('messages.project_members.existing_user.help') }}</p>
-
-                <form method="GET" action="{{ route('projects.members.index', $project) }}" class="row m-b-md">
-                    <div class="col-sm-8">
-                        <input type="text" name="user_q" value="{{ $userSearch }}" class="form-control" placeholder="{{ __('messages.project_members.existing_user.search_placeholder') }}">
-                    </div>
-                    <div class="col-sm-4">
-                        <button type="submit" class="btn btn-default"><i class="fa fa-search"></i> {{ __('messages.common.search') }}</button>
-                        @if($userSearch !== '')
-                            <a href="{{ route('projects.members.index', $project) }}" class="btn btn-link">{{ __('messages.project_members.existing_user.clear_search') }}</a>
-                        @endif
-                    </div>
-                </form>
-
-                @if($availableUsers->isEmpty())
-                    <div class="alert alert-info m-b-none">
-                        <strong>{{ __('messages.project_members.existing_user.empty_title') }}</strong><br>
-                        {{ $userSearch !== '' ? __('messages.project_members.existing_user.empty_search') : __('messages.project_members.existing_user.empty_all_members') }}
-                    </div>
-                @else
-                    <div class="row">
-                        @foreach($availableUsers as $availableUser)
-                            <div class="col-md-6">
-                                <div class="aptoria-member-card">
-                                    <div class="aptoria-member-card-title"><i class="fa fa-user text-muted"></i> {{ $availableUser->name }}</div>
-                                    <div class="aptoria-member-card-meta"><i class="fa fa-envelope-o"></i> {{ $availableUser->email }}</div>
-                                    <div class="m-t-xs">
-                                        <span class="label {{ $availableUser->isSystemAdmin() ? 'label-primary' : 'label-default' }}">
-                                            {{ $availableUser->isSystemAdmin() ? __('messages.project_members.global_roles.admin') : __('messages.project_members.global_roles.user') }}
-                                        </span>
-                                        <span class="text-muted small m-l-xs">
-                                            {{ $availableUser->last_login_at ? __('messages.project_members.existing_user.last_seen', ['date' => $availableUser->last_login_at->format('Y-m-d H:i')]) : __('messages.project_members.existing_user.never_logged_in') }}
-                                        </span>
-                                    </div>
-                                    <form method="POST" action="{{ route('projects.members.store', $project) }}" class="aptoria-member-card-form">
-                                        @csrf
-                                        <input type="hidden" name="email" value="{{ $availableUser->email }}">
-                                        <div class="row">
-                                            <div class="col-sm-7">
-                                                <select name="role" class="form-control input-sm" aria-label="{{ __('messages.project_members.role') }}">
-                                                    @foreach($roleOptions as $value => $label)
-                                                        <option value="{{ $value }}" @selected($value === $defaultRole)>{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-5">
-                                                <button type="submit" class="btn btn-success btn-sm btn-block"><i class="fa fa-plus"></i> {{ __('messages.project_members.existing_user.add_to_project') }}</button>
-                                            </div>
-                                        </div>
-                                    </form>
+<div class="card aptoria-table-card aptoria-panel-card">
+    <div class="card-header border-light justify-content-between align-items-center">
+        <div>
+            <h5 class="card-title mb-1"><i data-lucide="shield-check" class="me-1"></i>{{ __('messages.project_members.table_title') }}</h5>
+            <p class="text-muted mb-0 small">{{ __('messages.project_members.table_copy') }}</p>
+        </div>
+        <div class="card-action">
+            <span class="badge badge-soft-primary badge-label"><i class="ti ti-table me-1"></i>{{ __('messages.common.ui_datatables') }}</span>
+            <a href="#!" class="card-action-item" data-action="card-toggle"><i class="ti ti-chevron-up"></i></a>
+            <a href="#!" class="card-action-item" data-action="card-refresh"><i class="ti ti-refresh"></i></a>
+        </div>
+    </div>
+    <div class="card-body">
+        <table data-tables="project-members" class="table table-custom table-striped table-nowrap table-centered mb-0 w-100 aptoria-resource-table">
+            <thead class="thead-sm text-uppercase fs-xxs">
+                <tr>
+                    <th data-priority="1">{{ __('messages.project_members.member') }}</th>
+                    <th data-priority="2">{{ __('messages.project_members.role') }}</th>
+                    <th data-priority="3">{{ __('messages.common.status') }}</th>
+                    <th data-priority="5">{{ __('messages.project_members.added_by') }}</th>
+                    <th data-priority="4">{{ __('messages.common.updated') }}</th>
+                    @if ($canManageMembers)
+                        <th class="text-end aptoria-actions-cell no-sort" data-priority="1">{{ __('messages.common.actions') }}</th>
+                    @endif
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($memberships as $membership)
+                    @php
+                        $isOwner = (int) $membership->user_id === (int) $project->user_id;
+                        $memberIconMap = [
+                            'project_admin' => 'user-cog',
+                            'qa_engineer' => 'test-tube',
+                            'reviewer' => 'clipboard-search',
+                            'release_approver' => 'badge-check',
+                            'read_only_viewer' => 'eye',
+                        ];
+                        $memberIcon = $isOwner ? 'shield-check' : ($memberIconMap[$membership->role] ?? 'circle-user-round');
+                    @endphp
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2 min-w-0">
+                                <span class="avatar avatar-sm rounded text-bg-light"><span class="avatar-title"><i data-lucide="{{ $memberIcon }}"></i></span></span>
+                                <div class="min-w-0">
+                                    <span class="d-block text-truncate">{{ $membership->user?->name ?? __('messages.common.not_available') }}</span>
+                                    <small class="text-muted d-block text-truncate">{{ $membership->user?->email ?? __('messages.common.not_available') }}</small>
                                 </div>
                             </div>
-                        @endforeach
+                        </td>
+                        <td>
+                            <span class="badge badge-soft-{{ $isOwner ? 'primary' : $membership->role_tone }} badge-label"><i data-lucide="{{ $memberIcon }}" class="me-1"></i>{{ $isOwner ? __('messages.project_members.project_owner') : $membership->role_label }}</span>
+                        </td>
+                        <td><span class="badge badge-soft-{{ $membership->status_tone }} badge-label"><i data-lucide="{{ $membership->status === 'active' ? 'badge-check' : 'circle-x' }}" class="me-1"></i>{{ $membership->status_label }}</span></td>
+                        <td>{{ $membership->invitedBy?->name ?? '—' }}</td>
+                        <td>{{ $membership->updated_at?->format('Y-m-d H:i') }}</td>
+                        @if ($canManageMembers)
+                            <td class="text-end aptoria-actions-cell">
+                                @if ($isOwner)
+                                    <span class="badge badge-soft-primary badge-label"><i data-lucide="lock-keyhole" class="me-1"></i>{{ __('messages.project_members.owner_locked_badge') }}</span>
+                                @else
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-icon btn-sm rounded-circle" data-bs-toggle="dropdown" data-bs-boundary="viewport" type="button" aria-label="{{ __('messages.common.actions') }}"><i class="ti ti-dots"></i></button>
+                                        <div class="dropdown-menu dropdown-menu-end">
+                                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editMembership{{ $membership->id }}"><i data-lucide="pencil" class="me-2"></i>{{ __('messages.common.edit') }}</button>
+                                            <div class="dropdown-divider"></div>
+                                            <form method="POST" action="{{ route('projects.members.destroy', [$project, $membership]) }}" data-aptoria-confirm="delete" data-confirm-title="{{ __('messages.project_members.remove_title') }}" data-confirm-text="{{ __('messages.project_members.remove_text') }}" data-confirm-button="{{ __('messages.project_members.remove_confirm') }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="dropdown-item text-danger" type="submit"><i data-lucide="user-x" class="me-2"></i>{{ __('messages.project_members.remove') }}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
+                            </td>
+                        @endif
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-muted text-center aptoria-card-footer-subtle">{{ __('messages.project_members.table_footer') }}</div>
+</div>
+
+@if ($canManageMembers)
+    <div class="modal fade" id="addProjectMemberModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="POST" action="{{ route('projects.members.store', $project) }}" class="modal-content">
+                @csrf
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">{{ __('messages.project_members.add_existing_member') }}</h5>
+                        <p class="text-muted mb-0 small">{{ __('messages.project_members.add_existing_member_copy') }}</p>
                     </div>
-                    @if($availableUsersCount > $availableUsers->count())
-                        <p class="small text-muted m-t-sm m-b-none">{{ __('messages.project_members.existing_user.result_limit', ['shown' => $availableUsers->count(), 'total' => $availableUsersCount]) }}</p>
-                    @endif
-                @endif
-            </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('messages.common.close') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ __('messages.auth.email') }}</label>
+                        <div class="input-group"><span class="input-group-text"><i data-lucide="mail"></i></span><input type="email" name="email" class="form-control" required placeholder="{{ __('messages.project_members.email_placeholder') }}" value="{{ old('email') }}"></div>
+                        <div class="form-text">{{ __('messages.project_members.email_help') }}</div>
+                    </div>
+                    <div>
+                        <label class="form-label">{{ __('messages.project_members.role') }}</label>
+                        <select class="form-select" name="role" required>
+                            @foreach ($roles as $role)
+                                <option value="{{ $role }}" @selected(old('role', 'qa_engineer') === $role)>{{ __('messages.project_members.roles.'.$role) }}</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">{{ __('messages.project_members.role_help') }}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('messages.common.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="user-check" class="me-1"></i>{{ __('messages.project_members.add_existing_member') }}</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="hpanel hblue aptoria-create-user-panel">
-            <div class="panel-heading hbuilt"><i class="fa fa-user-plus"></i> {{ __('messages.project_members.create_user.title') }}</div>
-            <div class="panel-body">
-                <p class="text-muted">{{ __('messages.project_members.create_user.help') }}</p>
-                <form method="POST" action="{{ route('projects.members.store', $project) }}">
+
+    <div class="modal fade" id="createProjectUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form method="POST" action="{{ route('projects.members.create-user', $project) }}" class="modal-content">
+                @csrf
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title">{{ __('messages.project_members.create_user_and_add') }}</h5>
+                        <p class="text-muted mb-0 small">{{ __('messages.project_members.create_user_and_add_copy') }}</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('messages.common.close') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ __('messages.profile.name') }}</label>
+                            <div class="input-group"><span class="input-group-text"><i data-lucide="id-card"></i></span><input type="text" name="name" class="form-control" required maxlength="255" placeholder="{{ __('messages.users.name_placeholder') }}" value="{{ old('name') }}"></div>
+                            <div class="form-text">{{ __('messages.users.name_help') }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ __('messages.auth.email') }}</label>
+                            <div class="input-group"><span class="input-group-text"><i data-lucide="mail"></i></span><input type="email" name="email" class="form-control" required maxlength="255" placeholder="{{ __('messages.users.email_placeholder') }}" value="{{ old('email') }}"></div>
+                            <div class="form-text">{{ __('messages.project_members.create_user_email_help') }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('messages.project_members.role') }}</label>
+                            <select class="form-select" name="role" required>
+                                @foreach ($roles as $role)
+                                    <option value="{{ $role }}" @selected(old('role', 'qa_engineer') === $role)>{{ __('messages.project_members.roles.'.$role) }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">{{ __('messages.project_members.role_help') }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('messages.profile.language') }}</label>
+                            <select class="form-select" name="locale" required>
+                                @foreach ($supportedLocales as $locale => $label)
+                                    <option value="{{ $locale }}" @selected(old('locale', app()->getLocale()) === $locale)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">{{ __('messages.users.locale_help') }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('messages.profile.timezone') }}</label>
+                            <select class="form-select" name="timezone" required>
+                                @foreach ($supportedTimezones as $timezone)
+                                    <option value="{{ $timezone }}" @selected(old('timezone', config('app.timezone', 'Europe/Budapest')) === $timezone)>{{ $timezone }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">{{ __('messages.users.timezone_help') }}</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info d-flex gap-2 mt-3 mb-0" role="alert">
+                        <i data-lucide="key-round" class="mt-1"></i>
+                        <div><strong>{{ __('messages.users.temporary_password_title') }}</strong><br><span class="small">{{ __('messages.project_members.create_user_password_help') }}</span></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('messages.common.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="user-plus" class="me-1"></i>{{ __('messages.project_members.create_user_and_add') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @foreach ($memberships as $membership)
+        @continue((int) $membership->user_id === (int) $project->user_id)
+        <div class="modal fade" id="editMembership{{ $membership->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="POST" action="{{ route('projects.members.update', [$project, $membership]) }}" class="modal-content">
                     @csrf
-                    <input type="hidden" name="create_user" value="1">
-                    <div class="form-group">
-                        <label>{{ __('messages.project_members.create_user.name') }}</label>
-                        <input type="text" name="new_user_name" class="form-control" value="{{ old('new_user_name') }}" placeholder="{{ __('messages.project_members.new_user_name_placeholder') }}" required>
+                    @method('PUT')
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title">{{ __('messages.project_members.edit_member') }}</h5>
+                            <p class="text-muted mb-0 small">{{ $membership->user?->email }}</p>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ __('messages.common.close') }}"></button>
                     </div>
-                    <div class="form-group">
-                        <label>{{ __('messages.auth.email') }}</label>
-                        <input type="email" name="email" class="form-control" placeholder="qa@example.com" value="{{ old('email') }}" required>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">{{ __('messages.project_members.role') }}</label>
+                            <select class="form-select" name="role" required>
+                                @foreach ($roles as $role)
+                                    <option value="{{ $role }}" @selected($membership->role === $role)>{{ __('messages.project_members.roles.'.$role) }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">{{ __('messages.project_members.role_help') }}</div>
+                        </div>
+                        <div>
+                            <label class="form-label">{{ __('messages.common.status') }}</label>
+                            <select class="form-select" name="status" required>
+                                @foreach ($statuses as $status)
+                                    <option value="{{ $status }}" @selected($membership->status === $status)>{{ __('messages.project_members.statuses.'.$status) }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">{{ __('messages.project_members.status_help') }}</div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>{{ __('messages.project_members.new_user_password') }}</label>
-                        <input type="password" name="new_user_password" class="form-control" placeholder="{{ __('messages.project_members.new_user_password_placeholder') }}" required>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ __('messages.common.cancel') }}</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="me-1"></i>{{ __('messages.common.save') }}</button>
                     </div>
-                    <div class="form-group">
-                        <label>{{ __('messages.project_members.new_user_password_confirmation') }}</label>
-                        <input type="password" name="new_user_password_confirmation" class="form-control" placeholder="{{ __('messages.project_members.new_user_password_confirmation_placeholder') }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>{{ __('messages.project_members.role') }}</label>
-                        <select name="role" class="form-control" required>
-                            @foreach($roleOptions as $value => $label)
-                                <option value="{{ $value }}" @selected($value === $defaultRole)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>{{ __('messages.common.notes') }}</label>
-                        <textarea name="notes" class="form-control" rows="3" placeholder="{{ __('messages.project_members.notes_placeholder') }}">{{ old('notes') }}</textarea>
-                    </div>
-                    <div class="aptoria-muted-panel m-b-md">
-                        <i class="fa fa-lock text-muted"></i> {{ __('messages.project_members.create_user.password_notice') }}
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block"><i class="fa fa-user-plus"></i> {{ __('messages.project_members.create_user.submit') }}</button>
                 </form>
             </div>
         </div>
-    </div>
-</div>
-@else
-<div class="row">
-    <div class="col-lg-12">
-        <div class="hpanel hyellow">
-            <div class="panel-heading hbuilt"><i class="fa fa-lock"></i> {{ __('messages.project_members.restricted_title') }}</div>
-            <div class="panel-body">
-                <p class="text-muted m-b-none">{{ __('messages.project_members.restricted_help') }}</p>
-            </div>
-        </div>
-    </div>
-</div>
+    @endforeach
 @endif
-
-<div class="row">
-    <div class="col-lg-12">
-        <div class="hpanel hblue">
-            <div class="panel-heading hbuilt">
-                <i class="fa fa-address-card-o"></i> {{ __('messages.project_members.current_members.title') }}
-                <span class="pull-right text-muted">{{ __('messages.project_members.current_members.count_label', ['count' => $memberCount]) }}</span>
-            </div>
-            <div class="panel-body">
-                <p class="text-muted">{{ __('messages.project_members.current_members.help') }}</p>
-                @if($memberships->isEmpty())
-                    <div class="alert alert-info m-b-none">{{ __('messages.project_members.empty') }}</div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered m-b-none">
-                            <thead>
-                                <tr>
-                                    <th>{{ __('messages.project_members.current_members.member') }}</th>
-                                    <th>{{ __('messages.project_members.role') }}</th>
-                                    <th>{{ __('messages.project_members.permissions') }}</th>
-                                    <th>{{ __('messages.project_members.added_by') }}</th>
-                                    <th class="text-right">{{ __('messages.common.actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($memberships as $membership)
-                                    <tr>
-                                        <td>
-                                            <strong>{{ $membership->user?->name ?: __('messages.common.not_available') }}</strong>
-                                            @if($membership->user_id === $project->user_id)
-                                                <span class="label label-primary m-l-xs">{{ __('messages.project_members.owner') }}</span>
-                                            @endif
-                                            <br><small class="text-muted"><i class="fa fa-envelope-o"></i> {{ $membership->user?->email ?: __('messages.common.not_available') }}</small>
-                                        </td>
-                                        <td><span class="label label-default">{{ $membership->translated_role_label }}</span></td>
-                                        <td>
-                                            @foreach(array_slice($membership->permissions(), 0, 4) as $permission)
-                                                <span class="aptoria-role-chip">{{ \App\Models\ProjectMembership::translatedPermissionLabel($permission) }}</span>
-                                            @endforeach
-                                            @if(count($membership->permissions()) > 4)
-                                                <span class="text-muted small">{{ __('messages.project_members.current_members.more_permissions', ['count' => count($membership->permissions()) - 4]) }}</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            {{ $membership->invitedBy?->name ?: __('messages.common.none') }}<br>
-                                            <small class="text-muted">{{ $membership->created_at?->format('Y-m-d H:i') }}</small>
-                                        </td>
-                                        <td class="text-right">
-                                            @if($canManageMembers)
-                                                <button type="button" class="btn btn-xs btn-primary" data-toggle="collapse" data-target="#membership-edit-{{ $membership->id }}">
-                                                    <i class="fa fa-pencil"></i> {{ __('messages.common.edit') }}
-                                                </button>
-                                                @if($membership->user_id !== $project->user_id)
-                                                    <form method="POST" action="{{ route('projects.members.destroy', [$project, $membership]) }}" class="inline-form d-inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-xs btn-danger aptoria-confirm" data-confirm-message="{{ __('messages.project_members.delete_confirm') }}">
-                                                            <i class="fa fa-trash"></i> {{ __('messages.common.delete') }}
-                                                        </button>
-                                                    </form>
-                                                @endif
-                                            @else
-                                                <span class="text-muted">{{ __('messages.project_members.manage_restricted') }}</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    @if($canManageMembers)
-                                        <tr id="membership-edit-{{ $membership->id }}" class="collapse">
-                                            <td colspan="5">
-                                                <form method="POST" action="{{ route('projects.members.update', [$project, $membership]) }}" class="row">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <div class="col-sm-4">
-                                                        <label>{{ __('messages.project_members.role') }}</label>
-                                                        <select name="role" class="form-control">
-                                                            @foreach($roleOptions as $value => $label)
-                                                                <option value="{{ $value }}" @selected($membership->role === $value)>{{ $label }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-sm-6">
-                                                        <label>{{ __('messages.common.notes') }}</label>
-                                                        <input type="text" name="notes" class="form-control" value="{{ $membership->notes }}" placeholder="{{ __('messages.project_members.notes_placeholder') }}">
-                                                    </div>
-                                                    <div class="col-sm-2 m-t-lg">
-                                                        <button type="submit" class="btn btn-success btn-block"><i class="fa fa-check"></i> {{ __('messages.common.update') }}</button>
-                                                    </div>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    {{ $memberships->links() }}
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-8">
-        <div class="hpanel">
-            <div class="panel-heading hbuilt"><i class="fa fa-shield"></i> {{ __('messages.project_members.role_matrix') }}</div>
-            <div class="panel-body">
-                <p class="text-muted">{{ __('messages.project_members.role_matrix_help') }}</p>
-                <div class="row">
-                    @foreach($roleOptions as $role => $label)
-                        <div class="col-md-6 m-b-md">
-                            <h5 class="m-b-xs"><span class="label label-default">{{ $label }}</span></h5>
-                            <p class="small text-muted m-b-xs">{{ collect($rolePermissions[$role] ?? [])->map(fn ($permission) => \App\Models\ProjectMembership::translatedPermissionLabel($permission))->implode(', ') }}</p>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="hpanel hblue">
-            <div class="panel-heading hbuilt"><i class="fa fa-key"></i> {{ __('messages.project_members.my_permissions') }}</div>
-            <div class="panel-body">
-                <p class="text-muted">{{ __('messages.project_members.my_permissions_help') }}</p>
-                <div class="aptoria-permission-list">
-                    @foreach($currentPermissionMap as $ability => $granted)
-                        <div class="aptoria-permission-row">
-                            <span class="label {{ $granted ? 'label-success' : 'label-default' }}">{{ $granted ? __('messages.project_members.permission_status.granted') : __('messages.project_members.permission_status.denied') }}</span>
-                            <span class="m-l-xs">{{ \App\Models\ProjectMembership::translatedPermissionLabel($ability) }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection

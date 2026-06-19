@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Setup\SetupStateService;
+use App\Services\SetupStateService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,9 +15,6 @@ class EnsureApplicationIsInstalled
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (app()->environment('testing')) {
-            return $next($request);
-        }
 
         if ($this->setupState->canUseApplication()) {
             return $next($request);
@@ -40,14 +37,6 @@ class EnsureApplicationIsInstalled
 
     private function isSetupRequest(Request $request): bool
     {
-        if ($request->is('setup') || $request->is('setup/*')) {
-            return true;
-        }
-
-        if ($request->is('language/*')) {
-            return true;
-        }
-
-        return false;
+        return $request->is('setup') || $request->is('setup/*') || $request->is('language/*') || $request->is('up');
     }
 }

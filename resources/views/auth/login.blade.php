@@ -1,53 +1,33 @@
 @extends('layouts.auth')
 
-@section('title', __('messages.auth.login_title'))
+@section('title', __('messages.auth.sign_in'))
 
 @section('content')
-<div class="login-container">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="text-center m-b-md">
-                <img src="{{ asset('assets/aptoria/img/aptoria-logo-horizontal.png') }}" alt="Aptoria" class="aptoria-login-logo">
-                <small class="aptoria-login-tagline">{{ __('messages.app.tagline') }}</small>
-                <div class="m-t-sm">
-                    <div class="btn-group btn-group-xs">
-                        @foreach(config('aptoria.supported_locales') as $localeCode => $localeName)
-                            <a href="{{ route('language.switch', $localeCode) }}" class="btn {{ app()->getLocale() === $localeCode ? 'btn-primary' : 'btn-default' }}">{{ $localeName }}</a>
-                        @endforeach
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-5 col-xl-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-4">
+                <div class="aptoria-auth-brand mb-4">
+                    <img src="{{ asset('assets/aptoria-ui/assets/images/logo-color.svg') }}" alt="Aptoria" class="aptoria-brand-logo aptoria-auth-logo mx-auto">
+                    <p class="text-muted mt-3 mb-0">{{ __('messages.product.tagline') }}</p>
+                </div>
+                @if (session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
+                @if (session('warning'))<div class="alert alert-warning">{{ session('warning') }}</div>@endif
+                @if ($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+                <form method="POST" action="{{ route('login.store') }}" class="vstack gap-3" data-aptoria-form-scope="login" data-aptoria-form-plugin>
+                    @csrf
+                    <div>
+                        <label class="form-label">{{ __('messages.auth.email') }}</label>
+                        <input class="form-control" name="email" type="email" value="{{ old('email') }}" required autofocus>
                     </div>
-                </div>
+                    <div>
+                        <label class="form-label">{{ __('messages.auth.password') }}</label>
+                        <input class="form-control" name="password" type="password" required>
+                    </div>
+                    <label class="form-check"><input class="form-check-input" type="checkbox" name="remember"> <span class="form-check-label">{{ __('messages.auth.remember') }}</span></label>
+                    <button class="btn btn-primary w-100" type="submit">{{ __('messages.auth.sign_in') }}</button>
+                </form>
             </div>
-            <div class="hpanel">
-                <div class="panel-body">
-                    @if($errors->any())
-                        <div class="alert alert-danger aptoria-login-error" role="alert">
-                            <strong>{{ __('messages.common.needs_fix') }}</strong>
-                            <ul class="m-b-none">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-                    <form method="POST" action="{{ route('login.attempt') }}">
-                        @csrf
-                        <div class="form-group">
-                            <label class="control-label" for="email">{{ __('messages.auth.email') }}</label>
-                            <input type="email" id="email" name="email" class="form-control" value="{{ old('email', 'admin@example.com') }}" required autofocus>
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" for="password">{{ __('messages.auth.password') }}</label>
-                            <input type="password" id="password" name="password" class="form-control" placeholder="{{ __('messages.auth.password_placeholder') }}" required>
-                        </div>
-                        <div class="checkbox">
-                            <label><input type="checkbox" name="remember" value="1"> {{ __('messages.auth.remember') }}</label>
-                        </div>
-                        <button class="btn btn-success btn-block" type="submit">{{ __('messages.auth.login_button') }}</button>
-                        <p class="m-t text-muted small">{{ __('messages.auth.default_password_warning') }}</p>
-                    </form>
-                </div>
-            </div>
-            <div class="text-center text-muted small">v{{ config('aptoria.version') }} · © 2026 János Szujó</div>
         </div>
     </div>
 </div>

@@ -1,0 +1,24 @@
+@extends('layouts.app')
+@section('title', __('messages.native_tests.create_suite_title'))
+@section('page_title', __('messages.native_tests.create_suite_title'))
+@section('page_actions')<a href="{{ route('projects.tests.index', $project) }}" class="btn btn-light"><i data-lucide="arrow-left" class="me-1"></i>{{ __('messages.common.cancel') }}</a>@endsection
+@section('content')
+<form method="POST" action="{{ route('projects.tests.suites.store', $project) }}" class="aptoria-form-shell" data-aptoria-form-plugin>
+    @csrf
+    <div class="card aptoria-panel-card">
+        <div class="card-header border-light d-flex justify-content-between align-items-start gap-3"><div class="d-flex gap-3 align-items-start"><span class="avatar avatar-sm rounded text-bg-primary"><span class="avatar-title"><i data-lucide="flask-conical"></i></span></span><div><h5 class="card-title mb-1">{{ __('messages.native_tests.create_suite_title') }}</h5><p class="text-muted small mb-0">{{ __('messages.native_tests.create_suite_copy') }}</p></div></div><span class="badge badge-soft-info"><i data-lucide="folder-check" class="me-1"></i>{{ __('messages.native_tests.repository_backed') }}</span></div>
+        <div class="card-body">
+            <div class="aptoria-form-section mb-3"><div class="aptoria-form-section-header"><div class="d-flex gap-2 align-items-start"><span class="avatar avatar-xs rounded text-bg-primary"><span class="avatar-title"><i data-lucide="id-card"></i></span></span><div><h6 class="mb-1">{{ __('messages.native_tests.sections.suite_identity') }}</h6><p class="text-muted small mb-0">{{ __('messages.native_tests.sections.suite_identity_help') }}</p></div></div></div>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label" for="name">{{ __('messages.native_tests.name') }}</label><input id="name" name="name" value="{{ old('name') }}" class="form-control @error('name') is-invalid @enderror" required placeholder="{{ __('messages.native_tests.placeholders.suite_name') }}"><div class="form-text">{{ __('messages.native_tests.help.suite_name') }}</div>@error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
+                    <div class="col-md-6"><label class="form-label" for="owner_name">{{ __('messages.native_tests.owner_name') }}</label><input id="owner_name" name="owner_name" value="{{ old('owner_name') }}" class="form-control @error('owner_name') is-invalid @enderror" placeholder="{{ __('messages.native_tests.placeholders.owner_name') }}"><div class="form-text">{{ __('messages.native_tests.help.owner_name') }}</div>@error('owner_name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
+                    <div class="col-md-6"><label class="form-label" for="status">{{ __('messages.common.status') }}</label><select id="status" name="status" class="form-select @error('status') is-invalid @enderror">@foreach(\App\Models\TestSuite::STATUSES as $status)<option value="{{ $status }}" @selected(old('status','active')===$status)>{{ __('messages.native_tests.statuses.'.$status) }}</option>@endforeach</select><div class="form-text">{{ __('messages.native_tests.help.suite_status') }}</div>@error('status')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
+                    <div class="col-md-6"><label class="form-label" for="priority">{{ __('messages.native_tests.priority') }}</label><select id="priority" name="priority" class="form-select @error('priority') is-invalid @enderror">@foreach(\App\Models\TestSuite::PRIORITIES as $priority)<option value="{{ $priority }}" @selected(old('priority','normal')===$priority)>{{ __('messages.native_tests.priorities.'.$priority) }}</option>@endforeach</select><div class="form-text">{{ __('messages.native_tests.help.priority') }}</div>@error('priority')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
+                    <div class="col-12"><label class="form-label" for="description">{{ __('messages.native_tests.description') }}</label><textarea id="description" name="description" rows="5" class="form-control @error('description') is-invalid @enderror" placeholder="{{ __('messages.native_tests.placeholders.suite_description') }}">{{ old('description') }}</textarea><div class="form-text">{{ __('messages.native_tests.help.suite_description') }}</div>@error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer aptoria-card-footer-subtle d-flex justify-content-end gap-2"><a href="{{ route('projects.tests.index', $project) }}" class="btn btn-light">{{ __('messages.common.cancel') }}</a><button class="btn btn-primary"><i data-lucide="save" class="me-1"></i>{{ __('messages.common.save') }}</button></div>
+    </div>
+</form>
+@endsection

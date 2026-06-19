@@ -1,20 +1,16 @@
 # Contributing to Aptoria
 
-Aptoria is currently a post-MVP / early beta project.
-
-The repository may be public for review, portfolio and source-available evaluation, but Aptoria is not an open-source project unless the owner later changes the license explicitly.
+Aptoria is currently a source-available MVP/foundation project. Public visibility is for review, portfolio and non-commercial local evaluation unless the license changes explicitly.
 
 ## Contribution rules
 
-Before opening a pull request:
-
-- keep changes focused and small;
-- describe the QA workflow or user-facing behavior affected;
-- update documentation when behavior changes;
-- do not commit local runtime state;
-- do not commit secrets, API tokens, passwords or production endpoint data;
-- do not introduce Node/Tailwind/React/build-chain requirements unless that direction is approved first;
-- preserve Windows/XAMPP compatibility.
+- Keep changes focused and small.
+- Preserve the evidence-first product direction.
+- Do not turn Aptoria into a Postman, Newman, Jira or Datadog clone.
+- Keep Windows/XAMPP compatibility.
+- Update documentation when workflows change.
+- Do not commit runtime state, secrets, databases, setup locks or generated reports.
+- Keep UI changes aligned with `docs/UI_WORKFLOW_STABILIZATION_PASS.md` and `docs/icon-registry.md`.
 
 ## Required local checks
 
@@ -31,16 +27,15 @@ C:\xampp\php\php.exe artisan test
 
 ## Release ZIP hygiene
 
-Never commit or ship these files in a release ZIP:
+Never commit or ship these files:
 
 ```text
 .env
 vendor/
+node_modules/
 database/database.sqlite
 storage/app/installed.lock
 storage/app/setup-token.txt
 public/storage/
 bootstrap/cache/*.php
 ```
-
-Release ZIPs must remain cumulative and must keep the runtime application installable on Windows/XAMPP.

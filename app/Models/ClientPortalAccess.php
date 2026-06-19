@@ -6,100 +6,67 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class ClientPortalAccess extends Model
 {
     use HasFactory;
 
-    public const ROLE_CLIENT_VIEWER = 'client_viewer';
-    public const ROLE_CLIENT_APPROVER = 'client_approver';
-    public const ROLE_REVIEWER = 'reviewer';
+    public const ROLES = ['client_viewer', 'client_approver', 'external_reviewer'];
 
-    public const ROLES = [
-        self::ROLE_CLIENT_VIEWER,
-        self::ROLE_CLIENT_APPROVER,
-        self::ROLE_REVIEWER,
-    ];
-
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_REVOKED = 'revoked';
-
-    public const STATUSES = [
-        self::STATUS_ACTIVE,
-        self::STATUS_REVOKED,
-    ];
-
-    public const PERMISSION_REPORTS = 'reports';
-    public const PERMISSION_RELEASE_DECISIONS = 'release_decisions';
-    public const PERMISSION_ACCEPTED_RISKS = 'accepted_risks';
-    public const PERMISSION_FINDINGS = 'findings';
-    public const PERMISSION_EVIDENCE_PACKAGE = 'evidence_package';
-    public const PERMISSION_APPROVE_REPORTS = 'approve_reports';
-    public const PERMISSION_ACKNOWLEDGE_RELEASE = 'acknowledge_release';
-    public const PERMISSION_APPROVE_RISKS = 'approve_risks';
-
-    public const PERMISSIONS = [
-        self::PERMISSION_REPORTS,
-        self::PERMISSION_RELEASE_DECISIONS,
-        self::PERMISSION_ACCEPTED_RISKS,
-        self::PERMISSION_FINDINGS,
-        self::PERMISSION_EVIDENCE_PACKAGE,
-        self::PERMISSION_APPROVE_REPORTS,
-        self::PERMISSION_ACKNOWLEDGE_RELEASE,
-        self::PERMISSION_APPROVE_RISKS,
-    ];
+    public const PERMISSIONS = ['reports', 'readiness', 'findings', 'evidence'];
 
     protected $fillable = [
         'project_id',
+        'report_version_id',
         'created_by_user_id',
-        'label',
-        'contact_name',
-        'contact_email',
+        'name',
+        'token',
         'role',
-        'status',
-        'portal_token',
-        'permissions',
+        'permissions_json',
+        'is_active',
+        'acknowledge_required',
+        'acknowledgement_status',
+        'acknowledgement_decision',
+        'acknowledgement_comment',
+        'latest_acknowledgement_id',
         'expires_at',
         'last_viewed_at',
-        'revoked_at',
+        'acknowledged_at',
+        'acknowledged_by_name',
+        'acknowledged_by_email',
     ];
 
     protected function casts(): array
     {
         return [
-            'permissions' => 'array',
+            'permissions_json' => 'array',
+            'is_active' => 'boolean',
+            'acknowledge_required' => 'boolean',
             'expires_at' => 'datetime',
             'last_viewed_at' => 'datetime',
-            'revoked_at' => 'datetime',
+            'acknowledged_at' => 'datetime',
         ];
     }
 
     protected static function booted(): void
     {
-        static::creating(function (ClientPortalAccess $access): void {
-            if (! $access->portal_token) {
-                $access->portal_token = Str::random(48);
-            }
-
-            if (! $access->status) {
-                $access->status = self::STATUS_ACTIVE;
-            }
-
-            if (! $access->role) {
-                $access->role = self::ROLE_CLIENT_VIEWER;
+        static::creating(function (self $access): void {
+            if (! $access->token) {
+                $access->token = Str::random(56);
             }
         });
-    }
-
-    public function getRouteKeyName(): string
-    {
-        return 'portal_token';
     }
 
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function reportVersion(): BelongsTo
+    {
+        return $this->belongsTo(ReportVersion::class);
     }
 
     public function createdBy(): BelongsTo
@@ -112,47 +79,112 @@ class ClientPortalAccess extends Model
         return $this->hasMany(ClientPortalAcknowledgement::class);
     }
 
+    public function latestAcknowledgement(): BelongsTo
+    {
+        return $this->belongsTo(ClientPortalAcknowledgement::class, 'latest_acknowledgement_id');
+    }
+
+    public function getPermissionsAttribute(): array
+    {
+        $permissions = is_array($this->permissions_json) ? $this->permissions_json : [];
+
+        return array_values(array_intersect($permissions, self::PERMISSIONS));
+    }
+
     public function allows(string $permission): bool
     {
-        $permissions = $this->permissions ?: [];
-
-        return (bool) ($permissions[$permission] ?? false);
+        return in_array($permission, $this->permissions, true);
     }
 
-    public function isAvailable(): bool
+    public function getIsExpiredAttribute(): bool
     {
-        if ($this->status !== self::STATUS_ACTIVE) {
-            return false;
-        }
-
-        if ($this->expires_at && $this->expires_at->isPast()) {
-            return false;
-        }
-
-        return true;
+        return $this->expires_at instanceof Carbon && $this->expires_at->isPast();
     }
 
-    public function getPortalUrlAttribute(): string
+    public function getIsUsableAttribute(): bool
     {
-        return route('client-portal.show', $this);
+        return $this->is_active && ! $this->is_expired;
     }
 
     public function getRoleLabelAttribute(): string
     {
-        return __('messages.client_portal.roles.'.($this->role ?: self::ROLE_CLIENT_VIEWER));
+        return __('messages.client_portal.roles.'.($this->role ?: 'client_viewer'));
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return __('messages.client_portal.statuses.'.($this->status ?: self::STATUS_ACTIVE));
+        if (! $this->is_active) {
+            return __('messages.client_portal.statuses.inactive');
+        }
+
+        if ($this->is_expired) {
+            return __('messages.client_portal.statuses.expired');
+        }
+
+        return __('messages.client_portal.statuses.active');
     }
 
-    public function getStatusCssAttribute(): string
+    public function getStatusToneAttribute(): string
     {
-        return match ($this->status) {
-            self::STATUS_ACTIVE => $this->isAvailable() ? 'success' : 'warning',
-            self::STATUS_REVOKED => 'danger',
-            default => 'default',
+        if (! $this->is_active) {
+            return 'secondary';
+        }
+
+        if ($this->is_expired) {
+            return 'danger';
+        }
+
+        return 'success';
+    }
+
+    public function getAcknowledgementStateLabelAttribute(): string
+    {
+        if (! $this->acknowledge_required) {
+            return __('messages.client_portal.ack_states.not_required');
+        }
+
+        if ($this->acknowledged_at) {
+            return __('messages.client_portal.ack_states.acknowledged');
+        }
+
+        return __('messages.client_portal.ack_states.pending');
+    }
+
+    public function getAcknowledgementStateToneAttribute(): string
+    {
+        if (! $this->acknowledge_required) {
+            return 'secondary';
+        }
+
+        if ($this->acknowledged_at) {
+            return 'success';
+        }
+
+        return 'warning';
+    }
+
+    public function getAcknowledgementDecisionLabelAttribute(): string
+    {
+        if (! $this->acknowledgement_decision) {
+            return '—';
+        }
+
+        return __('messages.client_portal.ack_decisions.'.$this->acknowledgement_decision);
+    }
+
+    public function getAcknowledgementDecisionToneAttribute(): string
+    {
+        return match ($this->acknowledgement_decision) {
+            'approved' => 'success',
+            'needs_changes' => 'warning',
+            'rejected' => 'danger',
+            'reviewed' => 'primary',
+            default => 'secondary',
         };
+    }
+
+    public function getPublicUrlAttribute(): string
+    {
+        return route('client-portal.show', $this->token);
     }
 }

@@ -11,30 +11,25 @@ class TestSuite extends Model
 {
     use HasFactory;
 
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_DRAFT = 'draft';
-    public const STATUS_ARCHIVED = 'archived';
-
-    public const STATUSES = [
-        self::STATUS_ACTIVE,
-        self::STATUS_DRAFT,
-        self::STATUS_ARCHIVED,
-    ];
+    public const STATUSES = ['active', 'draft', 'archived'];
+    public const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
 
     protected $fillable = [
         'project_id',
+        'created_by_user_id',
         'name',
         'description',
         'status',
+        'priority',
+        'owner_name',
+        'metadata_json',
     ];
 
-    protected static function booted(): void
+    protected function casts(): array
     {
-        static::saving(function (TestSuite $suite): void {
-            if (! $suite->status) {
-                $suite->status = self::STATUS_ACTIVE;
-            }
-        });
+        return [
+            'metadata_json' => 'array',
+        ];
     }
 
     public function project(): BelongsTo
@@ -42,23 +37,48 @@ class TestSuite extends Model
         return $this->belongsTo(Project::class);
     }
 
-    public function testCases(): HasMany
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function cases(): HasMany
     {
         return $this->hasMany(TestCase::class);
     }
 
-    public function getStatusLabelAttribute(): string
+    public function runs(): HasMany
     {
-        return __('messages.test_suites.statuses.'.$this->status);
+        return $this->hasMany(TestRun::class);
     }
 
-    public function getStatusCssAttribute(): string
+    public function getStatusLabelAttribute(): string
+    {
+        return __('messages.native_tests.statuses.'.($this->status ?: 'active'));
+    }
+
+    public function getStatusToneAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_ACTIVE => 'success',
-            self::STATUS_DRAFT => 'default',
-            self::STATUS_ARCHIVED => 'warning',
-            default => 'default',
+            'active' => 'success',
+            'draft' => 'warning',
+            'archived' => 'secondary',
+            default => 'light',
+        };
+    }
+
+    public function getPriorityLabelAttribute(): string
+    {
+        return __('messages.native_tests.priorities.'.($this->priority ?: 'normal'));
+    }
+
+    public function getPriorityToneAttribute(): string
+    {
+        return match ($this->priority) {
+            'urgent' => 'danger',
+            'high' => 'warning',
+            'low' => 'secondary',
+            default => 'primary',
         };
     }
 }

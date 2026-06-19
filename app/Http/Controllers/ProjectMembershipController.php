@@ -5,174 +5,188 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\ProjectMembership;
 use App\Models\User;
-use App\Services\Access\ProjectAccessService;
-use App\Services\Settings\SettingService;
+use App\Services\AuditLogger;
+use App\Services\ProjectAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProjectMembershipController extends Controller
 {
-    public function index(Project $project, ProjectAccessService $access, SettingService $settings): View
+    public function index(Project $project, ProjectAccessService $projectAccess): View
     {
-        $access->authorize($project, request()->user(), 'project.view', __('messages.project_members.audit.members_page_access_denied'));
-
-        $itemsPerPage = $settings->integer('app.items_per_page', 25);
-
         $memberships = $project->memberships()
             ->with(['user', 'invitedBy'])
-            ->orderByRaw("CASE role WHEN 'project_admin' THEN 1 WHEN 'qa_engineer' THEN 2 WHEN 'reviewer' THEN 3 WHEN 'release_approver' THEN 4 ELSE 5 END")
-            ->latest()
-            ->paginate($itemsPerPage);
-
-        $memberUserIds = $project->memberships()->pluck('user_id')->filter()->values();
-        $userSearch = trim((string) request('user_q', ''));
-
-        $availableUsersQuery = User::query()
-            ->when($memberUserIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $memberUserIds))
-            ->when($userSearch !== '', function ($query) use ($userSearch): void {
-                $query->where(function ($inner) use ($userSearch): void {
-                    $inner->where('name', 'like', '%'.$userSearch.'%')
-                        ->orWhere('email', 'like', '%'.$userSearch.'%');
-                });
-            })
-            ->orderBy('name')
-            ->orderBy('email');
-
-        $availableUsersCount = (clone $availableUsersQuery)->count();
-        $availableUsers = $availableUsersQuery->limit(12)->get();
-        $totalUsers = User::query()->count();
+            ->orderByRaw("case role when 'project_admin' then 1 when 'qa_engineer' then 2 when 'release_approver' then 3 when 'reviewer' then 4 else 5 end")
+            ->orderBy('created_at')
+            ->get();
 
         return view('project_memberships.index', [
-            'project' => $project,
+            'project' => $project->load('owner'),
             'memberships' => $memberships,
-            'roleOptions' => ProjectMembership::translatedRoleOptions(),
-            'rolePermissions' => ProjectMembership::ROLE_PERMISSIONS,
-            'canManageMembers' => $access->can($project, request()->user(), 'members.manage'),
-            'currentProjectRoleLabel' => $access->roleLabel($project, request()->user()),
-            'currentPermissionMap' => $access->permissionMap($project, request()->user()),
-            'availableUsers' => $availableUsers,
-            'availableUsersCount' => $availableUsersCount,
-            'memberCount' => $project->memberships()->count(),
-            'totalUsers' => $totalUsers,
-            'userSearch' => $userSearch,
+            'roles' => ProjectMembership::roles(),
+            'statuses' => ProjectMembership::statuses(),
+            'currentRole' => $projectAccess->roleLabel($projectAccess->roleFor(auth()->user(), $project)),
+            'canManageMembers' => $projectAccess->can(auth()->user(), $project, 'members.manage'),
+            'supportedLocales' => config('aptoria.supported_locale_names', ['en' => 'English', 'hu' => 'Magyar']),
+            'supportedTimezones' => ['Europe/Budapest', 'UTC', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Los_Angeles'],
         ]);
     }
 
-    public function store(Request $request, Project $project, ProjectAccessService $access): RedirectResponse
+    public function store(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        $access->authorize($project, $request->user(), 'members.manage', __('messages.project_members.audit.member_add_denied'));
-
         $data = $request->validate([
-            'email' => ['required', 'email', 'max:190'],
-            'role' => ['required', 'string', Rule::in(ProjectMembership::ROLES)],
-            'notes' => ['nullable', 'string', 'max:2000'],
-            'create_user' => ['nullable', 'boolean'],
-            'new_user_name' => ['nullable', 'required_if:create_user,1', 'string', 'max:190'],
-            'new_user_password' => ['nullable', 'required_if:create_user,1', 'string', 'min:8', 'confirmed'],
+            'email' => ['required', 'email', 'max:255', Rule::exists('users', 'email')],
+            'role' => ['required', Rule::in(ProjectMembership::roles())],
         ]);
 
-        $user = User::query()->where('email', $data['email'])->first();
-        $createdUser = false;
+        $user = User::query()->where('email', $data['email'])->firstOrFail();
 
-        if (! $user) {
-            if (! $request->boolean('create_user')) {
-                throw ValidationException::withMessages([
-                    'email' => __('messages.project_members.user_not_found_create_hint'),
-                ]);
-            }
-
-            $user = User::query()->create([
-                'name' => $data['new_user_name'],
-                'email' => $data['email'],
-                'password' => $data['new_user_password'],
-                'role' => 'user',
-                'locale' => app()->getLocale(),
-                'timezone' => config('app.timezone', 'UTC'),
-            ]);
-            $createdUser = true;
+        if ((int) $project->user_id === (int) $user->id) {
+            return back()->withErrors(['email' => __('messages.project_members.owner_already_admin')])->withInput();
         }
 
-        $membership = $project->memberships()->where('user_id', $user->id)->first();
-        $previousRole = $membership?->role;
-
-        $project->memberships()->updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'role' => $data['role'],
-                'notes' => $data['notes'] ?? null,
-                'invited_by_user_id' => $request->user()?->id,
-                'joined_at' => $membership?->joined_at ?? now(),
-            ]
-        );
-
-        $access->recordMembershipEvent(
-            $project,
-            $request->user(),
-            $membership ? 'member_role_changed' : 'member_added',
-            $user,
-            (string) $data['role'],
-            $previousRole
-        );
-
-        $message = $membership
-            ? __('messages.project_members.updated')
-            : ($createdUser ? __('messages.project_members.created_with_user') : __('messages.project_members.created'));
-
-        return redirect()
-            ->route('projects.members.index', $project)
-            ->with('success', $message);
-    }
-
-    public function update(Request $request, Project $project, ProjectMembership $membership, ProjectAccessService $access): RedirectResponse
-    {
-        $access->authorize($project, $request->user(), 'members.manage', __('messages.project_members.audit.member_role_change_denied'));
-        $this->ensureMembershipBelongsToProject($project, $membership);
-
-        $data = $request->validate([
-            'role' => ['required', 'string', Rule::in(ProjectMembership::ROLES)],
-            'notes' => ['nullable', 'string', 'max:2000'],
+        $membership = ProjectMembership::query()->firstOrNew([
+            'project_id' => $project->id,
+            'user_id' => $user->id,
         ]);
 
-        $previousRole = (string) $membership->role;
-        $membership->update([
+        $membership->fill([
             'role' => $data['role'],
-            'notes' => $data['notes'] ?? null,
+            'status' => ProjectMembership::STATUS_ACTIVE,
+            'invited_by_user_id' => $request->user()->id,
+            'added_at' => $membership->exists ? $membership->added_at : now(),
         ]);
+        $membership->save();
 
-        $access->recordMembershipEvent($project, $request->user(), 'member_role_changed', $membership->user, (string) $data['role'], $previousRole);
+        $auditLogger->record('updated', __('messages.audit_messages.project_member_added'), $project, [
+            'member_user_id' => $user->id,
+            'member_email' => $user->email,
+            'role' => $membership->role,
+        ], 'workspace');
 
-        return redirect()
-            ->route('projects.members.index', $project)
-            ->with('success', __('messages.project_members.updated'));
+        return redirect()->route('projects.members.index', $project)->with('status', __('messages.project_members.added'));
     }
 
-    public function destroy(Request $request, Project $project, ProjectMembership $membership, ProjectAccessService $access): RedirectResponse
-    {
-        $access->authorize($project, $request->user(), 'members.manage', __('messages.project_members.audit.member_removal_denied'));
-        $this->ensureMembershipBelongsToProject($project, $membership);
 
-        if ((int) $project->user_id === (int) $membership->user_id) {
-            return back()->withErrors(['membership' => __('messages.project_members.owner_remove_blocked')]);
+    public function createUser(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'role' => ['required', Rule::in(ProjectMembership::roles())],
+            'locale' => ['required', 'string', 'in:en,hu'],
+            'timezone' => ['required', 'string', 'in:Europe/Budapest,UTC,Europe/London,Europe/Berlin,America/New_York,America/Los_Angeles'],
+        ]);
+
+        $temporaryPassword = $this->generateTemporaryPassword();
+
+        $user = User::query()->create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'role' => 'user',
+            'locale' => $data['locale'],
+            'timezone' => $data['timezone'],
+            'password' => Hash::make($temporaryPassword),
+            'password_change_required' => true,
+        ]);
+
+        $membership = ProjectMembership::query()->create([
+            'project_id' => $project->id,
+            'user_id' => $user->id,
+            'role' => $data['role'],
+            'status' => ProjectMembership::STATUS_ACTIVE,
+            'invited_by_user_id' => $request->user()->id,
+            'added_at' => now(),
+        ]);
+
+        $auditLogger->record('created', __('messages.audit_messages.user_created'), $user, [
+            'subject_label' => $user->email,
+            'managed_user_id' => $user->id,
+            'managed_user_email' => $user->email,
+            'role' => $user->role,
+            'project_id' => $project->id,
+            'project_role' => $membership->role,
+            'password_change_required' => true,
+        ], 'users');
+
+        $auditLogger->record('updated', __('messages.audit_messages.project_member_added'), $project, [
+            'member_user_id' => $user->id,
+            'member_email' => $user->email,
+            'role' => $membership->role,
+            'created_from_project_access' => true,
+        ], 'workspace');
+
+        return redirect()->route('projects.members.index', $project)
+            ->with('status', __('messages.project_members.created_user_and_added'))
+            ->with('temporary_user_name', $user->name)
+            ->with('temporary_user_email', $user->email)
+            ->with('temporary_password', $temporaryPassword);
+    }
+
+    public function update(Request $request, Project $project, ProjectMembership $membership, AuditLogger $auditLogger): RedirectResponse
+    {
+        $this->ensureMembershipBelongsToProject($project, $membership);
+        $this->preventOwnerMembershipChange($project, $membership);
+
+        $data = $request->validate([
+            'role' => ['required', Rule::in(ProjectMembership::roles())],
+            'status' => ['required', Rule::in(ProjectMembership::statuses())],
+        ]);
+
+        if ((int) $request->user()->id === (int) $membership->user_id && $data['status'] !== ProjectMembership::STATUS_ACTIVE) {
+            return back()->withErrors(['status' => __('messages.project_members.self_disable_blocked')]);
         }
 
-        $target = $membership->user;
-        $role = (string) $membership->role;
+        $before = $membership->only(['role', 'status']);
+        $membership->update($data);
+
+        $auditLogger->record('updated', __('messages.audit_messages.project_member_updated'), $project, [
+            'member_user_id' => $membership->user_id,
+            'before' => $before,
+            'after' => $membership->only(['role', 'status']),
+        ], 'workspace');
+
+        return redirect()->route('projects.members.index', $project)->with('status', __('messages.project_members.updated'));
+    }
+
+    public function destroy(Request $request, Project $project, ProjectMembership $membership, AuditLogger $auditLogger): RedirectResponse
+    {
+        $this->ensureMembershipBelongsToProject($project, $membership);
+        $this->preventOwnerMembershipChange($project, $membership);
+
+        if ((int) $request->user()->id === (int) $membership->user_id) {
+            return back()->withErrors(['member' => __('messages.project_members.self_remove_blocked')]);
+        }
+
+        $memberEmail = $membership->user?->email;
+        $memberUserId = $membership->user_id;
         $membership->delete();
 
-        if ($target instanceof User) {
-            $access->recordMembershipEvent($project, $request->user(), 'member_removed', $target, $role);
-        }
+        $auditLogger->record('updated', __('messages.audit_messages.project_member_removed'), $project, [
+            'member_user_id' => $memberUserId,
+            'member_email' => $memberEmail,
+        ], 'workspace', 'warning');
 
-        return redirect()
-            ->route('projects.members.index', $project)
-            ->with('success', __('messages.project_members.deleted'));
+        return redirect()->route('projects.members.index', $project)->with('status', __('messages.project_members.removed'));
+    }
+
+    private function generateTemporaryPassword(): string
+    {
+        return 'Temp-'.bin2hex(random_bytes(5)).'!9Aa';
     }
 
     private function ensureMembershipBelongsToProject(Project $project, ProjectMembership $membership): void
     {
         abort_unless((int) $membership->project_id === (int) $project->id, 404);
+    }
+
+    private function preventOwnerMembershipChange(Project $project, ProjectMembership $membership): void
+    {
+        if ((int) $membership->user_id === (int) $project->user_id) {
+            abort(403, __('messages.project_members.owner_locked'));
+        }
     }
 }
