@@ -18,6 +18,7 @@ return new class extends Migration
                 $table->string('base_url', 500)->nullable();
                 $table->string('environment_label')->nullable();
                 $table->string('status')->default('draft');
+                $table->string('workspace_type', 20)->default('live')->index();
                 $table->string('qa_owner')->nullable();
                 $table->text('release_goal')->nullable();
                 $table->boolean('is_active')->default(true);
@@ -41,6 +42,9 @@ return new class extends Migration
             }
             if (! Schema::hasColumn('projects', 'status')) {
                 $table->string('status')->default('draft')->after('environment_label');
+            }
+            if (! Schema::hasColumn('projects', 'workspace_type')) {
+                $table->string('workspace_type', 20)->default('live')->after('status')->index();
             }
             if (! Schema::hasColumn('projects', 'qa_owner')) {
                 $table->string('qa_owner')->nullable()->after('status');

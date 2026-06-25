@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClientPortalAccess;
 use App\Models\Project;
 use App\Services\AuditLogger;
+use App\Services\ClientPortalDecisionHandoffService;
 use App\Services\ReportDeliveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Illuminate\View\View;
 
 class ClientPortalController extends Controller
 {
-    public function index(Project $project, ReportDeliveryService $deliveryService): View
+    public function index(Project $project, ReportDeliveryService $deliveryService, ClientPortalDecisionHandoffService $handoffService): View
     {
         $accesses = Schema::hasTable('client_portal_accesses')
             ? $project->clientPortalAccesses()->with(['reportVersion', 'createdBy', 'latestAcknowledgement'])->latest()->get()
@@ -28,6 +29,9 @@ class ClientPortalController extends Controller
             ? $project->releaseReadinessRuns()->latest()->first()
             : null;
 
+        $decisionPackages = $handoffService->approvedDecisionPackages($project);
+        $decisionMatrix = $handoffService->publicMatrix($decisionPackages);
+
         $acknowledgements = Schema::hasTable('client_portal_acknowledgements')
             ? $project->clientPortalAcknowledgements()->with(['access', 'reportVersion'])->latest('acknowledged_at')->limit(12)->get()
             : collect();
@@ -36,6 +40,8 @@ class ClientPortalController extends Controller
             'project' => $project,
             'accesses' => $accesses,
             'reports' => $reports,
+            'decisionPackages' => $decisionPackages,
+            'decisionMatrix' => $decisionMatrix,
             'latestReadiness' => $latestReadiness,
             'acknowledgements' => $acknowledgements,
             'metrics' => [
@@ -46,6 +52,8 @@ class ClientPortalController extends Controller
                 'ack_pending' => $accesses->filter(fn (ClientPortalAccess $access) => $access->acknowledge_required && ! $access->acknowledged_at)->count(),
                 'approved_acknowledgements' => $accesses->where('acknowledgement_decision', 'approved')->count(),
                 'deliverable_reports' => $reports->count(),
+                'decision_packages' => $decisionPackages->count(),
+                'decision_package_blockers' => $decisionMatrix['total_blockers'],
             ],
         ]);
     }
@@ -69,7 +77,16 @@ class ClientPortalController extends Controller
             $deliveryService->ensureDeliverable($selectedReport);
         }
 
-        $permissions = array_values(array_intersect($data['permissions'] ?? ['reports', 'readiness'], ClientPortalAccess::PERMISSIONS));
+        $permissions = array_values(array_intersect($data['permissions'] ?? ['decision_package', 'reports', 'readiness'], ClientPortalAccess::PERMISSIONS));
+        if ($selectedReport) {
+            $reportData = is_array($selectedReport->data_json) ? $selectedReport->data_json : [];
+            if ((bool) $selectedReport->release_gate_id || data_get($reportData, 'source.type') === 'release_gate_decision_package') {
+                $permissions[] = 'decision_package';
+            }
+        }
+
+        $permissions = array_values(array_unique(array_intersect($permissions, ClientPortalAccess::PERMISSIONS)));
+
         if ($permissions === []) {
             $permissions = ['reports'];
         }

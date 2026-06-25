@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\ProgramSetting;
 use App\Services\AuditLogger;
 use App\Services\ComprehensiveDemoProjectService;
+use App\Services\LiveDemoApiSandboxService;
+use App\Services\WorkspaceModeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -60,7 +62,7 @@ class ProgramSettingsController extends Controller
         $user = request()->user();
         $result = $demoProjectService->build($user);
 
-        session(['current_project_id' => $result['project']->id]);
+        session(['workspace_mode' => WorkspaceModeService::SANDBOX, 'current_project_id' => $result['project']->id]);
 
         return redirect()
             ->route('projects.show', $result['project'])
@@ -68,6 +70,23 @@ class ProgramSettingsController extends Controller
                 'endpoints' => $result['summary']['endpoints'],
                 'findings' => $result['summary']['findings'],
                 'reports' => $result['summary']['report_versions'],
+            ]));
+    }
+
+    public function buildDemoApiProject(LiveDemoApiSandboxService $sandboxService): RedirectResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = request()->user();
+        $result = $sandboxService->build($user);
+
+        session(['workspace_mode' => WorkspaceModeService::SANDBOX, 'current_project_id' => $result['project']->id]);
+
+        return redirect()
+            ->route('projects.show', $result['project'])
+            ->with('status', __('messages.program_settings.demo_api_project_built', [
+                'endpoints' => $result['summary']['endpoints'],
+                'evidence' => $result['summary']['evidence'],
+                'tests' => $result['summary']['test_cases'],
             ]));
     }
 

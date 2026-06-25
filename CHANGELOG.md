@@ -4,7 +4,7 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 
 | Public line | Latest release | Legacy line |
 | --- | --- | --- |
-| `0.0.x` | `v0.0.53` | `v1.1.34` archived / replaced |
+| `0.0.x` | `v0.0.63` | `v1.1.34` archived / replaced |
 
 > [!NOTE]
 > Releases are listed newest first. Hotfix entries are kept next to the release they stabilize.
@@ -12,22 +12,116 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 > [!IMPORTANT]
 > The `0.0.x` line is a fresh evidence-first rebuild. It is not an in-place database upgrade from the legacy `1.1.34` line.
 
-## Release index
 
-- [v0.0.53 - Release Gate Report & Decision Package](#v0053---release-gate-report-decision-package)
-- [v0.0.52 - QA Cockpit / Coverage / Blind Spot Foundation](#v0052---qa-cockpit-coverage-blind-spot-foundation)
-- [v0.0.51 - UI & Workflow Stabilization Pass](#v0051---ui-workflow-stabilization-pass)
-- [v0.0.50 Hotfix - Table Auto Sizing & Auth Logo Alignment](#v0050-hotfix---table-auto-sizing-auth-logo-alignment)
-- [v0.0.50 - Release Gate Workflow Foundation](#v0050---release-gate-workflow-foundation)
-- [v0.0.49 Hotfix - Native Test Modal Form Workflow](#v0049-hotfix---native-test-modal-form-workflow)
-- [v0.0.49 - Native Test Evidence Model](#v0049---native-test-evidence-model)
-- [v0.0.48 - Import Adapter Layer Foundation](#v0048---import-adapter-layer-foundation)
-- [v0.0.47 Hotfix - Evidence Intake Form Consistency](#v0047-hotfix---evidence-intake-form-consistency)
-- [v0.0.47 - Evidence Repository Foundation](#v0047---evidence-repository-foundation)
-- [v0.0.46 Hotfix - Semantic Access Icon Pass](#v0046-hotfix---semantic-access-icon-pass)
-- [v0.0.46 Hotfix - User Onboarding for Project Access](#v0046-hotfix---user-onboarding-for-project-access)
+## v0.0.63 - Online License Authority Client Foundation
 
----
+- Added `OnlineLicenseAuthorityService` for the aptoria.dev runtime lease direction.
+- Added license mode configuration: `local_package`, `online_authority`, `hybrid`.
+- Added runtime lease cache path, authority URL, authority public key and offline grace configuration.
+- License runtime enforcement can now require a valid local license plus a signed online runtime lease when online authority mode is enabled.
+- License Management now surfaces the online authority state without complicating the simplified activation package workflow.
+- README.md was updated to the professional GitHub presentation format; release history remains in this changelog.
+- Added `docs/ONLINE_LICENSE_AUTHORITY_CLIENT.md`.
+
+- Simplified License Management to the same one-package activation workflow, with separate file uploads moved under Advanced manual install.
+- Simplified license activation to a one-file activation package upload with ZIP/JSON support.
+- Added License Activation Recovery Flow with `/license/activate`, public key install, signed license upload and lockout-safe activation.
+
+## v0.0.62 - Dashboard Editor Revert & Desktop Copy Cleanup
+
+- Reverted the Desktop Dashboard Layout Editor feature and restored the fixed dashboard layout.
+- Removed dashboard drag/drop, resize, save/reset controls and editor-specific routes/controllers/services/views/styles.
+- Added a cleanup migration that drops the unused `dashboard_layouts` table on installations where the editor hotfix had already been migrated.
+- Kept the desktop-only guard wording focused on desktop QA workspaces.
+
+## v0.0.61 - Live/Sandbox Workspace Separation & Sandbox Safety Banner
+
+- Added project-level `workspace_type` separation with `live` and `sandbox` workspace modes.
+- Added a topbar LIVE/SANDBOX switch with visible project counts.
+- Filtered project switcher and project index lists by the active workspace mode so live and sandbox workspaces do not mix.
+- Added a persistent sandbox safety strip below the topbar when SANDBOX mode is active.
+- Updated guided demo builders so generated demo projects are marked as sandbox workspaces.
+- Renamed user-facing demo wording from Live Demo toward Sandbox Demo / Sandbox API to avoid confusion with real live operation.
+- Added audit logging for workspace mode changes.
+- Added documentation and QA checklist for the live/sandbox separation flow.
+
+## v0.0.60 - Live Demo Scenario Templates & Guided Demo Flow
+
+- Added reusable guided scenario templates for the public Live Demo Guide: smoke scan, security leak review, artifact import trace and release gate decision.
+- Added `/demo-api/scenarios`, `/demo-api/scenarios/{slug}` and `/demo-api/scenarios/{slug}/evidence.json` JSON endpoints for demo onboarding, docs and importable run-sheet evidence.
+- Added `/demo-api/artifacts/scenario-templates.json` to the import artifact set.
+- Upgraded `/demo-guide` and `/projects/{project}/demo-guide` with selectable scenario cards, expected outcomes, step-by-step run sheets, direct project action links and scenario evidence links.
+- Seeded the Live Demo API Sandbox project with scenario-template endpoints and verified guided scenario evidence.
+- Updated OpenAPI/Postman demo artifacts and public demo documentation for the guided scenario flow.
+
+## v0.0.59 - Public Demo Guided Workflow & Sandbox Reset
+
+- Added a public `/demo-guide` walkthrough page for the Live Demo API Sandbox.
+- Added a project-scoped `/projects/{project}/demo-guide` page linking directly into Safe Scan, Import Center, Evidence Center, QA Cockpit and Release Gates.
+- Added a demo-mode banner inside the authenticated app so public sandbox users always see that dangerous actions are restricted.
+- Added landing and Program Settings links to the guided demo workflow.
+- Added `aptoria:demo-reset` as a clearer CLI alias for safely rebuilding only the live demo API sandbox project.
+- Added `docs/PUBLIC_DEMO_GUIDED_WORKFLOW.md` with deployment, reset and walkthrough guidance for `demo.aptoria.dev`.
+
+## v0.0.58 - Live Demo API Sandbox Foundation
+
+- Added built-in `/demo-api/*` JSON endpoints for public live trials: health, users, orders, products, release summary, auth boundary, sensitive-data demo, intentional server error and slow response.
+- Added demo artifacts for the Import Adapter Layer: OpenAPI JSON, Postman collection, QA CSV, Jira CSV and HAR.
+- Added `LiveDemoApiSandboxService` and `aptoria:demo-api-project` to create a live demo project with environment, auth profiles, endpoints, assertions, repository evidence, native tests, findings and read-only demo viewer access.
+- Added Program Settings UI card for building the Live Demo API Sandbox and quick links to demo artifacts.
+- Added public demo mode configuration and a middleware guard that blocks dangerous admin/licensing/user-management actions in public demo deployments.
+- Added demo-mode safe-scan target allowlist support through `APTORIA_DEMO_ALLOWED_TARGETS`.
+- Added login-page demo credentials panel when `APTORIA_DEMO_MODE=true`.
+- Added `docs/LIVE_DEMO_API_SANDBOX.md` and feature coverage for the sandbox foundation.
+
+## v0.0.57 Hotfix - Private License Issuer Web UI
+
+- Added an admin-only Private License Issuer web UI under Program Settings while keeping the issuer tool physically separated under `tools/license-issuer`.
+- Added shared `tools/license-issuer/src/LicenseIssuerCore.php` so the issuer logic can later be moved into a separate private tool/repository.
+- Added web workflows for generating issuer keypairs, issuing signed `aptoria-license.json` files from runtime requests and verifying signed licenses before delivery.
+- Added semantic navigation and documentation for the temporary in-app issuer testing workflow.
+- Kept generated keys and issued outputs excluded from release ZIPs.
+
+## v0.0.57 - Private License Issuer Tool
+
+- Added standalone private-side license issuer scripts under `tools/license-issuer`.
+- Added RSA keypair generation tool for issuer-owned private/public keys.
+- Added `issue-license.php` to read Aptoria license requests and sign `aptoria-license.json` with RSA/SHA-256.
+- Added `verify-license.php` to validate generated licenses against the issuer public key and optional request fingerprint binding.
+- Added sample request, issuer `.gitignore`, expanded issuer README and `docs/PRIVATE_LICENSE_ISSUER_TOOL.md`.
+- Updated license issuance and USB runtime documentation with the complete request -> issue -> verify -> install flow.
+- Kept private keys, generated PEM files and signed license outputs excluded from release ZIPs.
+
+## v0.0.56 - License Request & Admin License Management
+
+- Added `LicenseRequestService` to generate a hashed machine/USB license request JSON.
+- Added `aptoria:license-request` command and `get-license-request.bat` helper for portable/server issuance requests.
+- Added admin License Management screen under Program Settings with status, fingerprints, request preview, request download, public key save and signed license upload.
+- Added validation before storing uploaded licenses: JSON structure, required payload fields, product, public key, RSA/SHA-256 signature, expiry and fingerprint binding.
+- Added public `/license/request.json` download so blocked portable runtimes can still send a license request to the issuer.
+- Added detailed documentation in `docs/LICENSE_ISSUANCE_FLOW.md`.
+
+## v0.0.55 - Portable USB Runtime & License Guard Foundation
+
+- Added signed JSON license file format support.
+- Added RSA/SHA-256 license signature verification.
+- Added machine and portable USB fingerprint preparation.
+- Added global license guard middleware with invalid/expired/mismatched license blocking when enforcement is enabled.
+- Added `/license/invalid` runtime error page.
+- Added dashboard and Program Settings license status cards.
+- Added `start-aptoria.bat` portable runtime launcher.
+- Added `aptoria:license-fingerprint` and `aptoria:license-status` console commands.
+- Added `docs/USB_RUNTIME_AND_LICENSE_GUARD.md` and example license payload.
+
+## v0.0.54 - Client Portal Decision Handoff Foundation
+
+- Added `ClientPortalDecisionHandoffService` to expose approved release gate decision packages as a first-class public handoff surface.
+- Added a new `decision_package` client portal permission so external links can show fixed release decision packages without exposing all reports or internal evidence.
+- Public client portal pages now include a dedicated Decision Packages panel with final decision, score, blocker count, verified evidence, test run count, checksum and package downloads.
+- Public download routes now support ZIP delivery for approved release gate decision packages, reusing the existing checksum-backed package builder.
+- Report delivery links created from release gate package reports now default to decision-package visibility plus reports/readiness.
+- Internal report downloads now expose ZIP for release-gate-linked report versions.
+- Updated EN/HU translations and documentation for client handoff, approved package delivery and public acknowledgement context.
 
 ## v0.0.53 - Release Gate Report & Decision Package
 
@@ -144,6 +238,19 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 - Added audit events for user creation, user updates and temporary password resets.
 - Added regression coverage for system-admin user creation and project-admin create-user-and-add flow.
 
+# Changelog
+
+## v0.0.58 - Live Demo API Sandbox Foundation
+
+- Added built-in `/demo-api/*` JSON endpoints for public live trials: health, users, orders, products, release summary, auth boundary, sensitive-data demo, intentional server error and slow response.
+- Added demo artifacts for the Import Adapter Layer: OpenAPI JSON, Postman collection, QA CSV, Jira CSV and HAR.
+- Added `LiveDemoApiSandboxService` and `aptoria:demo-api-project` to create a live demo project with environment, auth profiles, endpoints, assertions, repository evidence, native tests, findings and read-only demo viewer access.
+- Added Program Settings UI card for building the Live Demo API Sandbox and quick links to demo artifacts.
+- Added public demo mode configuration and a middleware guard that blocks dangerous admin/licensing/user-management actions in public demo deployments.
+- Added demo-mode safe-scan target allowlist support through `APTORIA_DEMO_ALLOWED_TARGETS`.
+- Added login-page demo credentials panel when `APTORIA_DEMO_MODE=true`.
+- Added `docs/LIVE_DEMO_API_SANDBOX.md` and feature coverage for the sandbox foundation.
+
 ## v0.0.46 - Project Access & Membership Foundation
 
 - Added a project-scoped membership model with project admin, QA engineer, reviewer, release approver and read-only viewer roles.
@@ -193,6 +300,7 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 
 ## v0.0.43 - Report Visual Standard Foundation
 
+
 ### v0.0.43 Hotfix - Desktop-only Shell Guard
 
 - Removed the sidebar logo image; sidebar branding now keeps text only.
@@ -209,6 +317,7 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 - Demoted stored inner report headings so exports no longer show a second oversized document title below the header.
 - Updated the report standard marker to `report-visual-standard-v1.1` and expanded regression coverage for logo, translation and structure checks.
 
+
 - Added `ReportVisualStandardService` as the shared HTML export wrapper for report versions.
 - Standardized report exports around the professional report layout: header, meta table, KPI summary strip, notice block, numbered sections and footer.
 - Internal report downloads and public Client Portal report downloads now use the same HTML visual standard.
@@ -223,9 +332,20 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 - The simulation endpoint now accepts both POST and PUT so the preview button cannot trigger a MethodNotAllowed error from the shared rules form.
 - Added regression coverage for the method-spoofed simulation request.
 
+
 - Added finding duplicate candidate detection.
 - Added merge workflow that moves evidence to the primary finding.
 - Duplicate findings are retained as merged trace records.
 - Added candidate score, merge notes, dismiss workflow and audit events.
 - Findings page now links to the deduplication workflow.
 - Cumulatively includes v0.0.40 profiles/simulation and v0.0.41 evidence pack exports.
+
+
+## v0.0.57 hotfix - XAMPP OpenSSL issuer keypair fallback
+
+- Improved Private License Issuer keypair generation on Windows/XAMPP.
+- The issuer now retries PHP OpenSSL with discovered `openssl.cnf` paths.
+- Added fallback support for external `openssl` / `openssl.exe` binaries.
+- Updated CLI keypair generator to use the shared issuer core.
+- Added clearer diagnostics for missing OpenSSL configuration.
+- Documented `APTORIA_OPENSSL_CONF` / `OPENSSL_CONF` troubleshooting.

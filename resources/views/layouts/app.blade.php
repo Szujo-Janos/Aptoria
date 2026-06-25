@@ -41,6 +41,30 @@
 
         <div class="content-page">
             <div class="container-fluid">
+                @if (($currentWorkspaceMode ?? 'live') === 'sandbox')
+                    <div class="aptoria-sandbox-safety-strip mt-3 d-flex align-items-start justify-content-between gap-3">
+                        <div class="d-flex gap-2 align-items-start">
+                            <i data-lucide="flask-conical" class="mt-1"></i>
+                            <div>
+                                <strong>{{ __('messages.workspace_mode.sandbox_banner_title') }}</strong>
+                                <div class="small">{{ __('messages.workspace_mode.sandbox_banner_copy') }}</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('demo-guide.public') }}" class="btn btn-sm btn-warning text-nowrap"><i data-lucide="map" class="me-1"></i>{{ __('messages.nav.demo_guide') }}</a>
+                    </div>
+                @elseif (config('aptoria.demo.mode'))
+                    <div class="alert alert-info mt-3 d-flex align-items-start justify-content-between gap-3 aptoria-demo-mode-banner">
+                        <div class="d-flex gap-2 align-items-start">
+                            <i data-lucide="shield-check" class="mt-1"></i>
+                            <div>
+                                <strong>{{ __('messages.demo_guide.demo_mode_enabled') }}</strong>
+                                <div class="small">{{ __('messages.demo_guide.demo_mode_copy') }}</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('demo-guide.public') }}" class="btn btn-sm btn-info text-nowrap"><i data-lucide="map" class="me-1"></i>{{ __('messages.nav.demo_guide') }}</a>
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="alert alert-danger mt-3">
                         <strong>{{ __('messages.common.validation_error') }}</strong>

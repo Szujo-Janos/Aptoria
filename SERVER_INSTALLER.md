@@ -1,11 +1,11 @@
 # Aptoria Server First-Run Installer
 
-Current version: **v0.0.53**
+Current version: **v0.0.63**
 
 Aptoria contains a first-run setup flow for fresh deployments. Until the application is installed and locked, normal web pages redirect to `/setup`.
 
 > [!IMPORTANT]
-> The `v0.0.53` package is a fresh replacement for the legacy `1.1.34` code line. It is not an in-place database upgrade.
+> The `v0.0.63` package is a fresh replacement for the legacy `1.1.34` code line. It is not an in-place database upgrade.
 
 ## Installer overview
 
@@ -43,8 +43,8 @@ This file must never be included in release ZIPs or committed to Git.
 Use a clean target folder so old migrations, cached files and views cannot remain in `C:\xampp\htdocs\aptoria`.
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-0.0.53-github-transition.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_0.0.53"
+$ZipPath = "E:\GitHub projects\Aptoria\aptoria-0.0.63-github-transition.zip"
+$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_0.0.63"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue

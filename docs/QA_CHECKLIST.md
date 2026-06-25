@@ -214,3 +214,90 @@
 11. Click install and verify SweetAlert2 appears with Aptoria styling, not a native browser confirm.
 12. Confirm installation and verify the white install progress overlay animates through the setup messages.
 13. Narrow the browser below 1400 px and verify the desktop-only white-screen message blocks the setup UI.
+
+
+## v0.0.60 sandbox scenario templates smoke test
+
+1. Open `/demo-guide` and verify the Scenario templates card appears above the old walkthrough.
+2. Click each scenario card: First smoke scan, Security leak review, Artifact import trace and Release gate decision.
+3. Confirm the selected card highlights and the right-side guided run sheet changes.
+4. Open the Scenario evidence JSON button and verify `/demo-api/scenarios/{slug}/evidence.json` returns readable JSON.
+5. Open `/demo-api/scenarios` and verify it returns four scenario templates.
+6. Open `/demo-api/artifacts/scenario-templates.json` and verify it returns the same template list as an import artifact.
+7. Rebuild the Sandbox API workspace from Program Settings or `aptoria:demo-reset`.
+8. Open the generated project and verify the project-scoped Demo Guide links steps into Safe Scan, Import Center, Evidence, QA Cockpit, Release Readiness, Release Gates and Reports.
+9. Verify the generated endpoint inventory contains scenario endpoints such as `/scenarios`, `/scenarios/security-leak-review` and `/scenarios/release-gate-decision/evidence.json`.
+10. Verify Evidence Repository contains the verified “Guided release gate scenario run sheet” evidence item.
+
+## v0.0.61 – Live/Sandbox Workspace Separation & Sandbox Safety Banner
+
+1. Run migrations and clear caches.
+2. Open the topbar and confirm the LIVE/SANDBOX switch is visible on desktop width.
+3. In LIVE mode, confirm the Projects page lists only live projects.
+4. Create a new project in LIVE mode and confirm its workspace type is LIVE.
+5. Switch to SANDBOX mode from the topbar.
+6. Confirm the persistent sandbox safety strip appears below the topbar.
+7. Confirm the project switcher no longer mixes live projects into the sandbox list.
+8. Build the guided demo sandbox from Program Settings.
+9. Confirm the created project is named `Aptoria Guided Demo Sandbox` and has SANDBOX workspace type.
+10. Build the Sandbox API workspace from Program Settings or run `aptoria:demo-reset`.
+11. Confirm the created project is named `Aptoria Sandbox API` and has SANDBOX workspace type.
+12. Open a sandbox project and confirm sidebar badges show SANDBOX for project-scoped modules.
+13. Switch back to LIVE mode and confirm the sandbox warning strip disappears.
+14. Confirm user management and license management still show LIVE badges.
+
+## v0.0.62 - Dashboard Editor Revert Smoke Test
+
+1. Run migrations and clear caches.
+2. Open `/dashboard` on a desktop-sized browser window, 1400 px or wider.
+3. Confirm there is no **Desktop Dashboard Layout Editor** toolbar.
+4. Confirm there is no **Edit dashboard**, **Save layout**, **Cancel** or **Reset default** dashboard editor control.
+5. Confirm dashboard cards render in the normal fixed Bootstrap layout.
+6. Confirm no drag handles, resize buttons, green placeholders or modal-grey editor overlay appear.
+7. Confirm the active LIVE/SANDBOX workspace switch still works from the topbar.
+8. Confirm the global desktop-only guard still blocks browser widths below 1400 px.
+
+## License Activation Recovery Flow
+
+- Enable or simulate `APTORIA_LICENSE_REQUIRED=true` with no valid license.
+- Open `/dashboard`; it should redirect to `/license/activate`.
+- `/license/activate` must show the current license state, machine fingerprint and USB fingerprint.
+- Download `/license/request.json`; it should return the license request JSON.
+- Paste an invalid public key; the form must reject it.
+- Paste a valid public key; it should be saved and return to the activation page.
+- Upload malformed JSON; the form must reject it.
+- Upload a signed license that does not match the public key/fingerprint; it must be rejected.
+- Upload a valid signed `aptoria-license.json`; it should redirect to login or dashboard.
+- After activation, Program Settings → License Management should still work as the normal admin management screen.
+
+## Simplified License Activation
+
+- Enable or simulate `APTORIA_LICENSE_REQUIRED=true` with no valid license.
+- Open `/dashboard`; it should redirect to `/license/activate`.
+- The activation page should show one primary file upload, not separate public-key and license forms.
+- Download `/license/request.json`; it should return the license request JSON for the issuer.
+- Upload a ZIP missing `aptoria-license.json`; it must be rejected.
+- Upload a ZIP missing `license-public.pem` when no public key exists; it must be rejected.
+- Upload a ZIP containing both `aptoria-license.json` and `license-public.pem`; it should install both and redirect to login/dashboard.
+- Upload a plain signed `aptoria-license.json` when the public key is already installed; it should work.
+
+## Simplified License Management
+
+- Open Program Settings → License Management.
+- The main screen should show license status cards and one primary activation package upload.
+- The main screen should not show separate public key and signed-license forms by default.
+- Download request should still work.
+- Upload an invalid activation package; it must be rejected.
+- Upload a valid activation ZIP/JSON; it should install and return to License Management.
+- Open Advanced manual install; the old separate public-key and license-file forms should be available only there.
+
+## Online License Authority Client Foundation
+
+- Keep `APTORIA_LICENSE_MODE=local_package`; normal local activation should behave as before.
+- Set `APTORIA_LICENSE_MODE=online_authority` and `APTORIA_LICENSE_REQUIRED=true`.
+- With no valid local license, `/dashboard` should still redirect to `/license/activate`.
+- With a valid local license but no cached lease, runtime should require online verification.
+- License Management should show an Online License Authority status block.
+- `storage/app/license-runtime-lease.json` must not be present in the release ZIP.
+- `storage/app/license-install-id` must not be present in the release ZIP.
+- README must use the professional GitHub format and point release history to `CHANGELOG.md`.

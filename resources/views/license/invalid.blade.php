@@ -1,0 +1,1 @@
+@extends('license.activate')

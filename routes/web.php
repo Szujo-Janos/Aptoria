@@ -9,6 +9,8 @@ use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\ContractValidationController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoApiController;
+use App\Http\Controllers\DemoGuideController;
 use App\Http\Controllers\EndpointController;
 use App\Http\Controllers\EndpointTestBatchController;
 use App\Http\Controllers\EndpointTestRunController;
@@ -22,6 +24,8 @@ use App\Http\Controllers\HelpController;
 use App\Http\Controllers\ImportCenterController;
 use App\Http\Controllers\NativeTestController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LicenseController;
+use App\Http\Controllers\LicenseIssuerController;
 use App\Http\Controllers\PlaceholderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramSettingsController;
@@ -43,6 +47,38 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'landing')->name('landing');
 Route::get('/language/{locale}', LanguageController::class)->name('language.switch');
+Route::get('/demo-guide', [DemoGuideController::class, 'public'])->name('demo-guide.public');
+Route::get('/license/invalid', [LicenseController::class, 'invalid'])->name('license.invalid');
+Route::get('/license/activate', [LicenseController::class, 'activate'])->name('license.activate');
+Route::post('/license/activate', [LicenseController::class, 'activatePackage'])->name('license.activate.package');
+Route::post('/license/activate/license', [LicenseController::class, 'activateUpload'])->name('license.activate.upload');
+Route::post('/license/activate/public-key', [LicenseController::class, 'activatePublicKey'])->name('license.activate.public-key');
+Route::get('/license/request.json', [LicenseController::class, 'downloadRequest'])->name('license.request.download');
+Route::get('/license/status.json', [LicenseController::class, 'status'])->name('license.status');
+
+Route::prefix('demo-api')->name('demo-api.')->group(function (): void {
+    Route::get('/health', [DemoApiController::class, 'health'])->name('health');
+    Route::get('/users', [DemoApiController::class, 'users'])->name('users.index');
+    Route::get('/users/{id}', [DemoApiController::class, 'user'])->whereNumber('id')->name('users.show');
+    Route::get('/orders', [DemoApiController::class, 'orders'])->name('orders.index');
+    Route::get('/orders/{id}', [DemoApiController::class, 'order'])->whereNumber('id')->name('orders.show');
+    Route::get('/products', [DemoApiController::class, 'products'])->name('products.index');
+    Route::get('/reports/summary', [DemoApiController::class, 'reportSummary'])->name('reports.summary');
+    Route::get('/scenarios', [DemoApiController::class, 'scenarios'])->name('scenarios.index');
+    Route::get('/scenarios/{slug}', [DemoApiController::class, 'scenario'])->where('slug', '[A-Za-z0-9\-]+')->name('scenarios.show');
+    Route::get('/scenarios/{slug}/evidence.json', [DemoApiController::class, 'scenarioEvidence'])->where('slug', '[A-Za-z0-9\-]+')->name('scenarios.evidence');
+    Route::get('/security/public-profile', [DemoApiController::class, 'publicProfile'])->name('security.public-profile');
+    Route::get('/security/private-account', [DemoApiController::class, 'privateAccount'])->name('security.private-account');
+    Route::get('/security/leaky-token-example', [DemoApiController::class, 'leakyTokenExample'])->name('security.leaky-token');
+    Route::get('/errors/server-error', [DemoApiController::class, 'serverError'])->name('errors.server-error');
+    Route::get('/errors/slow-response', [DemoApiController::class, 'slowResponse'])->name('errors.slow-response');
+    Route::get('/artifacts/openapi.json', [DemoApiController::class, 'openApi'])->name('artifacts.openapi');
+    Route::get('/artifacts/postman-collection.json', [DemoApiController::class, 'postman'])->name('artifacts.postman');
+    Route::get('/artifacts/qa-results.csv', [DemoApiController::class, 'qaCsv'])->name('artifacts.qa-csv');
+    Route::get('/artifacts/jira-issues.csv', [DemoApiController::class, 'jiraCsv'])->name('artifacts.jira-csv');
+    Route::get('/artifacts/browser-network.har', [DemoApiController::class, 'har'])->name('artifacts.har');
+    Route::get('/artifacts/scenario-templates.json', [DemoApiController::class, 'scenarios'])->name('artifacts.scenarios');
+});
 
 Route::get('/client-portal/{token}', [PublicClientPortalController::class, 'show'])->name('client-portal.show');
 Route::post('/client-portal/{token}/acknowledge', [PublicClientPortalController::class, 'acknowledge'])->name('client-portal.acknowledge');
@@ -69,6 +105,7 @@ Route::middleware(['auth', 'password.changed'])->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
+    Route::post('/workspace-mode/{mode}', [ProjectContextController::class, 'mode'])->whereIn('mode', ['live', 'sandbox'])->name('workspace.mode');
     Route::get('/projects/context/clear', [ProjectContextController::class, 'clear'])->name('projects.context.clear');
     Route::get('/projects/{project}/activate', [ProjectContextController::class, 'switch'])->name('projects.switch');
 
@@ -87,6 +124,7 @@ Route::middleware(['auth', 'password.changed'])->group(function (): void {
 
 
     Route::get('/projects/{project}/qa-cockpit', [QaCockpitController::class, 'show'])->name('projects.qa-cockpit.show');
+    Route::get('/projects/{project}/demo-guide', [DemoGuideController::class, 'show'])->name('projects.demo-guide.show');
 
     Route::get('/projects/{project}/safe-scans', [SafeScanController::class, 'index'])->name('projects.safe-scans.index');
     Route::post('/projects/{project}/safe-scans', [SafeScanController::class, 'store'])->name('projects.safe-scans.store');
@@ -237,7 +275,19 @@ Route::middleware(['auth', 'password.changed'])->group(function (): void {
 
     Route::get('/program-settings', [ProgramSettingsController::class, 'edit'])->name('program-settings.edit');
     Route::put('/program-settings', [ProgramSettingsController::class, 'update'])->name('program-settings.update');
+    Route::middleware('admin')->group(function (): void {
+        Route::get('/program-settings/license', [LicenseController::class, 'manage'])->name('program-settings.license');
+        Route::post('/program-settings/license/package', [LicenseController::class, 'uploadPackage'])->name('program-settings.license.package');
+        Route::post('/program-settings/license/upload', [LicenseController::class, 'upload'])->name('program-settings.license.upload');
+        Route::post('/program-settings/license/public-key', [LicenseController::class, 'storePublicKey'])->name('program-settings.license.public-key');
+        Route::get('/program-settings/license-issuer', [LicenseIssuerController::class, 'index'])->name('program-settings.license-issuer');
+        Route::post('/program-settings/license-issuer/keypair', [LicenseIssuerController::class, 'generateKeypair'])->name('program-settings.license-issuer.keypair');
+        Route::post('/program-settings/license-issuer/issue', [LicenseIssuerController::class, 'issue'])->name('program-settings.license-issuer.issue');
+        Route::post('/program-settings/license-issuer/verify', [LicenseIssuerController::class, 'verify'])->name('program-settings.license-issuer.verify');
+        Route::get('/program-settings/license-issuer/public-key', [LicenseIssuerController::class, 'downloadPublicKey'])->name('program-settings.license-issuer.public-key.download');
+    });
     Route::post('/program-settings/demo-project', [ProgramSettingsController::class, 'buildDemoProject'])->name('program-settings.demo-project');
+    Route::post('/program-settings/demo-api-project', [ProgramSettingsController::class, 'buildDemoApiProject'])->name('program-settings.demo-api-project');
     Route::get('/help/how-it-works', [HelpController::class, 'howItWorks'])->name('help.how_it_works');
     Route::get('/help', [HelpController::class, 'index'])->name('help.index');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');

@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Middleware\BlockDangerousDemoActions;
 use App\Http\Middleware\EnforceSessionTimeout;
 use App\Http\Middleware\EnsureAdminUser;
 use App\Http\Middleware\EnsureApplicationIsInstalled;
 use App\Http\Middleware\EnsurePasswordChangeIsCompleted;
+use App\Http\Middleware\EnsureLicenseIsValid;
 use App\Http\Middleware\EnsureProjectAccess;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
@@ -22,7 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
             SetLocale::class,
             EnsureApplicationIsInstalled::class,
+            EnsureLicenseIsValid::class,
             EnforceSessionTimeout::class,
+            BlockDangerousDemoActions::class,
             EnsureProjectAccess::class,
         ]);
 

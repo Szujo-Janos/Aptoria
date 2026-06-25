@@ -13,6 +13,7 @@
                 <span class="badge badge-soft-primary badge-label mb-2"><i class="ti ti-point-filled"></i>v0.0.3</span>
                 <h3 class="mb-2 fw-normal">{{ __('messages.projects.projects_dashboard_title') }}</h3>
                 <p class="text-muted mb-0">{{ __('messages.projects.projects_dashboard_copy') }}</p>
+                    <div class="mt-2"><span class="badge {{ $currentWorkspaceModeSoftBadgeClass }} badge-label"><i data-lucide="{{ ($currentWorkspaceMode ?? 'live') === 'sandbox' ? 'flask-conical' : 'shield-check' }}" class="me-1"></i>{{ __('messages.workspace_mode.active_mode', ['mode' => $currentWorkspaceModeLabel]) }}</span></div>
             </div>
             <div class="col-xl-5">
                 <div class="d-flex flex-wrap justify-content-xl-end gap-2">
@@ -122,6 +123,7 @@
                         <th data-priority="1">{{ __('messages.projects.name') }}</th>
                         <th data-priority="3">{{ __('messages.projects.base_url') }}</th>
                         <th data-priority="4">{{ __('messages.projects.environment') }}</th>
+                        <th data-priority="2">{{ __('messages.workspace_mode.project_type') }}</th>
                         <th data-priority="2">{{ __('messages.projects.status') }}</th>
                         <th data-priority="5">{{ __('messages.workspace.workspace_readiness') }}</th>
                         <th data-priority="6">{{ __('messages.workspace.audit_events_short') }}</th>
@@ -147,6 +149,7 @@
                         </td>
                         <td><span class="text-muted d-inline-block text-truncate aptoria-url-cell">{{ $project->base_url ?: '—' }}</span></td>
                         <td>{{ $project->environment_label ?: '—' }}</td>
+                        <td><span class="badge badge-soft-{{ $project->workspace_type_tone }} badge-label"><i data-lucide="{{ $project->isSandbox() ? 'flask-conical' : 'shield-check' }}" class="me-1"></i>{{ $project->workspace_type_label }}</span></td>
                         <td><span class="badge badge-soft-{{ $project->status_tone }} badge-label"><i class="ti ti-point-filled"></i>{{ $project->status_label }}</span></td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
@@ -212,6 +215,7 @@
                             </div>
                         </div>
                         <div class="list-group list-group-flush border rounded">
+                            <div class="list-group-item d-flex justify-content-between gap-3"><span>{{ __('messages.workspace_mode.project_type') }}</span><strong>{{ $project->workspace_type_label }}</strong></div>
                             <div class="list-group-item d-flex justify-content-between gap-3"><span>{{ __('messages.projects.base_url') }}</span><strong class="text-truncate">{{ $project->base_url ?: '—' }}</strong></div>
                             <div class="list-group-item d-flex justify-content-between gap-3"><span>{{ __('messages.projects.environment') }}</span><strong>{{ $project->environment_label ?: '—' }}</strong></div>
                             <div class="list-group-item d-flex justify-content-between gap-3"><span>{{ __('messages.projects.qa_owner') }}</span><strong>{{ $project->qa_owner ?: '—' }}</strong></div>

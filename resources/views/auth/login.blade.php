@@ -11,6 +11,16 @@
                     <img src="{{ asset('assets/aptoria-ui/assets/images/logo-color.svg') }}" alt="Aptoria" class="aptoria-brand-logo aptoria-auth-logo mx-auto">
                     <p class="text-muted mt-3 mb-0">{{ __('messages.product.tagline') }}</p>
                 </div>
+                @if (config('aptoria.demo.mode'))
+                    <div class="alert alert-info d-flex gap-2 align-items-start">
+                        <i data-lucide="server-cog" class="mt-1"></i>
+                        <div>
+                            <strong>{{ __('messages.demo_mode.login_title') }}</strong>
+                            <div class="small mt-1">{{ __('messages.demo_mode.login_copy') }}</div>
+                            <div class="small mt-2"><code>{{ config('aptoria.demo.demo_user_email') }}</code> / <code>{{ config('aptoria.demo.demo_user_password') }}</code></div>
+                        </div>
+                    </div>
+                @endif
                 @if (session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
                 @if (session('warning'))<div class="alert alert-warning">{{ session('warning') }}</div>@endif
                 @if ($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif

@@ -16,6 +16,7 @@
             <a href="{{ route('projects.reports.download', [$project, $report, 'md']) }}" class="dropdown-item"><i data-lucide="markdown" class="me-2"></i>{{ __('messages.reports.download_markdown') }}</a>
             <a href="{{ route('projects.reports.download', [$project, $report, 'html']) }}" class="dropdown-item"><i data-lucide="file-code-2" class="me-2"></i>{{ __('messages.reports.download_html') }}</a>
             <a href="{{ route('projects.reports.download', [$project, $report, 'json']) }}" class="dropdown-item"><i data-lucide="file-json" class="me-2"></i>{{ __('messages.reports.download_json') }}</a>
+            @if($report->release_gate_id)<a href="{{ route('projects.reports.download', [$project, $report, 'zip']) }}" class="dropdown-item"><i data-lucide="archive" class="me-2"></i>{{ __('messages.reports.download_zip') }}</a>@endif
         </div>
     </div>
 @endsection
@@ -53,6 +54,7 @@
                 <a href="{{ route('projects.reports.download', [$project, $report, 'md']) }}" class="btn btn-light text-start"><i data-lucide="markdown" class="me-2"></i>{{ __('messages.reports.download_markdown') }}</a>
                 <a href="{{ route('projects.reports.download', [$project, $report, 'html']) }}" class="btn btn-light text-start"><i data-lucide="file-code-2" class="me-2"></i>{{ __('messages.reports.download_html') }}</a>
                 <a href="{{ route('projects.reports.download', [$project, $report, 'json']) }}" class="btn btn-light text-start"><i data-lucide="file-json" class="me-2"></i>{{ __('messages.reports.download_json') }}</a>
+                @if($report->release_gate_id)<a href="{{ route('projects.reports.download', [$project, $report, 'zip']) }}" class="btn btn-light text-start"><i data-lucide="archive" class="me-2"></i>{{ __('messages.reports.download_zip') }}</a>@endif
             </div>
         </div>
 

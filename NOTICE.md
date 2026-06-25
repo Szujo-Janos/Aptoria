@@ -29,8 +29,6 @@ The current public branch replaces the legacy Aptoria `1.1.x` code line with the
 
 See:
 
-- `docs/UPGRADE_FROM_1.1.34_TO_0.0.53.md`
-- `docs/LEGACY_1.1.34_VS_0.0.53_COMPARISON.md`
 - `TRANSITION_SUMMARY.md`
 
 ## Third-party components

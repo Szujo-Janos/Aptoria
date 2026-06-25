@@ -43,12 +43,13 @@ class ComprehensiveDemoProjectService
 
             $project = Project::create([
                 'user_id' => $user->id,
-                'name' => 'Aptoria Full Demo Project',
+                'name' => 'Aptoria Guided Demo Sandbox',
                 'slug' => self::DEMO_SLUG,
                 'description' => 'A complete synthetic API QA workspace showing inventory, environments, auth, safe scan evidence, assertions, snapshots, regressions, findings, retest, risk acceptance, OpenAPI contract validation, release readiness, report approval and client portal acknowledgement.',
                 'base_url' => 'https://demo-api.aptoria.local',
                 'environment_label' => 'staging-demo',
                 'status' => 'active',
+                'workspace_type' => Project::WORKSPACE_TYPE_SANDBOX,
                 'qa_owner' => $user->name,
                 'release_goal' => 'Validate the demo API v1.4 release candidate before client handoff.',
                 'is_active' => true,
@@ -712,7 +713,7 @@ class ComprehensiveDemoProjectService
     {
         $contract = [
             'openapi' => '3.0.3',
-            'info' => ['title' => 'Aptoria Full Demo API', 'version' => '1.4.0-rc'],
+            'info' => ['title' => 'Aptoria Guided Sandbox API', 'version' => '1.4.0-rc'],
             'paths' => [
                 '/health' => ['get' => ['operationId' => 'healthCheck']],
                 '/api/v1/me' => ['get' => ['operationId' => 'currentProfile']],
@@ -727,7 +728,7 @@ class ComprehensiveDemoProjectService
         $run = ContractValidationRun::create([
             'project_id' => $project->id,
             'validated_by_user_id' => $user->id,
-            'source_name' => 'Aptoria Full Demo OpenAPI',
+            'source_name' => 'Aptoria Guided Sandbox OpenAPI',
             'source_version' => 'v1.4.0-rc',
             'openapi_version' => '3.0.3',
             'status' => 'warning',
@@ -885,8 +886,8 @@ class ComprehensiveDemoProjectService
 
     private function createApprovedReportAndPortal(Project $project, User $user, ReleaseReadinessRun $readinessRun, ReleaseDecisionSnapshot $decision): array
     {
-        $markdown = "# Aptoria Full Demo Report\n\n## Executive summary\n\nThis synthetic report demonstrates the complete Aptoria evidence chain: endpoint inventory, safe scan, assertions, snapshot regression, findings, retest evidence, risk acceptance, contract validation, release readiness, sign-off and client portal acknowledgement.\n\n## Release decision\n\nBlocked for final production release. Approved only as a demo evidence package.";
-        $html = '<h1>Aptoria Full Demo Report</h1><p>This synthetic report demonstrates the complete Aptoria evidence chain.</p><p><strong>Decision:</strong> blocked for final production release; approved as demo evidence package.</p>';
+        $markdown = "# Aptoria Guided Sandbox Report\n\n## Executive summary\n\nThis synthetic report demonstrates the complete Aptoria evidence chain: endpoint inventory, safe scan, assertions, snapshot regression, findings, retest evidence, risk acceptance, contract validation, release readiness, sign-off and client portal acknowledgement.\n\n## Release decision\n\nBlocked for final production release. Approved only as a demo evidence package.";
+        $html = '<h1>Aptoria Guided Sandbox Report</h1><p>This synthetic report demonstrates the complete Aptoria evidence chain.</p><p><strong>Decision:</strong> blocked for final production release; approved as demo evidence package.</p>';
 
         $report = ReportVersion::create([
             'project_id' => $project->id,

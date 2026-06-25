@@ -59,6 +59,52 @@
             </div>
 
             <div class="card mt-3">
+                <div class="card-header border-light justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-1"><i data-lucide="key-round" class="me-1"></i>{{ __('messages.license.admin_card_title') }}</h5>
+                        <p class="text-muted mb-0 small">{{ __('messages.license.admin_card_copy') }}</p>
+                    </div>
+                    <a href="{{ route('program-settings.license') }}" class="btn btn-sm btn-light"><i data-lucide="key-round" class="me-1"></i>{{ __('messages.license.manage_short') }}</a>
+                    <span class="badge badge-soft-{{ $licenseStatus['tone'] ?? 'secondary' }} badge-label">{{ $licenseStatus['label'] ?? __('messages.common.not_available') }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="border rounded-3 p-3 h-100">
+                                <div class="small text-muted text-uppercase mb-1">{{ __('messages.license.enforcement') }}</div>
+                                <div class="fw-semibold">{{ ($licenseStatus['enforced'] ?? false) ? __('messages.license.enforced') : __('messages.license.not_enforced') }}</div>
+                                <small class="text-muted">APTORIA_LICENSE_REQUIRED</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded-3 p-3 h-100">
+                                <div class="small text-muted text-uppercase mb-1">{{ __('messages.license.expires_at') }}</div>
+                                <div class="fw-semibold">{{ $licenseStatus['expires_at'] ?? '—' }}</div>
+                                <small class="text-muted">{{ $licenseStatus['license_id'] ?? __('messages.license.no_license_id') }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded-3 p-3 h-100">
+                                <div class="small text-muted text-uppercase mb-1">{{ __('messages.license.binding_mode') }}</div>
+                                <div class="fw-semibold">{{ $licenseStatus['binding_mode'] ?? 'none' }}</div>
+                                <small class="text-muted">{{ __('messages.license.machine_or_usb_hint') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="text-muted small mb-1">{{ __('messages.license.machine_fingerprint') }}</div>
+                        <code class="small text-break d-block">{{ $licenseStatus['fingerprints']['machine']['value'] ?? '—' }}</code>
+                        <div class="text-muted small mt-2 mb-1">{{ __('messages.license.usb_fingerprint') }}</div>
+                        <code class="small text-break d-block">{{ $licenseStatus['fingerprints']['usb']['value'] ?? '—' }}</code>
+                    </div>
+                </div>
+                <div class="card-footer aptoria-card-footer-subtle d-flex flex-wrap justify-content-between gap-2 align-items-center">
+                    <span class="text-muted small">{{ __('messages.license.admin_card_help') }}</span>
+                    <a href="{{ route('program-settings.license') }}" class="btn btn-sm btn-primary"><i data-lucide="key-round" class="me-1"></i>{{ __('messages.license.manage_title') }}</a>
+                </div>
+            </div>
+
+            <div class="card mt-3">
                 <div class="card-header border-light">
                     <h5 class="card-title mb-0">{{ __('messages.program_settings.localization') }}</h5>
                 </div>
@@ -94,7 +140,7 @@
         <div class="card mt-3">
             <div class="card-header border-light justify-content-between align-items-center">
                 <div>
-                    <h5 class="card-title mb-1"><i data-lucide="database-zap" class="me-1"></i>{{ __('messages.program_settings.demo_project_title') }}</h5>
+                    <h5 class="card-title mb-1"><i data-lucide="database-zap" class="me-1"></i>{{ __('messages.program_settings.sandbox_tools_title') }}</h5>
                     <p class="text-muted mb-0 small">{{ __('messages.program_settings.demo_project_copy') }}</p>
                 </div>
                 <span class="badge badge-soft-success badge-label">{{ __('messages.program_settings.demo_project_badge') }}</span>
@@ -132,6 +178,59 @@
                     <button type="submit" class="btn btn-success"><i data-lucide="database-zap" class="me-1"></i>{{ __('messages.program_settings.demo_project_button') }}</button>
                 </form>
             </div>
+
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header border-light justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-1"><i data-lucide="server-cog" class="me-1"></i>{{ __('messages.program_settings.demo_api_title') }}</h5>
+                    <p class="text-muted mb-0 small">{{ __('messages.program_settings.demo_api_copy') }}</p>
+                </div>
+                <span class="badge badge-soft-info badge-label">{{ __('messages.program_settings.demo_api_badge') }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="d-flex gap-2 align-items-start">
+                                <span class="avatar avatar-xs rounded text-bg-info"><span class="avatar-title"><i data-lucide="braces"></i></span></span>
+                                <div>
+                                    <div class="fw-medium">{{ __('messages.program_settings.demo_api_scope_title') }}</div>
+                                    <div class="text-muted small">{{ __('messages.program_settings.demo_api_scope_copy') }}</div>
+                                    <code class="small text-break d-block mt-2">{{ config('aptoria.demo.api_base_url') }}</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded-3 p-3 h-100">
+                            <div class="d-flex gap-2 align-items-start">
+                                <span class="avatar avatar-xs rounded text-bg-warning"><span class="avatar-title"><i data-lucide="shield-check"></i></span></span>
+                                <div>
+                                    <div class="fw-medium">{{ __('messages.program_settings.demo_api_guard_title') }}</div>
+                                    <div class="text-muted small">{{ __('messages.program_settings.demo_api_guard_copy') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                    <a href="{{ route('demo-guide.public') }}" class="btn btn-sm btn-info"><i data-lucide="map" class="me-1"></i>{{ __('messages.demo_guide.open_public') }}</a>
+                    <a href="{{ route('demo-api.health') }}" target="_blank" class="btn btn-sm btn-light"><i data-lucide="activity" class="me-1"></i>{{ __('messages.program_settings.demo_api_health') }}</a>
+                    <a href="{{ route('demo-api.artifacts.openapi') }}" target="_blank" class="btn btn-sm btn-light"><i data-lucide="file-code-2" class="me-1"></i>OpenAPI</a>
+                    <a href="{{ route('demo-api.artifacts.postman') }}" target="_blank" class="btn btn-sm btn-light"><i data-lucide="file-json" class="me-1"></i>Postman</a>
+                    <a href="{{ route('demo-api.artifacts.qa-csv') }}" target="_blank" class="btn btn-sm btn-light"><i data-lucide="table-export" class="me-1"></i>QA CSV</a>
+                    <a href="{{ route('demo-api.artifacts.scenarios') }}" target="_blank" class="btn btn-sm btn-light"><i data-lucide="map" class="me-1"></i>Scenarios</a>
+                </div>
+            </div>
+            <div class="card-footer aptoria-card-footer-subtle d-flex flex-wrap justify-content-between gap-2 align-items-center">
+                <span class="text-muted small">{{ __('messages.program_settings.demo_api_help') }}</span>
+                <form method="POST" action="{{ route('program-settings.demo-api-project') }}" data-aptoria-confirm="warning" data-confirm-title="{{ __('messages.program_settings.demo_api_confirm_title') }}" data-confirm-text="{{ __('messages.program_settings.demo_api_confirm_text') }}" data-confirm-button="{{ __('messages.program_settings.demo_api_button') }}">
+                    @csrf
+                    <button type="submit" class="btn btn-info"><i data-lucide="server-cog" class="me-1"></i>{{ __('messages.program_settings.demo_api_button') }}</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -160,6 +259,16 @@
                         <span class="avatar avatar-xs rounded text-bg-success"><span class="avatar-title"><i data-lucide="check"></i></span></span>
                         <span><span class="d-block text-body">{{ __('messages.program_settings.current_version') }}</span><small class="text-muted">v{{ $aptoriaVersion }}</small></span>
                     </div>
+                    <a href="{{ route('program-settings.license') }}" class="list-group-item list-group-item-action d-flex gap-3">
+                        <span class="avatar avatar-xs rounded text-bg-{{ $licenseStatus['tone'] ?? 'secondary' }}"><span class="avatar-title"><i data-lucide="key-round"></i></span></span>
+                        <span><span class="d-block text-body">{{ __('messages.license.admin_card_title') }}</span><small class="text-muted">{{ $licenseStatus['label'] ?? __('messages.common.not_available') }}</small></span>
+                    </a>
+                    @if (auth()->user()?->isAdmin())
+                        <a href="{{ route('program-settings.license-issuer') }}" class="list-group-item list-group-item-action d-flex gap-3">
+                            <span class="avatar avatar-xs rounded text-bg-warning"><span class="avatar-title"><i data-lucide="certificate"></i></span></span>
+                            <span><span class="d-block text-body">{{ __('messages.license_issuer.short_title') }}</span><small class="text-muted">tools/license-issuer</small></span>
+                        </a>
+                    @endif
                     <div class="list-group-item d-flex gap-3">
                         <span class="avatar avatar-xs rounded text-bg-warning"><span class="avatar-title"><i data-lucide="lock-keyhole"></i></span></span>
                         <span><span class="d-block text-body">{{ __('messages.program_settings.setup_lock') }}</span><small class="text-muted">storage/app/installed.lock</small></span>

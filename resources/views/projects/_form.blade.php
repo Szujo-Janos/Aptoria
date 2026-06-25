@@ -9,13 +9,21 @@
                         <label class="form-label">{{ __('messages.projects.name') }}</label>
                         <div class="input-group"><span class="input-group-text"><i data-lucide="folder-kanban"></i></span><input class="form-control" name="name" value="{{ old('name', $project->name) }}" required placeholder="{{ __('messages.projects.name_placeholder') }}"></div>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-3">
                         <label class="form-label">{{ __('messages.projects.status') }}</label>
                         <select class="form-select" name="status">
                             <option value="draft" @selected(old('status', $project->status ?: 'draft') === 'draft')>{{ __('messages.projects.status_draft') }}</option>
                             <option value="active" @selected(old('status', $project->status) === 'active')>{{ __('messages.projects.status_active') }}</option>
                             <option value="paused" @selected(old('status', $project->status) === 'paused')>{{ __('messages.projects.status_paused') }}</option>
                         </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">{{ __('messages.workspace_mode.project_type') }}</label>
+                        <select class="form-select" name="workspace_type">
+                            <option value="live" @selected(old('workspace_type', $project->workspace_type ?: 'live') === 'live')>{{ __('messages.workspace_mode.live_short') }}</option>
+                            <option value="sandbox" @selected(old('workspace_type', $project->workspace_type) === 'sandbox')>{{ __('messages.workspace_mode.sandbox_short') }}</option>
+                        </select>
+                        <div class="form-text">{{ __('messages.workspace_mode.project_type_help') }}</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ __('messages.projects.base_url') }}</label>

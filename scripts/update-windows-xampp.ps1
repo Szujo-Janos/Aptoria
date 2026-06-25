@@ -4,14 +4,16 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
     Copy-Item ".env.example" ".env"
 }
 
-
-if (-not (Test-Path "bootstrap\cache")) {
-    New-Item -ItemType Directory -Path "bootstrap\cache" -Force | Out-Null
-}
-
 if (-not (Test-Path "database")) {
     New-Item -ItemType Directory -Path "database" | Out-Null
 }
+
+New-Item -ItemType Directory -Path "bootstrap\cache" -Force | Out-Null
+New-Item -ItemType Directory -Path "storage\app" -Force | Out-Null
+New-Item -ItemType Directory -Path "storage\framework\cache\data" -Force | Out-Null
+New-Item -ItemType Directory -Path "storage\framework\sessions" -Force | Out-Null
+New-Item -ItemType Directory -Path "storage\framework\views" -Force | Out-Null
+New-Item -ItemType Directory -Path "storage\logs" -Force | Out-Null
 
 
 # Remove stale migration files from earlier prototype builds.

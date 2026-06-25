@@ -15,7 +15,7 @@ class ClientPortalAccess extends Model
 
     public const ROLES = ['client_viewer', 'client_approver', 'external_reviewer'];
 
-    public const PERMISSIONS = ['reports', 'readiness', 'findings', 'evidence'];
+    public const PERMISSIONS = ['decision_package', 'reports', 'readiness', 'findings', 'evidence'];
 
     protected $fillable = [
         'project_id',

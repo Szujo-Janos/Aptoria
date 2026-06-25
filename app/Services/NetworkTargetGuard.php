@@ -20,6 +20,15 @@ class NetworkTargetGuard
 
         $host = trim($host, '[]');
 
+        if ($this->demoModeRestrictsTargets()) {
+            $allowedTarget = $this->isAllowedDemoTarget($host);
+            if (! $allowedTarget) {
+                return $this->blocked('demo_target_not_allowed', __('messages.demo_mode.target_not_allowed'));
+            }
+
+            return ['allowed' => true, 'reason' => null, 'code' => null, 'host' => $host];
+        }
+
         if ($allowPrivateNetworks) {
             return ['allowed' => true, 'reason' => null, 'code' => null, 'host' => $host];
         }
@@ -39,6 +48,32 @@ class NetworkTargetGuard
     private function blocked(string $code, string $reason): array
     {
         return ['allowed' => false, 'reason' => $reason, 'code' => $code, 'host' => null];
+    }
+
+    private function demoModeRestrictsTargets(): bool
+    {
+        return (bool) config('aptoria.demo.mode', false) && count((array) config('aptoria.demo.allowed_targets', [])) > 0;
+    }
+
+    private function isAllowedDemoTarget(string $host): bool
+    {
+        $host = strtolower(trim($host));
+
+        foreach ((array) config('aptoria.demo.allowed_targets', []) as $allowed) {
+            $allowed = strtolower(trim((string) $allowed));
+            if ($allowed === '') {
+                continue;
+            }
+
+            $allowedHost = parse_url(str_contains($allowed, '://') ? $allowed : 'https://'.$allowed, PHP_URL_HOST) ?: $allowed;
+            $allowedHost = strtolower(trim((string) $allowedHost, '[]'));
+
+            if ($host === $allowedHost || str_ends_with($host, '.'.$allowedHost)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isLocalHost(string $host): bool

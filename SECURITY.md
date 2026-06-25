@@ -1,6 +1,6 @@
 # Security Policy
 
-Aptoria is a self-hosted QA evidence and release decision tool. The current public replacement line is **v0.0.53** and should be treated as an active **MVP / foundation release**, not a hardened enterprise product.
+Aptoria is a self-hosted QA evidence and release decision tool. The current public replacement line is **v0.0.63** and should be treated as an active **MVP / foundation release**, not a hardened enterprise product.
 
 > [!WARNING]
 > Do not use the legacy `v1.1.34` package as the active deployment baseline. It is archived and replaced by the current `0.0.x` line.
@@ -10,7 +10,7 @@ Aptoria is a self-hosted QA evidence and release decision tool. The current publ
 | Version line | Status | Security handling |
 | --- | --- | --- |
 | `0.0.x` | Active foundation line | Security review and fixes target the latest package. |
-| `v0.0.53` | Current public replacement baseline | Supported as the current public package. |
+| `v0.0.63` | Current public replacement baseline | Supported as the current public package. |
 | `v1.1.34` | Archived legacy line | Replaced; not recommended as an active deployment baseline. |
 
 ## Do not publish secrets

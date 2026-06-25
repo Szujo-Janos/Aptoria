@@ -51,7 +51,7 @@ class ReportDeliveryService
             'created_by_user_id' => $user?->id,
             'name' => $name,
             'role' => $options['role'] ?? 'client_approver',
-            'permissions_json' => ['reports', 'readiness'],
+            'permissions_json' => $this->defaultDeliveryPermissions($report),
             'is_active' => true,
             'acknowledge_required' => (bool) ($options['acknowledge_required'] ?? true),
             'acknowledgement_status' => (bool) ($options['acknowledge_required'] ?? true) ? 'pending' : 'not_required',
@@ -95,6 +95,23 @@ class ReportDeliveryService
             'client_last_downloaded_at' => now(),
             'client_delivery_summary_json' => $summary,
         ])->save();
+    }
+
+
+    public function defaultDeliveryPermissions(ReportVersion $report): array
+    {
+        $permissions = ['reports', 'readiness'];
+
+        $data = is_array($report->data_json) ? $report->data_json : [];
+        $isDecisionPackage = (bool) $report->release_gate_id
+            || data_get($data, 'source.type') === 'release_gate_decision_package'
+            || data_get($data, 'release_gate.id') !== null;
+
+        if ($isDecisionPackage) {
+            array_unshift($permissions, 'decision_package');
+        }
+
+        return array_values(array_unique($permissions));
     }
 
     private function parseDate(mixed $value): ?Carbon

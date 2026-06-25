@@ -7,6 +7,8 @@ use App\Models\ReportVersion;
 use App\Models\ClientPortalAcknowledgement;
 use App\Services\AuditLogger;
 use App\Services\ClientPortalAcknowledgementService;
+use App\Services\ClientPortalDecisionHandoffService;
+use App\Services\ReleaseGateDecisionPackageService;
 use App\Services\ReleaseDecisionReportVersionService;
 use App\Services\ReportDeliveryService;
 use App\Services\ReportVisualStandardService;
@@ -19,7 +21,7 @@ use Illuminate\View\View;
 
 class PublicClientPortalController extends Controller
 {
-    public function show(string $token, ReportDeliveryService $deliveryService): View
+    public function show(string $token, ReportDeliveryService $deliveryService, ClientPortalDecisionHandoffService $handoffService): View
     {
         $access = $this->resolveAccess($token);
         $access->forceFill(['last_viewed_at' => now()])->save();
@@ -33,6 +35,11 @@ class PublicClientPortalController extends Controller
             }
             $reports = $reportsQuery->limit(8)->get();
         }
+        $decisionPackages = $access->allows('decision_package')
+            ? $handoffService->approvedDecisionPackages($project, $access)
+            : collect();
+        $decisionMatrix = $handoffService->publicMatrix($decisionPackages);
+
         $latestReadiness = $access->allows('readiness')
             ? $project->releaseReadinessRuns()->latest()->first()
             : null;
@@ -47,10 +54,13 @@ class PublicClientPortalController extends Controller
             'access' => $access->load(['reportVersion', 'createdBy']),
             'project' => $project,
             'reports' => $reports,
+            'decisionPackages' => $decisionPackages,
+            'decisionMatrix' => $decisionMatrix,
+            'handoffService' => $handoffService,
             'latestReadiness' => $latestReadiness,
             'findings' => $findings,
             'evidence' => $evidence,
-            'featuredReport' => $reports->first(),
+            'featuredReport' => $decisionPackages->first() ?: $reports->first(),
         ]);
     }
 
@@ -79,19 +89,34 @@ class PublicClientPortalController extends Controller
         return redirect()->route('client-portal.show', $access->token)->with('status', __('messages.client_portal.acknowledged'));
     }
 
-    public function download(string $token, ReportVersion $reportVersion, string $format, ReleaseDecisionReportVersionService $releaseDecisionReportService, ReportDeliveryService $deliveryService, ReportVisualStandardService $reportVisualStandardService): Response
+    public function download(string $token, ReportVersion $reportVersion, string $format, ReleaseDecisionReportVersionService $releaseDecisionReportService, ReleaseGateDecisionPackageService $releaseGatePackageService, ReportDeliveryService $deliveryService, ReportVisualStandardService $reportVisualStandardService): Response
     {
         $access = $this->resolveAccess($token);
-        abort_unless($access->allows('reports'), 403);
         abort_unless((int) $reportVersion->project_id === (int) $access->project_id, 404);
         if ($access->report_version_id) {
             abort_unless((int) $access->report_version_id === (int) $reportVersion->id, 403);
         }
-        abort_unless(in_array($format, ['md', 'html', 'pdf', 'json'], true), 404);
+
+        $reportData = is_array($reportVersion->data_json) ? $reportVersion->data_json : [];
+        $isDecisionPackage = (bool) $reportVersion->release_gate_id || data_get($reportData, 'source.type') === 'release_gate_decision_package';
+        $canDownloadReport = $access->allows('reports');
+        $canDownloadDecisionPackage = $isDecisionPackage && $access->allows('decision_package');
+        abort_unless($canDownloadReport || $canDownloadDecisionPackage, 403);
+        abort_unless(in_array($format, ['md', 'html', 'pdf', 'json', 'zip'], true), 404);
         abort_unless($deliveryService->isDeliverable($reportVersion), 403);
+        if ($format === 'zip') {
+            abort_unless($isDecisionPackage && $reportVersion->releaseGate, 404);
+        }
         $deliveryService->recordPublicDownload($reportVersion, $access, $format);
 
         $slug = Str::slug($access->project->name.'-'.$reportVersion->type.'-'.$reportVersion->id);
+
+        if ($format === 'zip') {
+            return response($releaseGatePackageService->zipBinary($reportVersion->releaseGate, $reportVersion), 200, [
+                'Content-Type' => 'application/zip',
+                'Content-Disposition' => 'attachment; filename="'.$slug.'-decision-package.zip"',
+            ]);
+        }
 
         if ($format === 'html') {
             return response($reportVisualStandardService->exportHtml($reportVersion), 200, [

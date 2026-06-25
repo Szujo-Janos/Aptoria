@@ -34,6 +34,51 @@
 
         <div class="row g-3">
             <div class="col-xl-8">
+                @if ($access->allows('decision_package'))
+                    <div class="card aptoria-panel-card mb-3">
+                        <div class="card-header border-light justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1"><i data-lucide="package-check" class="me-2 text-primary"></i>{{ __('messages.client_portal.decision_packages') }}</h5>
+                                <p class="text-muted mb-0 small">{{ __('messages.client_portal.decision_packages_copy') }}</p>
+                            </div>
+                            <span class="badge badge-soft-primary">{{ $decisionPackages->count() }}</span>
+                        </div>
+                        <div class="card-body">
+                            @forelse ($decisionPackages as $package)
+                                @php($summary = $handoffService->summary($package))
+                                <div class="border rounded-3 p-3 mb-3 aptoria-workflow-section">
+                                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                                        <div class="min-w-0">
+                                            <span class="badge badge-soft-success badge-label mb-2"><i class="ti ti-point-filled"></i>{{ __('messages.client_portal.approved_decision_package') }}</span>
+                                            <h5 class="mb-1 text-truncate">{{ $summary['gate_title'] ?: $package->title }}</h5>
+                                            <p class="text-muted small mb-0">{{ __('messages.client_portal.decision_package_checksum') }} <code>{{ $summary['checksum'] ? \Illuminate\Support\Str::limit($summary['checksum'], 16, '') : '—' }}</code></p>
+                                        </div>
+                                        <span class="badge badge-soft-{{ ($summary['final_decision'] ?? '') === 'no_go' ? 'danger' : (($summary['final_decision'] ?? '') === 'conditional_go' ? 'warning' : 'success') }} fs-6">{{ $summary['final_decision_label'] ?: __('messages.common.not_available') }}</span>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6 col-lg-3"><div class="border rounded p-2 h-100"><small class="text-muted d-block">{{ __('messages.release_readiness.score') }}</small><strong>{{ $summary['score'] ?? '—' }}/100</strong><span class="text-muted small ms-1">{{ $summary['grade'] ?: '' }}</span></div></div>
+                                        <div class="col-6 col-lg-3"><div class="border rounded p-2 h-100"><small class="text-muted d-block">{{ __('messages.release_gates.metrics.blockers') }}</small><strong>{{ $summary['blockers'] }}</strong></div></div>
+                                        <div class="col-6 col-lg-3"><div class="border rounded p-2 h-100"><small class="text-muted d-block">{{ __('messages.evidence.verified_metric') }}</small><strong>{{ $summary['verified_evidence'] }}</strong></div></div>
+                                        <div class="col-6 col-lg-3"><div class="border rounded p-2 h-100"><small class="text-muted d-block">{{ __('messages.native_tests.runs') }}</small><strong>{{ $summary['test_runs'] }}</strong></div></div>
+                                    </div>
+                                    @if (!empty($summary['decision_note']))
+                                        <div class="alert alert-light border small mb-3"><i data-lucide="file-text" class="me-1"></i>{{ $summary['decision_note'] }}</div>
+                                    @endif
+                                    <div class="btn-group btn-group-sm flex-wrap">
+                                        <a class="btn btn-light" href="{{ route('client-portal.reports.download', [$access->token, $package, 'html']) }}"><i data-lucide="file-code-2" class="me-1"></i>HTML</a>
+                                        <a class="btn btn-light" href="{{ route('client-portal.reports.download', [$access->token, $package, 'pdf']) }}"><i data-lucide="file-type-pdf" class="me-1"></i>PDF</a>
+                                        <a class="btn btn-light" href="{{ route('client-portal.reports.download', [$access->token, $package, 'json']) }}"><i data-lucide="braces" class="me-1"></i>JSON</a>
+                                        <a class="btn btn-primary" href="{{ route('client-portal.reports.download', [$access->token, $package, 'zip']) }}"><i data-lucide="archive" class="me-1"></i>ZIP</a>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center text-muted py-4">{{ __('messages.client_portal.no_decision_packages') }}</div>
+                            @endforelse
+                        </div>
+                        <div class="card-footer aptoria-card-footer-subtle text-muted">{{ __('messages.client_portal.decision_packages_footer') }}</div>
+                    </div>
+                @endif
+
                 @if ($access->allows('reports'))
                     <div class="card aptoria-panel-card mb-3">
                         <div class="card-header border-light justify-content-between align-items-center"><div><h5 class="card-title mb-1">{{ __('messages.client_portal.shared_reports') }}</h5><p class="text-muted mb-0 small">{{ __('messages.client_portal.shared_reports_copy') }}</p></div><span class="badge badge-soft-primary">{{ $reports->count() }}</span></div>

@@ -1649,3 +1649,288 @@ html[data-bs-theme="dark"] .aptoria-security-hardening-copy small { color: var(-
     overflow-x: hidden;
     max-height: calc(100vh - 12rem);
 }
+
+/* v0.0.56 License Management */
+.aptoria-code-panel {
+    max-height: 420px;
+    overflow: auto;
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: .75rem;
+    background: rgba(15, 23, 42, .035);
+    padding: 1rem;
+}
+[data-bs-theme="dark"] .aptoria-code-panel {
+    background: rgba(15, 23, 42, .42);
+    border-color: rgba(148, 163, 184, .22);
+}
+
+/* v0.0.61 Live / Sandbox workspace separation */
+.aptoria-workspace-mode-switch {
+    border: 1px solid rgba(148, 163, 184, .28);
+    border-radius: 999px;
+    padding: .2rem;
+    background: rgba(148, 163, 184, .08);
+}
+.aptoria-workspace-mode-switch .aptoria-mode-toggle {
+    border-radius: 999px;
+    font-weight: 400;
+    line-height: 1.2;
+}
+.aptoria-workspace-mode-switch .aptoria-mode-toggle svg {
+    width: .95rem;
+    height: .95rem;
+}
+.aptoria-sandbox-safety-strip {
+    border: 1px solid rgba(245, 158, 11, .35);
+    border-radius: .85rem;
+    padding: .85rem 1rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .16), rgba(245, 158, 11, .06));
+    color: #92400e;
+}
+.aptoria-sandbox-safety-strip svg {
+    width: 1.15rem;
+    height: 1.15rem;
+}
+[data-bs-theme="dark"] .aptoria-sandbox-safety-strip {
+    color: #fcd34d;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .18), rgba(15, 23, 42, .28));
+    border-color: rgba(245, 158, 11, .32);
+}
+
+/* v0.0.62 landing redesign + sidebar license status */
+.aptoria-sidebar-license { border: 1px solid var(--ins-border-color); border-radius: .8rem; padding: .9rem .95rem; background: linear-gradient(180deg, rgba(var(--ins-light-rgb), .45), rgba(var(--ins-light-rgb), .2)); }
+.aptoria-sidebar-license-head { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ins-secondary-color); margin-bottom: .45rem; }
+.aptoria-sidebar-license-state { display: flex; align-items: center; gap: .55rem; margin-bottom: .35rem; }
+.aptoria-sidebar-license-state strong { font-size: .95rem; font-weight: 600; color: var(--ins-heading-color); }
+.aptoria-sidebar-license small { display: block; color: var(--ins-secondary-color); line-height: 1.35; }
+.aptoria-sidebar-license-dot { width: .65rem; height: .65rem; border-radius: 999px; display: inline-block; box-shadow: 0 0 0 .28rem rgba(var(--ins-light-rgb), .85); }
+.aptoria-sidebar-license.is-valid .aptoria-sidebar-license-dot { background: var(--ins-success); box-shadow: 0 0 0 .28rem rgba(var(--ins-success-rgb), .14); }
+.aptoria-sidebar-license.is-invalid .aptoria-sidebar-license-dot { background: var(--ins-danger); box-shadow: 0 0 0 .28rem rgba(var(--ins-danger-rgb), .14); }
+html[data-bs-theme="dark"] .aptoria-sidebar-license { background: rgba(255,255,255,.03); }
+
+.aptoria-landing-body { background: #07111f; color: #dbe7ff; position: relative; overflow-x: hidden; }
+.aptoria-landing-body .container { max-width: none; width: 100%; padding-inline: 0; }
+.aptoria-landing-body .auth-logo, .aptoria-landing-body .card { display: none; }
+.aptoria-landing-scene { position: relative; min-height: 100vh; overflow: hidden; background: linear-gradient(135deg, #030712 0%, #07111f 45%, #0a1730 100%); }
+.aptoria-landing-backdrop { position: absolute; inset: 0; background: linear-gradient(110deg, rgba(3, 7, 18, .92) 2%, rgba(5, 12, 28, .88) 42%, rgba(5, 10, 22, .6) 100%), url('../images/landing-qa-hero.png') center/cover no-repeat; opacity: .98; }
+.aptoria-landing-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(77, 127, 212, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(77, 127, 212, .08) 1px, transparent 1px); background-size: 46px 46px; mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.45)); opacity: .38; }
+.aptoria-landing-shell { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; }
+.aptoria-landing-frame { width: min(1540px, calc(100% - 56px)); margin: 0 auto; padding: 1.5rem 0; }
+.aptoria-landing-copy, .aptoria-landing-console-wrap { position: relative; }
+.aptoria-landing-logo { height: 56px; width: auto; max-width: 280px; }
+.aptoria-landing-badge { border: 1px solid rgba(148, 163, 184, .24); border-radius: 999px; padding: .55rem .95rem; font-size: .79rem; letter-spacing: .08em; text-transform: uppercase; color: #93c5fd; background: rgba(15, 23, 42, .65); backdrop-filter: blur(12px); }
+.aptoria-landing-badge-dot { width: .55rem; height: .55rem; border-radius: 999px; background: #22c55e; box-shadow: 0 0 0 .34rem rgba(34,197,94,.16); }
+.aptoria-landing-title { font-size: clamp(2.5rem, 4.4vw, 4.45rem); line-height: 1.02; font-weight: 700; color: #f8fbff; margin-bottom: 1rem; max-width: 11ch; }
+.aptoria-landing-lead { max-width: 650px; font-size: 1.1rem; line-height: 1.75; color: rgba(219, 231, 255, .82); margin-bottom: 1.45rem; }
+.aptoria-landing-chip-row { display: flex; flex-wrap: wrap; gap: .75rem; }
+.aptoria-landing-chip { display: inline-flex; align-items: center; padding: .55rem .9rem; border-radius: 999px; border: 1px solid rgba(148, 163, 184, .22); background: rgba(8, 15, 31, .7); color: #c9dcff; font-size: .87rem; }
+.aptoria-landing-value-list { display: grid; gap: .9rem; max-width: 640px; }
+.aptoria-landing-value-item { display: flex; gap: .95rem; align-items: flex-start; padding: 1rem 1.05rem; border-radius: 1rem; border: 1px solid rgba(148, 163, 184, .14); background: rgba(9, 17, 34, .56); backdrop-filter: blur(10px); }
+.aptoria-landing-value-item i { width: 1.2rem; height: 1.2rem; margin-top: .15rem; color: #22c55e; flex: 0 0 auto; }
+.aptoria-landing-value-item strong, .aptoria-landing-value-item span { display: block; }
+.aptoria-landing-value-item strong { color: #f8fbff; font-size: 1rem; margin-bottom: .15rem; }
+.aptoria-landing-value-item span { color: rgba(219,231,255,.68); font-size: .92rem; line-height: 1.55; }
+.aptoria-landing-stat-card, .aptoria-landing-panel { border: 1px solid rgba(148, 163, 184, .14); background: rgba(9, 17, 34, .62); backdrop-filter: blur(14px); box-shadow: 0 20px 44px rgba(2, 6, 23, .28); }
+.aptoria-landing-stat-card { height: 100%; border-radius: 1rem; padding: 1rem 1.05rem; }
+.aptoria-landing-stat-card small, .aptoria-console-mini-card span, .aptoria-landing-eyebrow { display: block; text-transform: uppercase; letter-spacing: .08em; color: #8fb4ff; font-size: .73rem; margin-bottom: .4rem; }
+.aptoria-landing-stat-card strong { display: block; color: #f8fbff; font-size: 1.15rem; margin-bottom: .2rem; }
+.aptoria-landing-stat-card span { display: block; color: rgba(219,231,255,.68); font-size: .86rem; line-height: 1.5; }
+.aptoria-landing-terminal-panel { border-radius: 1.2rem; overflow: hidden; }
+.aptoria-console-toolbar { display: flex; align-items: center; gap: .45rem; padding: .95rem 1rem; border-bottom: 1px solid rgba(148,163,184,.12); background: rgba(2, 6, 23, .72); }
+.aptoria-console-dot { width: .75rem; height: .75rem; border-radius: 999px; display: inline-block; }
+.aptoria-console-dot.is-danger { background: #fb7185; }
+.aptoria-console-dot.is-warning { background: #fbbf24; }
+.aptoria-console-dot.is-success { background: #22c55e; }
+.aptoria-console-toolbar-label { margin-left: .55rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: #9db7df; }
+.aptoria-console-screen { padding: 1.25rem 1.2rem 1.3rem; background: linear-gradient(180deg, rgba(3, 7, 18, .96), rgba(7, 14, 29, .96)); }
+.aptoria-console-section-label { color: #60a5fa; text-transform: uppercase; letter-spacing: .08em; font-size: .72rem; margin-bottom: .9rem; }
+.aptoria-console-command-line { display: flex; align-items: center; gap: .45rem; min-height: 1.65rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; color: #e2f3ff; font-size: .98rem; margin-bottom: .75rem; }
+.aptoria-console-prompt { color: #22c55e; font-weight: 700; }
+.aptoria-console-caret { width: .62rem; height: 1.05rem; background: #38bdf8; display: inline-block; border-radius: 1px; animation: aptoria-console-blink 1s step-end infinite; }
+.aptoria-console-output { min-height: 2.8rem; padding: .85rem .95rem; border-radius: .9rem; background: rgba(15, 23, 42, .72); border: 1px solid rgba(148, 163, 184, .12); color: rgba(219,231,255,.78); line-height: 1.6; }
+.aptoria-console-mini-card { height: 100%; padding: .95rem 1rem; border-radius: .95rem; border: 1px solid rgba(148,163,184,.12); background: rgba(8, 15, 31, .72); }
+.aptoria-console-mini-card strong { display: block; color: #f8fbff; font-size: 1.1rem; margin-bottom: .2rem; }
+.aptoria-console-mini-card small { display: block; color: rgba(219,231,255,.68); line-height: 1.45; }
+.aptoria-landing-note-card, .aptoria-landing-stack-card { border-radius: 1rem; padding: 1.15rem 1.1rem; }
+.aptoria-landing-note-card h2 { color: #f8fbff; }
+.aptoria-landing-stack-list { display: grid; gap: .9rem; }
+.aptoria-landing-stack-list li { display: flex; gap: .75rem; align-items: flex-start; color: rgba(219,231,255,.82); }
+.aptoria-landing-stack-list i { width: 1.05rem; height: 1.05rem; color: #38bdf8; margin-top: .15rem; flex: 0 0 auto; }
+.aptoria-landing-body .btn-outline-light { border-color: rgba(255,255,255,.2); color: #f8fbff; }
+.aptoria-landing-body .btn-outline-light:hover { background: rgba(255,255,255,.12); color: #fff; }
+.aptoria-landing-body .btn-outline-info { border-color: rgba(56,189,248,.35); color: #c8f4ff; }
+.aptoria-landing-body .btn-outline-info:hover { background: rgba(56,189,248,.14); color: #fff; }
+.aptoria-landing-body .btn-light { border-color: transparent; }
+@keyframes aptoria-console-blink { 50% { opacity: 0; } }
+html[data-bs-theme="dark"] .aptoria-landing-scene { background: linear-gradient(135deg, #020611 0%, #061123 100%); }
+
+
+/* v0.0.62 light landing background hotfix */
+.aptoria-landing-body {
+    background: #f7fbff !important;
+    color: #172033 !important;
+}
+.aptoria-landing-scene {
+    background: linear-gradient(135deg, #ffffff 0%, #f4f9ff 46%, #eaf4ff 100%) !important;
+}
+.aptoria-landing-backdrop {
+    background:
+        linear-gradient(100deg, rgba(255, 255, 255, .98) 0%, rgba(247, 251, 255, .94) 35%, rgba(247, 251, 255, .58) 68%, rgba(247, 251, 255, .22) 100%),
+        url('../images/landing-qa-hero.png') center/cover no-repeat !important;
+    opacity: 1 !important;
+}
+.aptoria-landing-grid {
+    background-image:
+        linear-gradient(rgba(59, 130, 246, .08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59, 130, 246, .08) 1px, transparent 1px) !important;
+    opacity: .42 !important;
+}
+.aptoria-landing-badge {
+    color: #1d4ed8 !important;
+    border-color: rgba(37, 99, 235, .18) !important;
+    background: rgba(255, 255, 255, .78) !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+}
+.aptoria-landing-title {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+.aptoria-landing-lead {
+    color: #42526a !important;
+}
+.aptoria-landing-chip {
+    color: #0f2a4d !important;
+    border-color: rgba(37, 99, 235, .16) !important;
+    background: rgba(255, 255, 255, .78) !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .05);
+}
+.aptoria-landing-value-item,
+.aptoria-landing-stat-card,
+.aptoria-landing-panel {
+    color: #172033 !important;
+    border-color: rgba(37, 99, 235, .13) !important;
+    background: rgba(255, 255, 255, .84) !important;
+    box-shadow: 0 22px 50px rgba(30, 64, 175, .10) !important;
+}
+.aptoria-landing-value-item strong,
+.aptoria-landing-stat-card strong,
+.aptoria-landing-note-card h2,
+.aptoria-console-mini-card strong {
+    color: #0f172a !important;
+}
+.aptoria-landing-value-item span,
+.aptoria-landing-stat-card span,
+.aptoria-console-mini-card small,
+.aptoria-landing-stack-list li,
+.aptoria-landing-note-card .text-muted,
+.aptoria-console-output {
+    color: #475569 !important;
+}
+.aptoria-landing-stat-card small,
+.aptoria-console-mini-card span,
+.aptoria-landing-eyebrow,
+.aptoria-console-toolbar-label,
+.aptoria-console-section-label {
+    color: #2563eb !important;
+}
+.aptoria-landing-terminal-panel {
+    background: rgba(255, 255, 255, .9) !important;
+}
+.aptoria-console-toolbar {
+    border-bottom-color: rgba(37, 99, 235, .12) !important;
+    background: rgba(255, 255, 255, .78) !important;
+}
+.aptoria-console-screen {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .92), rgba(241, 247, 255, .92)) !important;
+}
+.aptoria-console-command-line {
+    color: #0f172a !important;
+}
+.aptoria-console-output {
+    border-color: rgba(37, 99, 235, .12) !important;
+    background: rgba(239, 246, 255, .82) !important;
+}
+.aptoria-console-mini-card {
+    border-color: rgba(37, 99, 235, .12) !important;
+    background: rgba(255, 255, 255, .72) !important;
+}
+.aptoria-landing-body .btn-outline-light {
+    border-color: rgba(15, 23, 42, .16) !important;
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, .58) !important;
+}
+.aptoria-landing-body .btn-outline-light:hover {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+.aptoria-landing-body .btn-outline-info {
+    border-color: rgba(14, 165, 233, .35) !important;
+    color: #075985 !important;
+    background: rgba(240, 249, 255, .66) !important;
+}
+.aptoria-landing-body .btn-outline-info:hover {
+    background: #e0f2fe !important;
+    color: #075985 !important;
+}
+.aptoria-landing-body .btn-light {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: rgba(15, 23, 42, .12) !important;
+}
+
+
+/* v0.0.62 simplified license activation */
+.aptoria-simple-activation-drop {
+    border: 1px dashed rgba(var(--ins-primary-rgb), .35);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(var(--ins-primary-rgb), .06), rgba(var(--ins-info-rgb), .035));
+}
+.aptoria-license-details {
+    border-top: 1px solid var(--ins-border-color);
+    padding-top: 1rem;
+}
+.aptoria-license-details summary {
+    cursor: pointer;
+}
+
+
+/* v0.0.62 simplified license management */
+.aptoria-license-management-hero {
+    border: 1px solid rgba(var(--ins-primary-rgb), .12);
+}
+.aptoria-license-mini-stat {
+    height: 100%;
+    border: 1px solid var(--ins-border-color);
+    border-radius: .85rem;
+    padding: 1rem;
+    background: rgba(var(--ins-light-rgb), .35);
+}
+.aptoria-license-mini-stat small,
+.aptoria-license-mini-stat span {
+    display: block;
+    color: var(--ins-secondary-color);
+    line-height: 1.35;
+}
+.aptoria-license-mini-stat small {
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: .68rem;
+    margin-bottom: .35rem;
+}
+.aptoria-license-mini-stat strong {
+    display: block;
+    color: var(--ins-heading-color);
+    font-size: 1.05rem;
+    margin-bottom: .25rem;
+}
+.aptoria-card-summary {
+    cursor: pointer;
+    list-style: none;
+}
+.aptoria-card-summary::-webkit-details-marker {
+    display: none;
+}
+html[data-bs-theme="dark"] .aptoria-license-mini-stat {
+    background: rgba(255,255,255,.025);
+}

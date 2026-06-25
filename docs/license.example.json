@@ -1,0 +1,22 @@
+{
+  "payload": {
+    "license_id": "APT-PORTABLE-0001",
+    "product": "aptoria",
+    "edition": "portable",
+    "subject": "Example customer",
+    "issued_at": "2026-06-20T00:00:00Z",
+    "expires_at": "2027-06-20T00:00:00Z",
+    "features": [
+      "portable_usb",
+      "evidence_repository",
+      "release_gate"
+    ],
+    "fingerprint_binding": {
+      "mode": "machine_or_usb",
+      "fingerprints": [
+        "sha256:REPLACE_WITH_MACHINE_OR_USB_FINGERPRINT"
+      ]
+    }
+  },
+  "signature": "BASE64_RSA_SHA256_SIGNATURE"
+}

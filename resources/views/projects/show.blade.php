@@ -26,6 +26,7 @@
                 <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start">
                     <div class="min-w-0">
                         <span class="badge badge-soft-{{ $project->status_tone }} badge-label mb-2"><i class="ti ti-point-filled"></i>{{ $project->status_label }}</span>
+                        <span class="badge badge-soft-{{ $project->workspace_type_tone }} badge-label mb-2 ms-1"><i data-lucide="{{ $project->isSandbox() ? 'flask-conical' : 'shield-check' }}" class="me-1"></i>{{ $project->workspace_type_label }}</span>
                         <h2 class="mb-2 fw-normal text-truncate">{{ $project->name }}</h2>
                         <p class="text-muted mb-0">{{ $project->description ?: __('messages.projects.no_description') }}</p>
                     </div>
@@ -52,6 +53,7 @@
             <div class="card-header border-light"><h5 class="card-title mb-0">{{ __('messages.workspace.project_context') }}</h5></div>
             <div class="card-body p-0">
                 <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between gap-3"><span class="text-muted">{{ __('messages.workspace_mode.project_type') }}</span><strong>{{ $project->workspace_type_label }}</strong></div>
                     <div class="list-group-item d-flex justify-content-between gap-3"><span class="text-muted">{{ __('messages.projects.base_url') }}</span><strong class="text-truncate">{{ $project->base_url ?: '—' }}</strong></div>
                     <div class="list-group-item d-flex justify-content-between gap-3"><span class="text-muted">{{ __('messages.nav.environments') }}</span><strong>{{ $metrics['environments'] ?? 0 }}</strong></div>
                     <div class="list-group-item d-flex justify-content-between gap-3"><span class="text-muted">{{ __('messages.nav.auth_profiles') }}</span><strong>{{ $metrics['auth_profiles'] ?? 0 }}</strong></div>

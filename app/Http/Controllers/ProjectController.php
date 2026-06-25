@@ -7,6 +7,7 @@ use App\Models\ProjectSetting;
 use App\Services\AuditLogger;
 use App\Services\ProjectAccessService;
 use App\Services\ProjectWorkspaceService;
+use App\Services\WorkspaceModeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -15,12 +16,16 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
-    public function index(Request $request, ProjectAccessService $projectAccess): View
+    public function index(Request $request, ProjectAccessService $projectAccess, WorkspaceModeService $workspaceMode): View
     {
         $status = $request->query('status');
         $status = in_array($status, ['active', 'draft', 'paused'], true) ? $status : null;
 
-        $projectsQuery = $projectAccess->visibleProjectsQuery($request->user())->with(['owner', 'memberships.user'])->withCount('auditLogs')->latest();
+        $activeWorkspaceMode = $workspaceMode->current($request);
+        $projectsQuery = $workspaceMode->applyMode(
+            $projectAccess->visibleProjectsQuery($request->user())->with(['owner', 'memberships.user'])->withCount('auditLogs'),
+            $activeWorkspaceMode
+        )->latest();
 
         if ($status) {
             $projectsQuery->where('status', $status);
@@ -28,23 +33,27 @@ class ProjectController extends Controller
 
         return view('projects.index', [
             'projects' => $projectsQuery->paginate(12)->withQueryString(),
-            'projectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->count(),
-            'activeProjectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->where('status', 'active')->count(),
-            'draftProjectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->where('status', 'draft')->count(),
-            'pausedProjectCount' => (clone $projectAccess->visibleProjectsQuery($request->user()))->where('status', 'paused')->count(),
+            'projectCount' => $workspaceMode->applyMode($projectAccess->visibleProjectsQuery($request->user()), $activeWorkspaceMode)->count(),
+            'activeProjectCount' => $workspaceMode->applyMode($projectAccess->visibleProjectsQuery($request->user()), $activeWorkspaceMode)->where('status', 'active')->count(),
+            'draftProjectCount' => $workspaceMode->applyMode($projectAccess->visibleProjectsQuery($request->user()), $activeWorkspaceMode)->where('status', 'draft')->count(),
+            'pausedProjectCount' => $workspaceMode->applyMode($projectAccess->visibleProjectsQuery($request->user()), $activeWorkspaceMode)->where('status', 'paused')->count(),
             'statusFilter' => $status,
             'projectAccess' => $projectAccess,
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request, WorkspaceModeService $workspaceMode): View
     {
-        return view('projects.create', ['project' => new Project(['status' => 'draft'])]);
+        return view('projects.create', ['project' => new Project([
+            'status' => 'draft',
+            'workspace_type' => $workspaceMode->current($request),
+        ])]);
     }
 
-    public function store(Request $request, AuditLogger $auditLogger, ProjectAccessService $projectAccess): RedirectResponse
+    public function store(Request $request, AuditLogger $auditLogger, ProjectAccessService $projectAccess, WorkspaceModeService $workspaceMode): RedirectResponse
     {
         $data = $this->validated($request);
+        $data['workspace_type'] = WorkspaceModeService::normalize($data['workspace_type'] ?? $workspaceMode->current($request));
         $data['user_id'] = $request->user()->id;
         $data['slug'] = $this->uniqueSlug($data['name']);
         $data['is_active'] = $data['status'] !== 'paused';
@@ -52,10 +61,12 @@ class ProjectController extends Controller
         $project = Project::create($data);
         $projectAccess->ensureOwnerMembership($project);
         $this->bootstrapDefaultEnvironment($project);
+        $workspaceMode->set($request, $project->workspace_type);
         $request->session()->put('current_project_id', $project->id);
         $auditLogger->record('created', __('messages.audit_messages.project_created'), $project, [
             'base_url' => $project->base_url,
             'status' => $project->status,
+            'workspace_type' => $project->workspace_type,
         ], 'workspace');
 
         return redirect()->route('projects.show', $project)->with('status', __('messages.projects.created'));
@@ -79,14 +90,15 @@ class ProjectController extends Controller
 
     public function update(Request $request, Project $project, AuditLogger $auditLogger): RedirectResponse
     {
-        $before = $project->only(['name', 'base_url', 'environment_label', 'status', 'qa_owner', 'release_goal']);
+        $before = $project->only(['name', 'base_url', 'environment_label', 'status', 'workspace_type', 'qa_owner', 'release_goal']);
         $data = $this->validated($request);
+        $data['workspace_type'] = WorkspaceModeService::normalize($data['workspace_type'] ?? $project->workspace_type);
         $data['is_active'] = $data['status'] !== 'paused';
         $project->update($data);
 
         $auditLogger->record('updated', __('messages.audit_messages.project_updated'), $project, [
             'before' => $before,
-            'after' => $project->only(['name', 'base_url', 'environment_label', 'status', 'qa_owner', 'release_goal']),
+            'after' => $project->only(['name', 'base_url', 'environment_label', 'status', 'workspace_type', 'qa_owner', 'release_goal']),
         ], 'workspace');
 
         return redirect()->route('projects.show', $project)->with('status', __('messages.projects.updated'));
@@ -142,6 +154,7 @@ class ProjectController extends Controller
             'base_url' => ['nullable', 'url', 'max:500'],
             'environment_label' => ['nullable', 'string', 'max:80'],
             'status' => ['required', 'in:draft,active,paused'],
+            'workspace_type' => ['nullable', 'in:live,sandbox'],
             'qa_owner' => ['nullable', 'string', 'max:160'],
             'release_goal' => ['nullable', 'string', 'max:2000'],
         ]);

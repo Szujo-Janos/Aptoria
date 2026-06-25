@@ -11,9 +11,12 @@ class Project extends Model
 {
     use HasFactory;
 
+    public const WORKSPACE_TYPE_LIVE = 'live';
+    public const WORKSPACE_TYPE_SANDBOX = 'sandbox';
+
     protected $fillable = [
         'user_id', 'name', 'slug', 'description', 'base_url', 'environment_label',
-        'status', 'qa_owner', 'release_goal', 'is_active',
+        'status', 'workspace_type', 'qa_owner', 'release_goal', 'is_active',
     ];
 
     protected function casts(): array
@@ -202,6 +205,26 @@ class Project extends Model
     public function defaultAuthProfile(): ?AuthProfile
     {
         return $this->authProfiles()->where('is_default', true)->first();
+    }
+
+    public function isSandbox(): bool
+    {
+        return $this->workspace_type === self::WORKSPACE_TYPE_SANDBOX;
+    }
+
+    public function isLive(): bool
+    {
+        return ! $this->isSandbox();
+    }
+
+    public function getWorkspaceTypeLabelAttribute(): string
+    {
+        return __('messages.workspace_mode.'.($this->workspace_type ?: self::WORKSPACE_TYPE_LIVE));
+    }
+
+    public function getWorkspaceTypeToneAttribute(): string
+    {
+        return $this->isSandbox() ? 'warning' : 'success';
     }
 
     public function getStatusLabelAttribute(): string

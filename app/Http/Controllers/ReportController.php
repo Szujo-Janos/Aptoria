@@ -7,6 +7,7 @@ use App\Models\ReportVersion;
 use App\Services\AuditLogger;
 use App\Services\ReportBuilderService;
 use App\Services\ReleaseDecisionReportVersionService;
+use App\Services\ReleaseGateDecisionPackageService;
 use App\Services\ReportDeliveryService;
 use App\Services\ReportVisualStandardService;
 use Illuminate\Http\RedirectResponse;
@@ -82,12 +83,21 @@ class ReportController extends Controller
         ]);
     }
 
-    public function download(Project $project, ReportVersion $reportVersion, string $format, ReleaseDecisionReportVersionService $releaseDecisionReportService, ReportVisualStandardService $reportVisualStandardService): Response
+    public function download(Project $project, ReportVersion $reportVersion, string $format, ReleaseDecisionReportVersionService $releaseDecisionReportService, ReleaseGateDecisionPackageService $releaseGatePackageService, ReportVisualStandardService $reportVisualStandardService): Response
     {
         $this->ensureBelongsToProject($project, $reportVersion);
-        abort_unless(in_array($format, ['md', 'html', 'pdf', 'json'], true), 404);
+        abort_unless(in_array($format, ['md', 'html', 'pdf', 'json', 'zip'], true), 404);
 
         $slug = Str::slug($project->name.'-'.$reportVersion->type.'-'.$reportVersion->id);
+
+        if ($format === 'zip') {
+            abort_unless($reportVersion->release_gate_id && $reportVersion->releaseGate, 404);
+
+            return response($releaseGatePackageService->zipBinary($reportVersion->releaseGate, $reportVersion), 200, [
+                'Content-Type' => 'application/zip',
+                'Content-Disposition' => 'attachment; filename="'.$slug.'-decision-package.zip"',
+            ]);
+        }
 
         if ($format === 'html') {
             return response($reportVisualStandardService->exportHtml($reportVersion), 200, [
