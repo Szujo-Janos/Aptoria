@@ -43,8 +43,8 @@ This file must never be included in release ZIPs or committed to Git.
 Use a clean target folder so old migrations, cached files and views cannot remain in `C:\xampp\htdocs\aptoria`.
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-0.0.63-github-transition.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_0.0.63"
+$ZipPath = "E:\Aptoria\aptoria-0.0.63.zip"
+$TempPath = "E:\Aptoria\_temp_aptoria_0.0.63"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue

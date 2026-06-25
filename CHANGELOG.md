@@ -15,6 +15,7 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 
 ## v0.0.63 - Online License Authority Client Foundation
 
+- Sanitized public Markdown documentation for GitHub release: removed internal issuer docs, replaced private-tool details with public activation/authority wording, and removed private issuer UI references from the public package.
 - Added `OnlineLicenseAuthorityService` for the aptoria.dev runtime lease direction.
 - Added license mode configuration: `local_package`, `online_authority`, `hybrid`.
 - Added runtime lease cache path, authority URL, authority public key and offline grace configuration.
@@ -74,21 +75,21 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 - Added login-page demo credentials panel when `APTORIA_DEMO_MODE=true`.
 - Added `docs/LIVE_DEMO_API_SANDBOX.md` and feature coverage for the sandbox foundation.
 
-## v0.0.57 Hotfix - Private License Issuer Web UI
+## v0.0.57 Hotfix - License Administration Web UI
 
-- Added an admin-only Private License Issuer web UI under Program Settings while keeping the issuer tool physically separated under `tools/license-issuer`.
-- Added shared `tools/license-issuer/src/LicenseIssuerCore.php` so the issuer logic can later be moved into a separate private tool/repository.
+- Added an admin-only License Administration web UI under Program Settings.
+- Added shared license issuance core so signing logic can later be moved into a separate internal utility.
 - Added web workflows for generating issuer keypairs, issuing signed `aptoria-license.json` files from runtime requests and verifying signed licenses before delivery.
 - Added semantic navigation and documentation for the temporary in-app issuer testing workflow.
 - Kept generated keys and issued outputs excluded from release ZIPs.
 
-## v0.0.57 - Private License Issuer Tool
+## v0.0.57 - License Issuance Tooling
 
-- Added standalone private-side license issuer scripts under `tools/license-issuer`.
+- Added license issuance support for signed activation packages.
 - Added RSA keypair generation tool for issuer-owned private/public keys.
 - Added `issue-license.php` to read Aptoria license requests and sign `aptoria-license.json` with RSA/SHA-256.
 - Added `verify-license.php` to validate generated licenses against the issuer public key and optional request fingerprint binding.
-- Added sample request, issuer `.gitignore`, expanded issuer README and `docs/PRIVATE_LICENSE_ISSUER_TOOL.md`.
+- Added public-safe license activation documentation and repository hygiene notes.
 - Updated license issuance and USB runtime documentation with the complete request -> issue -> verify -> install flow.
 - Kept private keys, generated PEM files and signed license outputs excluded from release ZIPs.
 
@@ -343,7 +344,7 @@ Aptoria release history for the `0.0.x` evidence-first rebuild.
 
 ## v0.0.57 hotfix - XAMPP OpenSSL issuer keypair fallback
 
-- Improved Private License Issuer keypair generation on Windows/XAMPP.
+- Improved License Administration keypair generation on Windows/XAMPP.
 - The issuer now retries PHP OpenSSL with discovered `openssl.cnf` paths.
 - Added fallback support for external `openssl` / `openssl.exe` binaries.
 - Updated CLI keypair generator to use the shared issuer core.

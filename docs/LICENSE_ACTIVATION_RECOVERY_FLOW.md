@@ -10,7 +10,7 @@ The page is intentionally simple. In normal use the user uploads **one activatio
 
 ## Recommended activation package
 
-The private license issuer should send one ZIP file containing:
+The license authority should send one ZIP file containing:
 
 ```text
 aptoria-license.json
@@ -45,7 +45,7 @@ This remains useful for locked-down or portable runtime setups.
 Program Settings → License Management uses the same simplified workflow:
 
 1. Download license request.
-2. Send it to the license issuer.
+2. Send it to the license authority.
 3. Receive one activation package.
 4. Upload that package.
 

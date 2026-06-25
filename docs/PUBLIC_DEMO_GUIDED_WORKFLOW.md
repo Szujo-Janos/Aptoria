@@ -111,7 +111,7 @@ Do not expose the public demo with unrestricted scan targets. Keep the target al
 Recommended blocked areas for public demos:
 
 - License Management
-- Private License Issuer
+- License administration
 - User Management
 - Database maintenance
 - Project deletion

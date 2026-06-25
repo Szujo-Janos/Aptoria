@@ -3,8 +3,8 @@
 Use this pattern for local installation. For the clean rebuild phase, delete the old target folder before copying the new ZIP so no old migrations/views remain.
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-0.0.3.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_0.0.3"
+$ZipPath = "E:\Aptoria\aptoria-0.0.63.zip"
+$TempPath = "E:\Aptoria\_temp_aptoria_0.0.63"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
@@ -12,7 +12,7 @@ Remove-Item $ProjectRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $ProjectRoot -Force
 
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
-Copy-Item "$TempPath\aptoria-0.0.3\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-0.0.63\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass

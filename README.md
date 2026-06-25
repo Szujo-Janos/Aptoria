@@ -2,6 +2,8 @@
   <img src="public/assets/aptoria-ui/assets/images/logo-color.svg" alt="Aptoria logo" width="320">
 </p>
 
+<h1 align="center">Aptoria</h1>
+
 <p align="center">
   <strong>Evidence-first API QA, coverage and release-decision platform.</strong><br>
   Turn scattered API QA artifacts into auditable evidence, release gates and decision packages.
@@ -343,8 +345,8 @@ Prefer a clean target folder when replacing an older local copy so stale migrati
 Use this exact PowerShell template:
 
 ```powershell
-$ZipPath = "E:\GitHub projects\Aptoria\aptoria-0.0.63.zip"
-$TempPath = "E:\GitHub projects\Aptoria\_temp_aptoria_0.0.63"
+$ZipPath = "E:\Aptoria\aptoria-0.0.63.zip"
+$TempPath = "E:\Aptoria\_temp_aptoria_0.0.63"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue

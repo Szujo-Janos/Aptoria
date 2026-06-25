@@ -47,7 +47,7 @@ Protected endpoint:
 
 ```http
 GET /demo-api/security/private-account
-Authorization: Bearer aptoria-demo-token
+Authorization: Bearer <demo-token>
 ```
 
 Intentional demo problems:
@@ -114,7 +114,7 @@ APTORIA_DEMO_API_TOKEN=aptoria-demo-token
 APTORIA_DEMO_ALLOWED_TARGETS=demo.aptoria.dev,api-demo.aptoria.dev
 ```
 
-When `APTORIA_DEMO_MODE=true`, selected destructive/admin operations are blocked, including user management, license management, license issuer, project deletes, client portal mutation and membership mutation.
+When `APTORIA_DEMO_MODE=true`, selected destructive/admin operations are blocked, including user management, license management, license administration, project deletes, client portal mutation and membership mutation.
 
 Safe scan target restriction is controlled by `APTORIA_DEMO_ALLOWED_TARGETS`. When set, safe scan blocks targets outside the configured host list.
 
@@ -132,7 +132,7 @@ Safe scan target restriction is controlled by `APTORIA_DEMO_ALLOWED_TARGETS`. Wh
 
 Do not allow unrestricted scanning from a public demo. Public demo deployments must restrict safe scan targets through `APTORIA_DEMO_ALLOWED_TARGETS`.
 
-Do not expose the Private License Issuer in public demo mode. The demo middleware blocks it by default.
+Do not expose the License administration in public demo mode. The demo middleware blocks it by default.
 
 
 ## Guided scenario templates

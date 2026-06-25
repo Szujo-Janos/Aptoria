@@ -263,12 +263,6 @@
                         <span class="avatar avatar-xs rounded text-bg-{{ $licenseStatus['tone'] ?? 'secondary' }}"><span class="avatar-title"><i data-lucide="key-round"></i></span></span>
                         <span><span class="d-block text-body">{{ __('messages.license.admin_card_title') }}</span><small class="text-muted">{{ $licenseStatus['label'] ?? __('messages.common.not_available') }}</small></span>
                     </a>
-                    @if (auth()->user()?->isAdmin())
-                        <a href="{{ route('program-settings.license-issuer') }}" class="list-group-item list-group-item-action d-flex gap-3">
-                            <span class="avatar avatar-xs rounded text-bg-warning"><span class="avatar-title"><i data-lucide="certificate"></i></span></span>
-                            <span><span class="d-block text-body">{{ __('messages.license_issuer.short_title') }}</span><small class="text-muted">tools/license-issuer</small></span>
-                        </a>
-                    @endif
                     <div class="list-group-item d-flex gap-3">
                         <span class="avatar avatar-xs rounded text-bg-warning"><span class="avatar-title"><i data-lucide="lock-keyhole"></i></span></span>
                         <span><span class="d-block text-body">{{ __('messages.program_settings.setup_lock') }}</span><small class="text-muted">storage/app/installed.lock</small></span>

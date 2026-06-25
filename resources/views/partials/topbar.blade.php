@@ -91,7 +91,6 @@
                                     <a href="{{ route('program-settings.edit') }}" class="dropdown-item"><i data-lucide="tool" class="me-2 fs-16"></i>{{ __('messages.nav.program_settings') }}</a>
                                     @if (auth()->user()?->isAdmin())
                                         <a href="{{ route('program-settings.license') }}" class="dropdown-item"><i data-lucide="key-round" class="me-2 fs-16"></i>{{ __('messages.nav.license_management') }}</a>
-                                        <a href="{{ route('program-settings.license-issuer') }}" class="dropdown-item"><i data-lucide="certificate" class="me-2 fs-16"></i>{{ __('messages.nav.license_issuer') }}</a>
                                     @endif
                                     <a href="{{ route('help.how_it_works') }}" class="dropdown-item"><i data-lucide="sitemap" class="me-2 fs-16"></i>{{ __('messages.nav.how_it_works') }}</a>
                                     <a href="{{ route('help.index') }}" class="dropdown-item"><i data-lucide="help-circle" class="me-2 fs-16"></i>{{ __('messages.nav.help') }}</a>

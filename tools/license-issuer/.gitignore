@@ -1,8 +1,0 @@
-keys/
-out/
-*.pem
-*.key
-*.issued.json
-aptoria-license.json
-license-request.json
-!examples/*.json

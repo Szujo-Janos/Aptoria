@@ -12,7 +12,6 @@ class BlockDangerousDemoActions
     private array $blockedRoutePrefixes = [
         'users.',
         'program-settings.license',
-        'program-settings.license-issuer',
         'projects.client-portal.',
         'projects.members.',
     ];

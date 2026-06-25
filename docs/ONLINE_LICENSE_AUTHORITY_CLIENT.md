@@ -1,24 +1,24 @@
 # Online License Authority Client Foundation
 
-Aptoria now prepares the guarded portable runtime direction where the customer-side app can ask `aptoria.dev` for a short-lived signed runtime lease.
+Aptoria prepares an optional online license authority direction for guarded portable/customer runtimes.
 
-This is not a full DRM solution. If PHP source is shipped to a customer, a determined attacker can still modify code. The goal is to make casual copy/edit bypasses much harder by moving the decisive license state to a server controlled by the product owner.
+In this model, the local Aptoria runtime can ask `aptoria.dev` for a short-lived signed runtime lease. The goal is to keep the decisive license state on infrastructure controlled by the product owner while keeping the customer-side activation workflow simple.
 
-## Modes
+## License modes
 
-```text
+```env
 APTORIA_LICENSE_MODE=local_package
 APTORIA_LICENSE_MODE=online_authority
 APTORIA_LICENSE_MODE=hybrid
 ```
 
 - `local_package`: local signed activation package only.
-- `online_authority`: local license must be valid and a signed runtime lease from the authority is required.
-- `hybrid`: same client foundation, intended for later mixed policy rules.
+- `online_authority`: local license plus online runtime lease verification.
+- `hybrid`: reserved for mixed policy rules.
 
-Runtime blocking still depends on:
+Runtime blocking is controlled by:
 
-```text
+```env
 APTORIA_LICENSE_REQUIRED=true
 ```
 
@@ -34,22 +34,11 @@ APTORIA_LICENSE_AUTHORITY_PUBLIC_KEY_PATH=storage/app/license-authority-public.p
 APTORIA_LICENSE_RUNTIME_LEASE_FILE=storage/app/license-runtime-lease.json
 ```
 
-## Runtime lease request
+## Runtime lease concept
 
-When a guarded runtime needs verification, Aptoria sends a lease request containing:
+A runtime lease is a short-lived signed permission document. The local runtime can cache it for a limited offline grace period.
 
-- product and app version;
-- license ID and edition;
-- install ID;
-- machine and USB fingerprints;
-- runtime metadata;
-- basic manifest hash for important runtime files.
-
-The request does not include private signing keys.
-
-## Expected authority response
-
-The authority should return a signed JSON object:
+The authority response should include:
 
 ```json
 {
@@ -64,15 +53,15 @@ The authority should return a signed JSON object:
 }
 ```
 
-The signature is verified locally with the authority public key. The private signing key remains on `aptoria.dev`.
+The local runtime verifies the signature with the configured authority public key.
 
 ## Offline grace
 
-If the lease expires but the cached lease is still inside the configured grace period, the runtime can continue in `offline_grace` state.
+If the authority is temporarily unavailable, Aptoria can continue only while a previously valid cached lease remains inside the configured grace period.
 
 Default:
 
-```text
+```env
 APTORIA_LICENSE_OFFLINE_GRACE_HOURS=72
 ```
 
@@ -86,14 +75,16 @@ storage/app/license-runtime-lease.json
 storage/app/license-install-id
 ```
 
-## Next server-side work
+## Server-side authority scope
 
-The `aptoria.dev` License Authority server should provide:
+The `aptoria.dev` authority side is expected to manage:
 
 - license registry;
-- device activation registry;
-- runtime lease signing;
+- allowed devices/fingerprints;
+- activation limits;
 - revocation;
+- runtime lease signing;
 - heartbeat / last-seen tracking;
-- optional manifest evaluation;
-- admin UI for license/device status.
+- optional runtime manifest evaluation.
+
+Authority-side private signing material and customer license records are not part of this public repository package.

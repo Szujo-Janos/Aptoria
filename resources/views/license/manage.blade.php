@@ -6,9 +6,6 @@
     <a href="{{ route('program-settings.edit') }}" class="btn btn-light">
         <i data-lucide="arrow-left" class="me-1"></i>{{ __('messages.common.back') }}
     </a>
-    <a href="{{ route('program-settings.license-issuer') }}" class="btn btn-warning">
-        <i data-lucide="certificate" class="me-1"></i>{{ __('messages.license_issuer.short_title') }}
-    </a>
 @endsection
 
 @section('content')
