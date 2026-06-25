@@ -305,19 +305,24 @@ storage runtime files
 Required public/release files include:
 
 ```text
-.env.example
-.env.testing
-composer.json
-artisan
-scripts/update-windows-xampp.ps1
-scripts/update-linux.sh
-public/assets/aptoria-ui/vendor
 README.md
 LICENSE
 NOTICE.md
 CREDITS.md
 THIRD_PARTY_NOTICES.md
 SECURITY.md
+.env.example
+composer.json
+artisan
+VERSION
+TRANSITION_SUMMARY.md
+scripts/update-windows-xampp.ps1
+scripts/update-linux.sh
+.github/workflows/public-hygiene.yml
+docs/GITHUB_REPLACEMENT_CHECKLIST.md
+docs/ARCHITECTURE_TRANSITION_MAP.md
+docs/UPGRADE_FROM_1.1.34_TO_0.0.53.md
+docs/LEGACY_1.1.34_VS_0.0.53_COMPARISON.md
 ```
 
 The `bootstrap/cache` directory is created locally by the install/update scripts. It is intentionally not tracked because the public hygiene workflow treats it as runtime state.

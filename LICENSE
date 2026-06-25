@@ -1,18 +1,49 @@
 Aptoria Source-Available License
+Version 1.0
+Effective date: 2026-06-25
 
 Copyright (c) 2026 János Szujó. All rights reserved.
 
-Permission is granted to view this repository, clone it for personal review, run it locally for evaluation, and reference it as a portfolio/demo project.
+1. Project status
 
-Unless a separate written agreement says otherwise, you may not:
+Aptoria is source-available, not open-source. Public repository access is provided so the project can be reviewed, evaluated, demonstrated as portfolio work, and tested locally in a controlled non-commercial environment.
 
-- sell, sublicense, rent, lease, host or offer Aptoria as a commercial service;
-- redistribute modified or unmodified copies as your own product;
-- remove Aptoria branding, authorship notices or third-party notices;
-- use the project name, logo or product identity in a way that suggests endorsement.
+2. Permitted use
 
-Internal evaluation, learning, code review and non-commercial local testing are allowed.
+You may view, clone, fork for private review, and run Aptoria locally for evaluation, learning, security review, portfolio review, or non-commercial testing.
 
-Third-party dependencies and bundled frontend libraries remain under their own licenses. See NOTICE.md, CREDITS.md, THIRD_PARTY_NOTICES.md, composer.json and composer.lock.
+3. Restrictions
 
-This license is intentionally not an open-source license. For commercial use, redistribution, managed hosting or contribution arrangements, contact the project owner.
+Without a separate written agreement from the copyright owner, you may not:
+
+- sell, rent, lease, sublicense, redistribute, or commercially exploit Aptoria;
+- offer Aptoria as a hosted service, managed service, SaaS product, white-label product, or bundled commercial product;
+- remove or alter copyright, license, ownership, notice, or attribution files;
+- present Aptoria or modified Aptoria code as your own product;
+- publish modified builds as an official Aptoria release;
+- bypass, remove, disable, or misrepresent license, activation, runtime lease, integrity, audit, or security controls;
+- use Aptoria branding, product name, logo, screenshots, or visual identity in a way that suggests endorsement or ownership transfer.
+
+4. Modifications
+
+You may make local modifications for evaluation and private testing only. Modified copies remain subject to this license and may not be distributed or used commercially without written permission.
+
+5. Third-party software
+
+Third-party dependencies, Laravel framework components, frontend assets, fonts, icons, JavaScript libraries, and other bundled or referenced third-party materials remain governed by their own upstream licenses. See THIRD_PARTY_NOTICES.md and dependency metadata for details.
+
+6. No warranty
+
+Aptoria is provided as-is, without warranty of any kind, including but not limited to warranties of merchantability, fitness for a particular purpose, non-infringement, availability, or security. You are responsible for evaluating whether Aptoria is suitable for your environment and use case.
+
+7. Limitation of liability
+
+To the maximum extent permitted by applicable law, the copyright owner is not liable for any claim, damage, data loss, business interruption, security incident, lost profit, or other liability arising from use, review, modification, deployment, or inability to use Aptoria.
+
+8. Separate agreements
+
+A separate written license, commercial agreement, customer agreement, or contributor agreement may grant additional rights. If such an agreement exists and directly applies to you, that agreement controls where it conflicts with this public source-available license.
+
+9. Contact
+
+For commercial licensing, hosted usage, redistribution, or other permissions, contact the project owner through the official Aptoria project channels.
