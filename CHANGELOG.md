@@ -1,3 +1,34 @@
+# Changelog
+
+Aptoria release history for the `0.0.x` evidence-first rebuild.
+
+| Public line | Latest release | Legacy line |
+| --- | --- | --- |
+| `0.0.x` | `v0.0.53` | `v1.1.34` archived / replaced |
+
+> [!NOTE]
+> Releases are listed newest first. Hotfix entries are kept next to the release they stabilize.
+
+> [!IMPORTANT]
+> The `0.0.x` line is a fresh evidence-first rebuild. It is not an in-place database upgrade from the legacy `1.1.34` line.
+
+## Release index
+
+- [v0.0.53 - Release Gate Report & Decision Package](#v0053---release-gate-report-decision-package)
+- [v0.0.52 - QA Cockpit / Coverage / Blind Spot Foundation](#v0052---qa-cockpit-coverage-blind-spot-foundation)
+- [v0.0.51 - UI & Workflow Stabilization Pass](#v0051---ui-workflow-stabilization-pass)
+- [v0.0.50 Hotfix - Table Auto Sizing & Auth Logo Alignment](#v0050-hotfix---table-auto-sizing-auth-logo-alignment)
+- [v0.0.50 - Release Gate Workflow Foundation](#v0050---release-gate-workflow-foundation)
+- [v0.0.49 Hotfix - Native Test Modal Form Workflow](#v0049-hotfix---native-test-modal-form-workflow)
+- [v0.0.49 - Native Test Evidence Model](#v0049---native-test-evidence-model)
+- [v0.0.48 - Import Adapter Layer Foundation](#v0048---import-adapter-layer-foundation)
+- [v0.0.47 Hotfix - Evidence Intake Form Consistency](#v0047-hotfix---evidence-intake-form-consistency)
+- [v0.0.47 - Evidence Repository Foundation](#v0047---evidence-repository-foundation)
+- [v0.0.46 Hotfix - Semantic Access Icon Pass](#v0046-hotfix---semantic-access-icon-pass)
+- [v0.0.46 Hotfix - User Onboarding for Project Access](#v0046-hotfix---user-onboarding-for-project-access)
+
+---
+
 ## v0.0.53 - Release Gate Report & Decision Package
 
 - Added `ReleaseGateDecisionPackageService` to turn a release gate into a fixed decision package instead of a loose workflow screen.
@@ -113,8 +144,6 @@
 - Added audit events for user creation, user updates and temporary password resets.
 - Added regression coverage for system-admin user creation and project-admin create-user-and-add flow.
 
-# Changelog
-
 ## v0.0.46 - Project Access & Membership Foundation
 
 - Added a project-scoped membership model with project admin, QA engineer, reviewer, release approver and read-only viewer roles.
@@ -164,7 +193,6 @@
 
 ## v0.0.43 - Report Visual Standard Foundation
 
-
 ### v0.0.43 Hotfix - Desktop-only Shell Guard
 
 - Removed the sidebar logo image; sidebar branding now keeps text only.
@@ -181,7 +209,6 @@
 - Demoted stored inner report headings so exports no longer show a second oversized document title below the header.
 - Updated the report standard marker to `report-visual-standard-v1.1` and expanded regression coverage for logo, translation and structure checks.
 
-
 - Added `ReportVisualStandardService` as the shared HTML export wrapper for report versions.
 - Standardized report exports around the professional report layout: header, meta table, KPI summary strip, notice block, numbered sections and footer.
 - Internal report downloads and public Client Portal report downloads now use the same HTML visual standard.
@@ -196,11 +223,9 @@
 - The simulation endpoint now accepts both POST and PUT so the preview button cannot trigger a MethodNotAllowed error from the shared rules form.
 - Added regression coverage for the method-spoofed simulation request.
 
-
 - Added finding duplicate candidate detection.
 - Added merge workflow that moves evidence to the primary finding.
 - Duplicate findings are retained as merged trace records.
 - Added candidate score, merge notes, dismiss workflow and audit events.
 - Findings page now links to the deduplication workflow.
 - Cumulatively includes v0.0.40 profiles/simulation and v0.0.41 evidence pack exports.
-
