@@ -7,15 +7,17 @@
 <p align="center">
   Self-hosted API QA evidence, coverage and release-decision platform.
 </p>
-![Version](https://img.shields.io/badge/version-0.0.62-blue)
-![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-default-003B57?logo=sqlite&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-XAMPP-0078D4?logo=windows&logoColor=white)
-![Self hosted](https://img.shields.io/badge/self--hosted-ready-2ea44f)
-![Evidence first](https://img.shields.io/badge/evidence--first-API_QA-6f42c1)
-![License Guard](https://img.shields.io/badge/license--guard-supported-6f42c1)
-![Status](https://img.shields.io/badge/status-active-success)
+<p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.0.53-blue">
+  <img alt="Laravel" src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white">
+  <img alt="PHP" src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white">
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-default-003B57?logo=sqlite&logoColor=white">
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-XAMPP-0078D4?logo=windows&logoColor=white">
+  <img alt="Self hosted" src="https://img.shields.io/badge/self--hosted-ready-2ea44f">
+  <img alt="Evidence first" src="https://img.shields.io/badge/evidence--first-API_QA-6f42c1">
+  <img alt="License Guard" src="https://img.shields.io/badge/license--guard-supported-6f42c1">
+  <img alt="Status" src="https://img.shields.io/badge/status-active-success">
+</p>
 
 
 **Aptoria** is a self-hosted, evidence-first API QA and release decision platform built with Laravel.
