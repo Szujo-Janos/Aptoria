@@ -2,33 +2,115 @@
   <img src="public/assets/aptoria-ui/assets/images/logo-color.svg" alt="Aptoria logo" width="320">
 </p>
 
-# Aptoria
+<h1 align="center">Aptoria</h1>
 
 <p align="center">
-  Self-hosted API QA evidence, coverage and release-decision platform.
-</p>
-<p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.0.53-blue">
-  <img alt="Laravel" src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white">
-  <img alt="PHP" src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white">
-  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-default-003B57?logo=sqlite&logoColor=white">
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-XAMPP-0078D4?logo=windows&logoColor=white">
-  <img alt="Self hosted" src="https://img.shields.io/badge/self--hosted-ready-2ea44f">
-  <img alt="Evidence first" src="https://img.shields.io/badge/evidence--first-API_QA-6f42c1">
-  <img alt="License Guard" src="https://img.shields.io/badge/license--guard-supported-6f42c1">
-  <img alt="Status" src="https://img.shields.io/badge/status-active-success">
+  <strong>Evidence-first API QA, coverage and release-decision platform.</strong><br>
+  Turn scattered API QA artifacts into auditable evidence, release gates and decision packages.
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.0.53-blue" alt="Version 0.0.53">
+  <img src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.2+">
+  <img src="https://img.shields.io/badge/SQLite-default-003B57?logo=sqlite&logoColor=white" alt="SQLite default">
+  <img src="https://img.shields.io/badge/Windows-XAMPP-0078D4?logo=windows&logoColor=white" alt="Windows XAMPP">
+  <img src="https://img.shields.io/badge/API_QA-evidence--first-6f42c1" alt="Evidence-first API QA">
+  <img src="https://img.shields.io/badge/release_gate-supported-6f42c1" alt="Release gate supported">
+  <img src="https://img.shields.io/badge/source--available-review_only-lightgrey" alt="Source available">
+</p>
+
+<table align="center">
+  <tr>
+    <td align="center"><strong>Current release</strong><br><code>v0.0.53</code></td>
+    <td align="center"><strong>Repository line</strong><br><code>0.0.x evidence-first rebuild</code></td>
+    <td align="center"><strong>Legacy line replaced</strong><br><code>v1.1.34</code></td>
+  </tr>
+</table>
+
+> [!NOTE]
+> Aptoria is prepared for public GitHub presentation as a source-available project for review, evaluation, portfolio presentation and non-commercial local testing.
+
+> [!IMPORTANT]
+> Public visibility does not make Aptoria open-source. See `LICENSE`, `NOTICE.md`, `CREDITS.md` and `THIRD_PARTY_NOTICES.md`.
+
+---
+
+## Why Aptoria exists
 
 **Aptoria** is a self-hosted, evidence-first API QA and release decision platform built with Laravel.
 
-Current release: **v0.0.53**  
-Repository line: **0.0.x evidence-first rebuild**  
-Legacy line replaced: **v1.1.34**
+It is not a Postman, Newman, Jira, Datadog or full test-management clone. Its role is to collect and normalize the release-critical evidence those tools often leave scattered: endpoint inventory, safe scan proof, imported QA artifacts, native test evidence, findings, verified evidence, release gates and checksum-backed decision packages.
 
-Aptoria is not a Postman, Newman, Jira, Datadog or full test-management clone. Its role is to collect and normalize the release-critical evidence those tools often leave scattered: endpoint inventory, safe scan proof, imported QA artifacts, native test evidence, findings, verified evidence, release gates and checksum-backed decision packages.
+Aptoria exists to answer one release question:
 
-> Repository status note: this branch is prepared for public GitHub presentation as a source-available project. Public visibility does not make Aptoria open-source; see `LICENSE`, `NOTICE.md`, `CREDITS.md` and `THIRD_PARTY_NOTICES.md`.
+> What evidence do we have, what is missing, and can this API release be approved responsibly?
+
+---
+
+## Product workflow
+
+```mermaid
+flowchart LR
+    A[API endpoints] --> B[Endpoint inventory]
+    B --> C[Safe scan evidence]
+    D[Postman / Newman / Jira / OpenAPI / CSV / HAR] --> E[Import Adapter Layer]
+    C --> F[Evidence Repository]
+    E --> F
+    F --> G[Findings & Native Test Evidence]
+    G --> H[QA Cockpit]
+    H --> I[Release Gate]
+    I --> J[Decision Package]
+    J --> K[Client Handoff]
+```
+
+---
+
+## Architecture overview
+
+```mermaid
+flowchart TB
+    UI[Aptoria UI] --> APP[Laravel Application]
+    APP --> DB[(SQLite database)]
+    APP --> STORAGE[Evidence storage]
+    APP --> IMPORTS[Import adapters]
+    APP --> REPORTS[Reports & exports]
+    IMPORTS --> POSTMAN[Postman / Newman]
+    IMPORTS --> JIRA[Jira]
+    IMPORTS --> OPENAPI[OpenAPI]
+    IMPORTS --> CSV[CSV / HAR]
+    REPORTS --> HTML[HTML]
+    REPORTS --> PDF[PDF]
+    REPORTS --> JSON[JSON]
+    REPORTS --> ZIP[ZIP evidence pack]
+```
+
+---
+
+## At a glance
+
+| Area | Purpose | Output |
+|---|---|---|
+| Endpoint Inventory | Track release-scope API endpoints | Endpoint scope and scan targets |
+| Safe Scan Evidence | Capture non-destructive API QA proof | Evidence records and snapshots |
+| Import Adapter Layer | Normalize external QA artifacts | Findings, assertions, tests and evidence |
+| Evidence Repository | Store checksum-backed proof | Verified, archived and exportable evidence |
+| Native Test Evidence | Record suites, cases and test runs | Linked test evidence and failed-run findings |
+| QA Cockpit | Review coverage and blind spots | Confidence score and release readiness signals |
+| Release Gate | Freeze approval state | Auditable go / no-go decision |
+| Decision Package | Export the final review package | HTML, PDF, JSON, Markdown and ZIP |
+
+---
+
+## Built for
+
+| Role | What Aptoria gives them |
+|---|---|
+| QA Engineers | A structured place to collect endpoint, scan and test evidence |
+| Reviewers | Verified evidence, findings and blind spots before release sign-off |
+| Release Approvers | A clear release gate with an auditable decision trail |
+| Clients | A clean decision handoff package instead of scattered QA files |
+| Small teams | A self-hosted release evidence layer without adopting a full enterprise QA suite |
 
 ---
 
@@ -50,7 +132,8 @@ Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
-## Current v0.0.53 feature line
+<details open>
+<summary><strong>Current v0.0.53 feature line</strong></summary>
 
 ### Project and access foundation
 
@@ -106,6 +189,8 @@ Release history is tracked in [`CHANGELOG.md`](CHANGELOG.md).
 - Release Gate Report & Decision Package exports
 - Report Visual Standard for professional evidence documents
 
+</details>
+
 ---
 
 ## Legacy replacement notice
@@ -142,6 +227,9 @@ SQLite is the default local/self-hosted database target. Other SQL databases may
 
 The repository intentionally excludes machine-specific runtime state.
 
+> [!WARNING]
+> Never commit runtime files, local databases, setup locks, private keys, generated customer licenses or public storage output.
+
 Do **not** commit or ship:
 
 ```text
@@ -175,6 +263,20 @@ SECURITY.md
 ```
 
 The `bootstrap/cache` directory is created locally by the install/update scripts. It is intentionally not tracked because the public hygiene workflow treats it as runtime state.
+
+---
+
+## Quick start
+
+| Step | Action |
+|---|---|
+| 1 | Clone or extract the repository |
+| 2 | Run the Windows/XAMPP update script |
+| 3 | Clear Laravel caches |
+| 4 | Run migrations |
+| 5 | Open `/setup` |
+| 6 | Create the first admin user |
+| 7 | Run the first QA workflow smoke test |
 
 ---
 
@@ -341,22 +443,24 @@ The workflow checks public release hygiene, required public files, Composer meta
 
 ## Documentation map
 
-- `TRANSITION_SUMMARY.md` – short explanation of the 1.1.34 → 0.0.53 replacement
-- `docs/UPGRADE_FROM_1.1.34_TO_0.0.53.md` – replacement notes
-- `docs/LEGACY_1.1.34_VS_0.0.53_COMPARISON.md` – old vs new comparison
-- `docs/GITHUB_REPLACEMENT_CHECKLIST.md` – public replacement checklist
-- `docs/ARCHITECTURE_TRANSITION_MAP.md` – architecture transition map
-- `docs/INSTALL_WINDOWS_XAMPP.md` – Windows/XAMPP install/update workflow
-- `docs/QA_CHECKLIST.md` – current release QA checklist
-- `docs/PROJECT_ACCESS_FOUNDATION.md`
-- `docs/EVIDENCE_REPOSITORY_FOUNDATION.md`
-- `docs/IMPORT_ADAPTER_LAYER.md`
-- `docs/NATIVE_TEST_EVIDENCE_MODEL.md`
-- `docs/QA_COCKPIT_COVERAGE_BLIND_SPOT_FOUNDATION.md`
-- `docs/RELEASE_GATE_WORKFLOW_FOUNDATION.md`
-- `docs/RELEASE_GATE_REPORT_DECISION_PACKAGE.md`
-- `docs/REPORT_VISUAL_STANDARD.md`
-- `SERVER_INSTALLER.md` – first-run installer and operational notes
+| Document | Purpose |
+|---|---|
+| `TRANSITION_SUMMARY.md` | Short explanation of the 1.1.34 → 0.0.53 replacement |
+| `docs/UPGRADE_FROM_1.1.34_TO_0.0.53.md` | Replacement notes |
+| `docs/LEGACY_1.1.34_VS_0.0.53_COMPARISON.md` | Old vs new comparison |
+| `docs/GITHUB_REPLACEMENT_CHECKLIST.md` | Public replacement checklist |
+| `docs/ARCHITECTURE_TRANSITION_MAP.md` | Architecture transition map |
+| `docs/INSTALL_WINDOWS_XAMPP.md` | Windows/XAMPP install/update workflow |
+| `docs/QA_CHECKLIST.md` | Current release QA checklist |
+| `docs/PROJECT_ACCESS_FOUNDATION.md` | Project access foundation |
+| `docs/EVIDENCE_REPOSITORY_FOUNDATION.md` | Evidence Repository foundation |
+| `docs/IMPORT_ADAPTER_LAYER.md` | Import Adapter Layer |
+| `docs/NATIVE_TEST_EVIDENCE_MODEL.md` | Native Test Evidence model |
+| `docs/QA_COCKPIT_COVERAGE_BLIND_SPOT_FOUNDATION.md` | QA Cockpit, coverage and blind spot foundation |
+| `docs/RELEASE_GATE_WORKFLOW_FOUNDATION.md` | Release Gate Workflow foundation |
+| `docs/RELEASE_GATE_REPORT_DECISION_PACKAGE.md` | Release Gate Report & Decision Package |
+| `docs/REPORT_VISUAL_STANDARD.md` | Report Visual Standard |
+| `SERVER_INSTALLER.md` | First-run installer and operational notes |
 
 ---
 
