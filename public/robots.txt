@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /setup
+Disallow: /dashboard
+Disallow: /projects
+Disallow: /program-settings
+Disallow: /audit-log
+Disallow: /runtime-diagnostics
+Disallow: /deployment-readiness
+Disallow: /subdomain-deployment
+
+Sitemap: https://aptoria.dev/sitemap.xml
