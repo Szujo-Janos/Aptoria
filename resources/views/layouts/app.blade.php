@@ -7,6 +7,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Aptoria evidence-first API QA and release decision platform.">
+    <meta name="robots" content="noindex,nofollow,noarchive">
     <title>@yield('title', $appName)</title>
     <link rel="shortcut icon" href="{{ asset('assets/aptoria-ui/assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/aptoria-ui/assets/js/config.js') }}"></script>
@@ -93,7 +94,7 @@
 
             <footer class="footer">
                 <div class="container-fluid d-flex justify-content-between small text-muted">
-                    <span>© {{ date('Y') }} Aptoria</span>
+                    <span>Copyright © {{ date('Y') }} Aptoria. All rights reserved.</span>
                     <span>v{{ $aptoriaVersion }} · Evidence-first API QA</span>
                 </div>
             </footer>
