@@ -6,6 +6,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @hasSection('meta')
+        @yield('meta')
+    @else
+        <meta name="robots" content="noindex,nofollow,noarchive">
+    @endif
     <title>@yield('title', $appName)</title>
     <link rel="shortcut icon" href="{{ asset('assets/aptoria-ui/assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/aptoria-ui/assets/js/config.js') }}"></script>
