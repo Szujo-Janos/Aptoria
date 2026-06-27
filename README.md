@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.80-blue" alt="Version 0.0.80">
+  <img src="https://img.shields.io/badge/version-0.0.81-blue" alt="Version 0.0.81">
   <img src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.2+">
   <img src="https://img.shields.io/badge/SQLite-default-003B57?logo=sqlite&logoColor=white" alt="SQLite default">
@@ -22,13 +22,29 @@
 
 ---
 
-## What Aptoria does
+## What Aptoria is
 
 Aptoria is a self-hosted QA review workspace for API-heavy projects. It helps a QA engineer, reviewer or release owner answer one practical question:
 
 > What evidence do we have, what is missing, and can this release be approved responsibly?
 
 It does not try to replace Postman, Newman, Jira, OpenAPI documents, HAR captures or existing test tools. Aptoria sits above them as an evidence and decision layer.
+
+---
+
+## What Aptoria is not
+
+Aptoria is not a public attack scanner, not a vulnerability exploitation tool, and not a replacement for responsible manual QA review.
+
+It is designed for controlled QA, sandbox, staging and internal review environments. Do not use public demo surfaces for real secrets, customer data, private tokens or uncontrolled target scanning.
+
+---
+
+## Why evidence-first QA matters
+
+A test result is useful, but a release decision needs context. Aptoria keeps the link between endpoints, imported artifacts, findings, accepted risks, blockers, warnings and final reports visible.
+
+The goal is simple: make QA decisions reviewable, explainable and easier to hand off.
 
 ---
 
@@ -134,9 +150,11 @@ See [`SECURITY.md`](SECURITY.md) for reporting and hygiene guidance.
 
 ---
 
-## Project owner
+## Project links
 
-GitHub: <https://github.com/Szujo-Janos>
+- Website: <https://aptoria.dev>
+- Repository: <https://github.com/Szujo-Janos/Aptoria>
+- Issues: <https://github.com/Szujo-Janos/Aptoria/issues>
 
 ---
 
