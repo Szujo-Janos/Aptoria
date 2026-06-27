@@ -1,6 +1,6 @@
 @extends('layouts.auth')
 
-@section('title', 'Aptoria · QA evidence and release readiness')
+@section('title', 'Aptoria · Evidence-first API QA and release readiness')
 @section('body_class', 'aptoria-landing-body min-vh-100')
 
 @php
@@ -24,53 +24,48 @@
     $isLandingOnly = $domainRole === 'landing';
     $showLocalRuntimeActions = ! in_array($domainRole, ['landing', 'demo'], true);
 
-    $landingUrl = rtrim((string) config('aptoria.domain.landing_url'), '/');
+    $landingUrl = rtrim((string) config('aptoria.domain.landing_url'), '/') ?: url('/');
     $demoUrl = rtrim((string) config('aptoria.domain.demo_url'), '/');
-    $docsUrl = 'https://github.com/Szujo-Janos/aptoria/tree/main/docs';
-    $githubUrl = 'https://github.com/Szujo-Janos';
-    $downloadUrl = 'https://github.com/Szujo-Janos/aptoria/releases';
-    $supportUrl = 'https://github.com/Szujo-Janos/aptoria/issues';
-    $githubIconUrl = 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/github.svg';
+    $githubUrl = rtrim((string) config('aptoria.links.github_url'), '/');
+    $docsUrl = rtrim((string) config('aptoria.links.docs_url'), '/');
+    $downloadUrl = rtrim((string) config('aptoria.links.download_url'), '/');
+    $supportUrl = rtrim((string) config('aptoria.links.support_url'), '/');
+    $ogImageUrl = $landingUrl.'/assets/aptoria-ui/assets/images/og-aptoria.png';
 
     $demoGuideUrl = $isLandingOnly ? $demoUrl.'/demo-guide' : route('demo-guide.public');
 
+    $seoDescription = 'Aptoria is an evidence-first API QA workspace for safe API review, imported test artifacts, finding triage, release gates and auditable decision packages.';
+
+    $organizationSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => 'Aptoria',
+        'url' => $landingUrl,
+        'sameAs' => [$githubUrl],
+    ];
+
+    $softwareSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'Aptoria',
+        'applicationCategory' => 'DeveloperApplication',
+        'operatingSystem' => 'Self-hosted Laravel application',
+        'description' => $seoDescription,
+        'url' => $landingUrl,
+        'softwareVersion' => config('aptoria.version'),
+        'author' => [
+            '@type' => 'Organization',
+            'name' => 'Aptoria',
+        ],
+    ];
+
     $integrations = [
-        [
-            'name' => 'Postman',
-            'label' => 'Collections',
-            'class' => 'is-postman',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/postman.svg',
-        ],
-        [
-            'name' => 'Newman',
-            'label' => 'Postman CLI results',
-            'class' => 'is-newman',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/postman.svg',
-        ],
-        [
-            'name' => 'Jira',
-            'label' => 'Issue CSV',
-            'class' => 'is-jira',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/jira.svg',
-        ],
-        [
-            'name' => 'OpenAPI',
-            'label' => 'Contracts',
-            'class' => 'is-openapi',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/openapiinitiative.svg',
-        ],
-        [
-            'name' => 'HAR',
-            'label' => 'Browser network',
-            'class' => 'is-har',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/googlechrome.svg',
-        ],
-        [
-            'name' => 'CSV',
-            'label' => 'Manual QA imports',
-            'class' => 'is-csv',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/microsoftexcel.svg',
-        ],
+        ['name' => 'Postman', 'label' => 'Collections', 'class' => 'is-postman', 'icon' => 'package'],
+        ['name' => 'Newman', 'label' => 'CLI results', 'class' => 'is-newman', 'icon' => 'terminal-square'],
+        ['name' => 'Jira', 'label' => 'Issue CSV', 'class' => 'is-jira', 'icon' => 'list-checks'],
+        ['name' => 'OpenAPI', 'label' => 'Contracts', 'class' => 'is-openapi', 'icon' => 'braces'],
+        ['name' => 'HAR', 'label' => 'Browser network', 'class' => 'is-har', 'icon' => 'network'],
+        ['name' => 'CSV', 'label' => 'Manual QA imports', 'class' => 'is-csv', 'icon' => 'file-spreadsheet'],
     ];
 
     $capabilities = [
@@ -81,7 +76,42 @@
         ['icon' => 'shield-check', 'title' => 'Release readiness', 'copy' => 'Evaluate rules, profiles, blockers, warnings and release decision packages before handoff.'],
         ['icon' => 'history', 'title' => 'Audit trail', 'copy' => 'Preserve who did what, what changed, which evidence was used and why a decision was made.'],
     ];
+
+    $trustCards = [
+        [
+            'icon' => 'check-circle-2',
+            'title' => 'What Aptoria is',
+            'copy' => 'A downloadable QA review workspace that connects API checks, imported artifacts, findings, evidence packs and release decisions.',
+        ],
+        [
+            'icon' => 'ban',
+            'title' => 'What it is not',
+            'copy' => 'It is not a public attack scanner, not a replacement for your test tools and not a place for secrets in public demos.',
+        ],
+        [
+            'icon' => 'clipboard-check',
+            'title' => 'Why evidence-first matters',
+            'copy' => 'A release decision is easier to defend when every finding, warning and accepted risk points back to reviewable evidence.',
+        ],
+    ];
 @endphp
+
+@section('meta')
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="{{ $landingUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Aptoria · Evidence-first API QA and release readiness">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $landingUrl }}">
+    <meta property="og:image" content="{{ $ogImageUrl }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Aptoria · Evidence-first API QA and release readiness">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $ogImageUrl }}">
+    <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($softwareSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endsection
 
 @section('content')
 <div class="aptoria-landing-scene">
@@ -91,11 +121,12 @@
     <section class="aptoria-landing-shell py-4 py-xl-5">
         <div class="aptoria-landing-frame">
             <header class="aptoria-landing-nav mb-4 mb-xl-5">
-                <a href="{{ $landingUrl ?: url('/') }}" class="aptoria-landing-nav-brand" aria-label="Aptoria">
+                <a href="{{ $landingUrl }}" class="aptoria-landing-nav-brand" aria-label="Aptoria">
                     <img src="{{ asset('assets/aptoria-ui/assets/images/logo-color.svg') }}" alt="Aptoria" class="aptoria-brand-logo">
                 </a>
                 <nav class="aptoria-landing-nav-links" aria-label="Aptoria navigation">
                     <a href="#platform">Platform</a>
+                    <a href="#trust">Trust layer</a>
                     <a href="#integrations">Integrations</a>
                     <a href="{{ $demoGuideUrl }}">Demo</a>
                     <a href="{{ $docsUrl }}" target="_blank" rel="noopener">Docs</a>
@@ -157,10 +188,10 @@
                             <a href="{{ $downloadUrl }}" class="btn btn-outline-light btn-lg" target="_blank" rel="noopener">
                                 <i data-lucide="download" class="me-1"></i>Download
                             </a>
-                            <a href="{{ $githubUrl }}" class="btn btn-outline-info btn-lg" target="_blank" rel="noopener">
-                                <img src="{{ $githubIconUrl }}" alt="" class="aptoria-btn-brand-icon me-1">GitHub
+                            <a href="{{ $githubUrl }}" class="btn btn-light btn-lg text-dark" target="_blank" rel="noopener">
+                                <i data-lucide="github" class="me-1"></i>GitHub
                             </a>
-                            <a href="{{ $docsUrl }}" class="btn btn-light btn-lg text-dark" target="_blank" rel="noopener">
+                            <a href="{{ $docsUrl }}" class="btn btn-outline-info btn-lg" target="_blank" rel="noopener">
                                 <i data-lucide="book-open" class="me-1"></i>Docs
                             </a>
                         </div>
@@ -247,7 +278,7 @@
                                 @foreach ($integrations as $integration)
                                     <div class="aptoria-integration-logo {{ $integration['class'] }}">
                                         <span class="aptoria-integration-brand-row">
-                                            <img src="{{ $integration['logo'] }}" alt="{{ $integration['name'] }} logo" class="aptoria-integration-img">
+                                            <i data-lucide="{{ $integration['icon'] }}" class="aptoria-integration-img"></i>
                                             <strong>{{ $integration['name'] }}</strong>
                                         </span>
                                         <small>{{ $integration['label'] }}</small>
@@ -276,7 +307,30 @@
                 </div>
             </div>
 
-            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4 mt-xl-5">
+            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4 mt-xl-5" id="trust">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-4">
+                        <small class="aptoria-landing-eyebrow">Public trust layer</small>
+                        <h2 class="h3 mb-2">Clear scope, no fake magic.</h2>
+                        <p class="mb-0 text-muted">
+                            Aptoria is intentionally positioned as a review and decision workspace. It helps teams organize evidence, not pretend that automation alone is proof.
+                        </p>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="aptoria-capability-grid">
+                            @foreach ($trustCards as $card)
+                                <div class="aptoria-capability-card">
+                                    <i data-lucide="{{ $card['icon'] }}"></i>
+                                    <strong>{{ $card['title'] }}</strong>
+                                    <span>{{ $card['copy'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4">
                 <div class="row g-4 align-items-start">
                     <div class="col-lg-4">
                         <small class="aptoria-landing-eyebrow">Platform coverage</small>
@@ -339,7 +393,8 @@
             </section>
 
             <footer class="aptoria-landing-footer mt-4">
-                <span>Aptoria turns QA activity into reviewable release evidence.</span>
+                <span>Copyright © {{ date('Y') }} Aptoria. All rights reserved.</span>
+                <a href="{{ $githubUrl }}" target="_blank" rel="noopener">GitHub</a>
                 <a href="{{ $supportUrl }}" target="_blank" rel="noopener">Contact / issues</a>
             </footer>
         </div>
