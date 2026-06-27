@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\DeploymentReadinessService;
 use App\Services\EnvironmentCheckService;
 use App\Services\SetupAccessService;
 use App\Services\SecurityHardeningService;
@@ -21,6 +22,7 @@ class SetupController extends Controller
 {
     public function __construct(
         private readonly EnvironmentCheckService $environmentCheck,
+        private readonly DeploymentReadinessService $deploymentReadiness,
         private readonly SetupStateService $setupState,
         private readonly SetupAdminPolicyService $setupAdminPolicy,
         private readonly SetupAccessService $setupAccess,
@@ -58,6 +60,7 @@ class SetupController extends Controller
             'automaticActionStatuses' => $this->automaticActionStatuses($migrationsReady),
             'access' => $access,
             'securityChecklist' => $this->securityHardening->checklist(),
+            'deploymentPreflight' => $this->deploymentReadiness->run('installer'),
         ]);
     }
 
@@ -173,6 +176,12 @@ class SetupController extends Controller
 
         if (! $request->boolean('confirm')) {
             return $this->toSetupStep('install')->withErrors(['setup' => __('messages.setup.install_confirm_required')]);
+        }
+
+        $preflight = $this->deploymentReadiness->run('installer');
+        if ((bool) ($preflight['install_blocked'] ?? false)) {
+            $firstBlocker = $preflight['blocking_checks'][0]['remediation'] ?? 'Fix installer preflight blockers before continuing.';
+            return $this->toSetupStep('install')->withErrors(['setup' => 'Installer preflight blocked installation. '.$firstBlocker]);
         }
 
         try {

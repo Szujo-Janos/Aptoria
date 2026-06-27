@@ -17,6 +17,9 @@
                         <div>
                             <strong>{{ __('messages.demo_mode.login_title') }}</strong>
                             <div class="small mt-1">{{ __('messages.demo_mode.login_copy') }}</div>
+                            @if (config('aptoria.demo.viewer_read_only'))
+                                <div class="small mt-1">{{ __('messages.demo_mode.viewer_read_only') }}</div>
+                            @endif
                             <div class="small mt-2"><code>{{ config('aptoria.demo.demo_user_email') }}</code> / <code>{{ config('aptoria.demo.demo_user_password') }}</code></div>
                         </div>
                     </div>

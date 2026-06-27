@@ -28,13 +28,14 @@ use App\Models\RiskAcceptance;
 use App\Models\ScanResult;
 use App\Models\ScanRun;
 use App\Models\User;
+use App\Models\TestSuite;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ComprehensiveDemoProjectService
 {
-    public const DEMO_SLUG = 'aptoria-full-demo';
+    public const DEMO_SLUG = 'aptoria-full-demo-workspace';
 
     public function build(User $user): array
     {
@@ -43,15 +44,15 @@ class ComprehensiveDemoProjectService
 
             $project = Project::create([
                 'user_id' => $user->id,
-                'name' => 'Aptoria Guided Demo Sandbox',
+                'name' => 'Aptoria Full Demo Workspace',
                 'slug' => self::DEMO_SLUG,
-                'description' => 'A complete synthetic API QA workspace showing inventory, environments, auth, safe scan evidence, assertions, snapshots, regressions, findings, retest, risk acceptance, OpenAPI contract validation, release readiness, report approval and client portal acknowledgement.',
-                'base_url' => 'https://demo-api.aptoria.local',
+                'description' => 'A full synthetic showcase workspace showing every major Aptoria module: inventory, environments, auth, safe scan evidence, assertions, snapshots, regressions, findings, retest, risk acceptance, imports, native tests, release gates, reports, evidence packs, calendar, audit log and client portal handoff.',
+                'base_url' => rtrim((string) config('aptoria.demo.api_base_url', 'https://demo.aptoria.dev/demo-api'), '/'),
                 'environment_label' => 'staging-demo',
                 'status' => 'active',
                 'workspace_type' => Project::WORKSPACE_TYPE_SANDBOX,
                 'qa_owner' => $user->name,
-                'release_goal' => 'Validate the demo API v1.4 release candidate before client handoff.',
+                'release_goal' => 'Show the full Aptoria evidence-first API QA and release decision workflow in one safe public demo workspace.',
                 'is_active' => true,
             ]);
 
@@ -114,7 +115,10 @@ class ComprehensiveDemoProjectService
 
     private function deleteExistingDemoProjects(): int
     {
-        $projectIds = Project::query()->where('slug', self::DEMO_SLUG)->pluck('id');
+        $projectIds = Project::query()
+            ->whereIn('slug', [self::DEMO_SLUG, 'aptoria-full-demo', 'aptoria-guided-demo-sandbox'])
+            ->orWhereIn('name', ['Aptoria Full Demo Project', 'Aptoria Guided Demo Sandbox'])
+            ->pluck('id');
 
         if ($projectIds->isEmpty()) {
             return 0;
@@ -170,7 +174,7 @@ class ComprehensiveDemoProjectService
         $staging = Environment::create([
             'project_id' => $project->id,
             'name' => 'Demo Staging',
-            'base_url' => 'https://demo-api.aptoria.local/staging',
+            'base_url' => rtrim((string) config('aptoria.demo.api_base_url', 'https://demo.aptoria.dev/demo-api'), '/'),
             'environment_type' => 'staging',
             'is_production' => false,
             'is_default' => true,
@@ -180,7 +184,7 @@ class ComprehensiveDemoProjectService
         $production = Environment::create([
             'project_id' => $project->id,
             'name' => 'Demo Production',
-            'base_url' => 'https://demo-api.aptoria.local',
+            'base_url' => rtrim((string) config('aptoria.demo.api_base_url', 'https://demo.aptoria.dev/demo-api'), '/'),
             'environment_type' => 'production',
             'is_production' => true,
             'is_default' => false,
@@ -240,12 +244,12 @@ class ComprehensiveDemoProjectService
     {
         $definitions = [
             'health' => ['GET', '/health', 'Health check', false, null, 'low', 'platform,smoke', 200, 'application/json'],
-            'profile' => ['GET', '/api/v1/me', 'Authenticated profile', true, $bearerAuth->id, 'review', 'auth,profile,smoke', 200, 'application/json'],
-            'orders' => ['GET', '/api/v1/orders', 'Order list', true, $bearerAuth->id, 'high', 'orders,regression,release', 200, 'application/json'],
-            'order_detail' => ['GET', '/api/v1/orders/1001', 'Order detail', true, $bearerAuth->id, 'review', 'orders,contract', 200, 'application/json'],
-            'billing' => ['GET', '/api/v1/billing/invoices', 'Billing invoices', true, $bearerAuth->id, 'critical', 'billing,sensitive,regression', 200, 'application/json'],
-            'client_report' => ['GET', '/api/v1/client/reports/latest', 'Latest client report package', true, $clientAuth->id, 'review', 'client-portal,reports', 200, 'application/json'],
-            'feature_flags' => ['GET', '/api/v1/feature-flags', 'Feature flag registry', true, $bearerAuth->id, 'low', 'release,configuration', 200, 'application/json'],
+            'profile' => ['GET', '/security/public-profile', 'Public profile payload', false, null, 'review', 'auth,profile,smoke', 200, 'application/json'],
+            'orders' => ['GET', '/orders', 'Order list', false, null, 'high', 'orders,regression,release', 200, 'application/json'],
+            'order_detail' => ['GET', '/orders/1001', 'Order detail', false, null, 'review', 'orders,contract', 200, 'application/json'],
+            'billing' => ['GET', '/security/leaky-token-example', 'Sensitive token example', false, null, 'critical', 'billing,sensitive,regression', 200, 'application/json'],
+            'client_report' => ['GET', '/reports/summary', 'Latest client report package', false, null, 'review', 'client-portal,reports', 200, 'application/json'],
+            'feature_flags' => ['GET', '/scenarios', 'Scenario template registry', false, null, 'low', 'release,configuration', 200, 'application/json'],
         ];
 
         $endpoints = [];
@@ -467,7 +471,7 @@ class ComprehensiveDemoProjectService
                     'endpoint_name' => $endpoint->name,
                     'method' => $endpoint->method,
                     'path' => $endpoint->path,
-                    'url' => 'https://demo-api.aptoria.local/staging'.$endpoint->path,
+                    'url' => ''.rtrim((string) config('aptoria.demo.api_base_url', 'https://demo.aptoria.dev/demo-api'), '/').''.$endpoint->path,
                     'state' => 'passed',
                     'tone' => 'success',
                     'status_code' => 200,
@@ -489,7 +493,7 @@ class ComprehensiveDemoProjectService
                 'endpoint_name' => $endpoint->name,
                 'method' => $endpoint->method,
                 'path' => $endpoint->path,
-                'url' => 'https://demo-api.aptoria.local/staging'.$endpoint->path,
+                'url' => ''.rtrim((string) config('aptoria.demo.api_base_url', 'https://demo.aptoria.dev/demo-api'), '/').''.$endpoint->path,
                 'state' => $targetState,
                 'tone' => $targetTone,
                 'status_code' => $key === 'billing' ? 500 : 200,

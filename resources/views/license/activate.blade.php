@@ -32,6 +32,16 @@
                         <i data-lucide="check-circle" class="me-1"></i>{{ session('status') }}
                     </div>
                 @endif
+                @if (session('warning'))
+                    <div class="alert alert-warning">
+                        <i data-lucide="alert-triangle" class="me-1"></i>{{ session('warning') }}
+                    </div>
+                @endif
+                @if (session('license_online_status'))
+                    <div class="alert alert-{{ session('license_online_tone') === 'danger' ? 'danger' : (session('license_online_tone') === 'success' ? 'success' : 'warning') }}">
+                        <i data-lucide="cloud-check" class="me-1"></i>{{ session('license_online_status') }}
+                    </div>
+                @endif
 
                 <form method="POST" action="{{ route('license.activate.package') }}" enctype="multipart/form-data" data-aptoria-form-plugin>
                     @csrf

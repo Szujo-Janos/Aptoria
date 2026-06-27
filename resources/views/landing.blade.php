@@ -1,20 +1,85 @@
 @extends('layouts.auth')
 
-@section('title', 'Aptoria')
+@section('title', 'Aptoria · QA evidence and release readiness')
 @section('body_class', 'aptoria-landing-body min-vh-100')
 
 @php
     $terminalCommands = [
         'aptoria safe-scan run --target sandbox-api --profile smoke',
         'aptoria import preview --source postman --file collection.json',
-        'aptoria contract:check compare --source openapi.json --inventory current',
+        'aptoria newman:ingest --run results.json --link-evidence',
+        'aptoria jira:map --file issues.csv --triage-ready',
         'aptoria release-gate evaluate --project payments-api --evidence latest',
     ];
+
     $terminalOutputs = [
-        __('messages.product.landing_terminal_output_1'),
-        __('messages.product.landing_terminal_output_2'),
-        __('messages.product.landing_terminal_output_3'),
-        __('messages.product.landing_terminal_output_4'),
+        '✓ 38 endpoints reviewed · 6 findings linked · evidence pack ready',
+        '✓ Postman collection parsed · 14 requests mapped · 2 conflicts flagged',
+        '✓ Newman run imported · assertions linked to endpoints and findings',
+        '✓ Jira issues normalized · owners, severity and evidence references attached',
+        '✓ Release gate evaluated · 1 blocker · 3 warnings · decision package generated',
+    ];
+
+    $domainRole = strtolower((string) config('aptoria.domain.role', 'local'));
+    $isLandingOnly = $domainRole === 'landing';
+    $showLocalRuntimeActions = ! in_array($domainRole, ['landing', 'demo'], true);
+
+    $landingUrl = rtrim((string) config('aptoria.domain.landing_url'), '/');
+    $demoUrl = rtrim((string) config('aptoria.domain.demo_url'), '/');
+    $docsUrl = 'https://github.com/Szujo-Janos/aptoria/tree/main/docs';
+    $githubUrl = 'https://github.com/Szujo-Janos';
+    $downloadUrl = 'https://github.com/Szujo-Janos/aptoria/releases';
+    $supportUrl = 'https://github.com/Szujo-Janos/aptoria/issues';
+    $githubIconUrl = 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/github.svg';
+
+    $demoGuideUrl = $isLandingOnly ? $demoUrl.'/demo-guide' : route('demo-guide.public');
+
+    $integrations = [
+        [
+            'name' => 'Postman',
+            'label' => 'Collections',
+            'class' => 'is-postman',
+            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/postman.svg',
+        ],
+        [
+            'name' => 'Newman',
+            'label' => 'Postman CLI results',
+            'class' => 'is-newman',
+            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/postman.svg',
+        ],
+        [
+            'name' => 'Jira',
+            'label' => 'Issue CSV',
+            'class' => 'is-jira',
+            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/jira.svg',
+        ],
+        [
+            'name' => 'OpenAPI',
+            'label' => 'Contracts',
+            'class' => 'is-openapi',
+            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/openapiinitiative.svg',
+        ],
+        [
+            'name' => 'HAR',
+            'label' => 'Browser network',
+            'class' => 'is-har',
+            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/googlechrome.svg',
+        ],
+        [
+            'name' => 'CSV',
+            'label' => 'Manual QA imports',
+            'class' => 'is-csv',
+            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/microsoftexcel.svg',
+        ],
+    ];
+
+    $capabilities = [
+        ['icon' => 'radar', 'title' => 'Safe API scanning', 'copy' => 'Run controlled GET/HEAD reviews with timeouts, private-network protection and target guardrails.'],
+        ['icon' => 'folder-check', 'title' => 'Evidence repository', 'copy' => 'Keep response previews, headers, imports, manual notes and audit-ready references in one place.'],
+        ['icon' => 'bug', 'title' => 'Finding triage', 'copy' => 'Track severity, owner, due date, duplicate candidates, merge workflow, dismissal and accepted risk.'],
+        ['icon' => 'brackets-contain', 'title' => 'Import adapter layer', 'copy' => 'Preview and normalize Postman, Newman, Jira CSV, OpenAPI, HAR and QA spreadsheet artifacts.'],
+        ['icon' => 'shield-check', 'title' => 'Release readiness', 'copy' => 'Evaluate rules, profiles, blockers, warnings and release decision packages before handoff.'],
+        ['icon' => 'history', 'title' => 'Audit trail', 'copy' => 'Preserve who did what, what changed, which evidence was used and why a decision was made.'],
     ];
 @endphp
 
@@ -25,85 +90,109 @@
 
     <section class="aptoria-landing-shell py-4 py-xl-5">
         <div class="aptoria-landing-frame">
-            <div class="row g-4 g-xxl-5 align-items-stretch">
+            <header class="aptoria-landing-nav mb-4 mb-xl-5">
+                <a href="{{ $landingUrl ?: url('/') }}" class="aptoria-landing-nav-brand" aria-label="Aptoria">
+                    <img src="{{ asset('assets/aptoria-ui/assets/images/logo-color.svg') }}" alt="Aptoria" class="aptoria-brand-logo">
+                </a>
+                <nav class="aptoria-landing-nav-links" aria-label="Aptoria navigation">
+                    <a href="#platform">Platform</a>
+                    <a href="#integrations">Integrations</a>
+                    <a href="{{ $demoGuideUrl }}">Demo</a>
+                    <a href="{{ $docsUrl }}" target="_blank" rel="noopener">Docs</a>
+                    <a href="{{ $githubUrl }}" target="_blank" rel="noopener">GitHub</a>
+                </nav>
+            </header>
+
+            <div class="row g-4 g-xxl-5 align-items-stretch" id="platform">
                 <div class="col-xl-6 d-flex">
                     <div class="aptoria-landing-copy w-100">
                         <div class="d-inline-flex align-items-center gap-2 aptoria-landing-badge mb-4">
                             <span class="aptoria-landing-badge-dot"></span>
-                            <span>{{ __('messages.product.landing_badge_title') }}</span>
+                            <span>API QA evidence · release readiness · audit trail</span>
                         </div>
 
-                        <img src="{{ asset('assets/aptoria-ui/assets/images/logo-color.svg') }}" alt="Aptoria" class="aptoria-brand-logo aptoria-landing-logo mb-4">
-
-                        <h1 class="aptoria-landing-title">{{ __('messages.product.headline') }}</h1>
-                        <p class="aptoria-landing-lead">{{ __('messages.product.landing_copy') }}</p>
+                        <h1 class="aptoria-landing-title">Turn API testing into release evidence.</h1>
+                        <p class="aptoria-landing-lead">
+                            Aptoria is a QA-focused workspace for API review, evidence collection, finding triage,
+                            external test imports and release decision handoff. It helps teams move from scattered
+                            test artifacts to a structured, reviewable readiness picture.
+                        </p>
 
                         <div class="aptoria-landing-chip-row mb-4">
-                            <span class="aptoria-landing-chip">{{ __('messages.product.landing_badge_evidence') }}</span>
-                            <span class="aptoria-landing-chip">{{ __('messages.product.landing_badge_safe_scan') }}</span>
-                            <span class="aptoria-landing-chip">{{ __('messages.product.landing_badge_release_gate') }}</span>
-                            <span class="aptoria-landing-chip">{{ __('messages.product.landing_badge_audit_trail') }}</span>
+                            <span class="aptoria-landing-chip">Safe scans</span>
+                            <span class="aptoria-landing-chip">Evidence packs</span>
+                            <span class="aptoria-landing-chip">Finding triage</span>
+                            <span class="aptoria-landing-chip">Release gates</span>
+                            <span class="aptoria-landing-chip">Import previews</span>
                         </div>
 
                         <div class="aptoria-landing-value-list mb-4">
                             <div class="aptoria-landing-value-item">
                                 <i data-lucide="scan-search"></i>
                                 <div>
-                                    <strong>{{ __('messages.product.value_1') }}</strong>
-                                    <span>{{ __('messages.product.landing_value_copy_1') }}</span>
+                                    <strong>Review APIs without turning the tool into a weapon.</strong>
+                                    <span>Sandbox target restrictions, private-network blocking and safe request methods keep public demos and customer reviews controlled.</span>
                                 </div>
                             </div>
                             <div class="aptoria-landing-value-item">
                                 <i data-lucide="folder-check"></i>
                                 <div>
-                                    <strong>{{ __('messages.product.value_2') }}</strong>
-                                    <span>{{ __('messages.product.landing_value_copy_2') }}</span>
+                                    <strong>Keep the proof behind every QA decision.</strong>
+                                    <span>Evidence, findings, imports, assertions, release rules and reports stay connected instead of disappearing into screenshots and chat threads.</span>
                                 </div>
                             </div>
                             <div class="aptoria-landing-value-item">
-                                <i data-lucide="shield-chevron"></i>
+                                <i data-lucide="workflow"></i>
                                 <div>
-                                    <strong>{{ __('messages.product.value_3') }}</strong>
-                                    <span>{{ __('messages.product.landing_value_copy_3') }}</span>
+                                    <strong>Bridge QA, developers and release owners.</strong>
+                                    <span>Use one project workspace to see what failed, what changed, what is blocked and what can be released with confidence.</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-flex flex-wrap gap-2 mb-4">
-                            <a href="{{ route('login') }}" class="btn btn-primary btn-lg">
-                                <i data-lucide="log-in" class="me-1"></i>{{ __('messages.auth.sign_in') }}
+                        <div class="aptoria-landing-cta-row mb-4">
+                            <a href="{{ $demoGuideUrl }}" class="btn btn-primary btn-lg">
+                                <i data-lucide="play-circle" class="me-1"></i>Explore the demo
                             </a>
-                            <a href="{{ route('demo-guide.public') }}" class="btn btn-outline-light btn-lg">
-                                <i data-lucide="map" class="me-1"></i>{{ __('messages.demo_guide.open_public') }}
+                            <a href="{{ $downloadUrl }}" class="btn btn-outline-light btn-lg" target="_blank" rel="noopener">
+                                <i data-lucide="download" class="me-1"></i>Download
                             </a>
-                            <a href="{{ route('demo-api.health') }}" class="btn btn-outline-info btn-lg" target="_blank">
-                                <i data-lucide="braces" class="me-1"></i>{{ __('messages.product.try_live_api') }}
+                            <a href="{{ $githubUrl }}" class="btn btn-outline-info btn-lg" target="_blank" rel="noopener">
+                                <img src="{{ $githubIconUrl }}" alt="" class="aptoria-btn-brand-icon me-1">GitHub
                             </a>
-                            <a href="{{ route('setup.index') }}" class="btn btn-light btn-lg text-dark">
-                                <i data-lucide="settings-2" class="me-1"></i>{{ __('messages.setup.open_setup') }}
+                            <a href="{{ $docsUrl }}" class="btn btn-light btn-lg text-dark" target="_blank" rel="noopener">
+                                <i data-lucide="book-open" class="me-1"></i>Docs
                             </a>
                         </div>
+
+                        @if ($showLocalRuntimeActions)
+                            <div class="aptoria-landing-local-actions mb-4">
+                                <span>Local runtime</span>
+                                <a href="{{ route('login') }}">Login</a>
+                                <a href="{{ route('setup.index') }}">Setup</a>
+                            </div>
+                        @endif
 
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <div class="aptoria-landing-stat-card">
-                                    <small>{{ __('messages.product.landing_stat_1_label') }}</small>
-                                    <strong>{{ __('messages.product.landing_stat_1_value') }}</strong>
-                                    <span>{{ __('messages.product.landing_stat_1_copy') }}</span>
+                                    <small>Review scope</small>
+                                    <strong>API + QA</strong>
+                                    <span>Endpoints, auth, environments, findings, reports and evidence in one workspace.</span>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="aptoria-landing-stat-card">
-                                    <small>{{ __('messages.product.landing_stat_2_label') }}</small>
-                                    <strong>{{ __('messages.product.landing_stat_2_value') }}</strong>
-                                    <span>{{ __('messages.product.landing_stat_2_copy') }}</span>
+                                    <small>Import layer</small>
+                                    <strong>6 sources</strong>
+                                    <span>Postman, Newman, OpenAPI, Jira CSV, HAR and manual QA artifacts.</span>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="aptoria-landing-stat-card">
-                                    <small>{{ __('messages.product.landing_stat_3_label') }}</small>
-                                    <strong>{{ __('messages.product.landing_stat_3_value') }}</strong>
-                                    <span>{{ __('messages.product.landing_stat_3_copy') }}</span>
+                                    <small>Output</small>
+                                    <strong>Decision pack</strong>
+                                    <span>Evidence packs, release gate reports and auditable handoff material.</span>
                                 </div>
                             </div>
                         </div>
@@ -117,10 +206,10 @@
                                 <span class="aptoria-console-dot is-danger"></span>
                                 <span class="aptoria-console-dot is-warning"></span>
                                 <span class="aptoria-console-dot is-success"></span>
-                                <span class="aptoria-console-toolbar-label">{{ __('messages.product.landing_terminal_title') }}</span>
+                                <span class="aptoria-console-toolbar-label">APTORIA // QA COMMAND STREAM</span>
                             </div>
                             <div class="aptoria-console-screen">
-                                <div class="aptoria-console-section-label">{{ __('messages.product.landing_terminal_section') }}</div>
+                                <div class="aptoria-console-section-label">Live review flow</div>
                                 <div class="aptoria-console-command-line">
                                     <span class="aptoria-console-prompt">$</span>
                                     <span id="aptoriaTypewriterText"></span>
@@ -131,44 +220,128 @@
                                 <div class="aptoria-console-metrics row g-3 mt-1">
                                     <div class="col-sm-6">
                                         <div class="aptoria-console-mini-card">
-                                            <span>{{ __('messages.product.landing_console_card_1_title') }}</span>
-                                            <strong>{{ __('messages.product.landing_console_card_1_value') }}</strong>
-                                            <small>{{ __('messages.product.landing_console_card_1_copy') }}</small>
+                                            <span>Evidence model</span>
+                                            <strong>Traceable</strong>
+                                            <small>Every finding can point back to a scan, import, assertion or manual QA artifact.</small>
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="aptoria-console-mini-card">
-                                            <span>{{ __('messages.product.landing_console_card_2_title') }}</span>
-                                            <strong>{{ __('messages.product.landing_console_card_2_value') }}</strong>
-                                            <small>{{ __('messages.product.landing_console_card_2_copy') }}</small>
+                                            <span>Release guard</span>
+                                            <strong>Rule based</strong>
+                                            <small>Blockers, warnings and accepted risks are visible before the release decision.</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        <div class="aptoria-landing-panel aptoria-landing-integrations-card mb-4" id="integrations">
+                            <small class="aptoria-landing-eyebrow">Works with common QA artifacts</small>
+                            <h2 class="h4 mb-2">Bring existing API and QA work into one reviewable system.</h2>
+                            <p class="mb-3 text-muted">
+                                Aptoria is not trying to replace every tool. It collects their output, normalizes it,
+                                links it to evidence and turns it into release-readiness context.
+                            </p>
+                            <div class="aptoria-integration-rail">
+                                @foreach ($integrations as $integration)
+                                    <div class="aptoria-integration-logo {{ $integration['class'] }}">
+                                        <span class="aptoria-integration-brand-row">
+                                            <img src="{{ $integration['logo'] }}" alt="{{ $integration['name'] }} logo" class="aptoria-integration-img">
+                                            <strong>{{ $integration['name'] }}</strong>
+                                        </span>
+                                        <small>{{ $integration['label'] }}</small>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="aptoria-landing-panel aptoria-landing-note-card h-100">
-                                    <small class="aptoria-landing-eyebrow">{{ __('messages.product.not_a_clone') }}</small>
-                                    <h2 class="h4 mb-2">{{ __('messages.product.landing_note_title') }}</h2>
-                                    <p class="mb-0 text-muted">{{ __('messages.product.not_a_clone_copy') }}</p>
+                                    <small class="aptoria-landing-eyebrow">For QA teams</small>
+                                    <h2 class="h4 mb-2">Less chasing. More evidence.</h2>
+                                    <p class="mb-0 text-muted">Capture what was tested, what failed, why it matters and what evidence supports the decision.</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="aptoria-landing-panel aptoria-landing-stack-card h-100">
-                                    <small class="aptoria-landing-eyebrow">{{ __('messages.product.landing_stack_title') }}</small>
-                                    <ul class="list-unstyled mb-0 aptoria-landing-stack-list">
-                                        <li><i data-lucide="shield-check"></i><span>{{ __('messages.product.landing_stack_item_1') }}</span></li>
-                                        <li><i data-lucide="database"></i><span>{{ __('messages.product.landing_stack_item_2') }}</span></li>
-                                        <li><i data-lucide="git-merge"></i><span>{{ __('messages.product.landing_stack_item_3') }}</span></li>
-                                    </ul>
+                                <div class="aptoria-landing-panel aptoria-landing-note-card h-100">
+                                    <small class="aptoria-landing-eyebrow">For developers</small>
+                                    <h2 class="h4 mb-2">Clearer handoff.</h2>
+                                    <p class="mb-0 text-muted">See endpoint context, reproduced behavior, import source, severity, expected result and linked artifacts.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4 mt-xl-5">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-4">
+                        <small class="aptoria-landing-eyebrow">Platform coverage</small>
+                        <h2 class="h3 mb-2">From endpoint inventory to release decision.</h2>
+                        <p class="mb-0 text-muted">
+                            A single Aptoria project can show the complete QA chain: environments, auth profiles,
+                            API inventory, safe scans, imported artifacts, findings, native tests, reports and audit history.
+                        </p>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="aptoria-capability-grid">
+                            @foreach ($capabilities as $capability)
+                                <div class="aptoria-capability-card">
+                                    <i data-lucide="{{ $capability['icon'] }}"></i>
+                                    <strong>{{ $capability['title'] }}</strong>
+                                    <span>{{ $capability['copy'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-4">
+                        <small class="aptoria-landing-eyebrow">Downloadable QA workspace</small>
+                        <h2 class="h3 mb-2">Run Aptoria where your QA evidence belongs.</h2>
+                        <p class="mb-0 text-muted">
+                            Aptoria is designed as a downloadable, self-hosted QA review system. Use it in your own
+                            environment, keep review artifacts under your control and turn API testing activity into
+                            evidence-backed release decisions.
+                        </p>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="aptoria-landing-route-grid">
+                            <div class="aptoria-landing-route-card">
+                                <i data-lucide="package-check"></i>
+                                <strong>Download and install</strong>
+                                <span>Deploy the Aptoria application into your own QA, staging or internal review environment.</span>
+                            </div>
+                            <div class="aptoria-landing-route-card">
+                                <i data-lucide="database-zap"></i>
+                                <strong>Keep evidence local</strong>
+                                <span>Store endpoint evidence, imports, findings, audit history and reports inside your own project workspace.</span>
+                            </div>
+                            <div class="aptoria-landing-route-card">
+                                <i data-lucide="key-round"></i>
+                                <strong>License controlled usage</strong>
+                                <span>Activate the downloaded system with a license instead of exposing public admin surfaces to end users.</span>
+                            </div>
+                            <div class="aptoria-landing-route-card">
+                                <i data-lucide="shield-check"></i>
+                                <strong>Demo before commitment</strong>
+                                <span>Use the online showcase only to understand the product before downloading and running your own instance.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="aptoria-landing-footer mt-4">
+                <span>Aptoria turns QA activity into reviewable release evidence.</span>
+                <a href="{{ $supportUrl }}" target="_blank" rel="noopener">Contact / issues</a>
+            </footer>
         </div>
     </section>
 </div>

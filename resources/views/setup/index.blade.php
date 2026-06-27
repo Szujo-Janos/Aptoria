@@ -311,6 +311,28 @@
                             </div>
 
                             @php
+                                $preflightStatus = $deploymentPreflight['status'] ?? 'warning';
+                                $preflightTone = $preflightStatus === 'ok' ? 'success' : ($preflightStatus === 'error' ? 'danger' : 'warning');
+                                $preflightScore = (int) ($deploymentPreflight['score'] ?? 0);
+                            @endphp
+                            <div class="alert alert-{{ $preflightTone }} d-flex gap-3 align-items-start">
+                                <span class="avatar avatar-xs rounded text-bg-{{ $preflightTone }}"><span class="avatar-title"><i class="ti ti-rocket"></i></span></span>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">Installer preflight: {{ strtoupper($preflightStatus) }} · {{ $preflightScore }}/100</div>
+                                    <div class="small">Errors: {{ $deploymentPreflight['summary']['errors'] ?? 0 }} · Warnings: {{ $deploymentPreflight['summary']['warnings'] ?? 0 }} · Passed: {{ $deploymentPreflight['summary']['passed'] ?? 0 }}</div>
+                                    @if(! empty($deploymentPreflight['blocking_checks']))
+                                        <ul class="mb-0 mt-2 small">
+                                            @foreach(array_slice($deploymentPreflight['blocking_checks'], 0, 4) as $preflightCheck)
+                                                <li><code>{{ $preflightCheck['id'] }}</code> — {{ $preflightCheck['remediation'] }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        <div class="small text-muted mt-1">The installer can continue. Rerun <code>php artisan aptoria:deployment-preflight --strict</code> after installation before public deployment.</div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @php
                                 $installProgressSteps = [
                                     __('messages.setup.install_progress_runtime'),
                                     __('messages.setup.install_progress_migrations'),

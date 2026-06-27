@@ -43,3 +43,36 @@ yarn-error.log
 /database/database.sqlite
 /public/storage/
 /bootstrap/cache/
+/storage/app/license-authority-private.pem
+/storage/app/license-authority-registry.json
+
+# Standalone license issuer runtime/private files
+/license-issuer/config.php
+/license-issuer/storage/*.json
+/license-issuer/storage/*.pem
+/license-issuer/storage/*.zip
+!/license-issuer/storage/.gitkeep
+/license-issuer/storage/logs/
+/license-issuer/storage/rate-limit/
+/license-issuer/storage/**/*.json
+/license-issuer/storage/**/*.jsonl
+
+# Deployment smoke result runtime imports
+/storage/app/aptoria-deployment/smoke-results/
+/storage/app/aptoria-deployment/*.json
+# Runtime/private Aptoria files
+.env
+.env.*
+!.env.example
+/vendor/
+/node_modules/
+/database/*.sqlite
+/storage/app/installed.lock
+/storage/app/setup-token.txt
+/storage/app/aptoria-license.json
+/storage/app/license-*.pem
+/storage/app/*lease*.json
+/storage/app/aptoria-deployment/
+/public/storage
+/bootstrap/cache/*.php
+/license-request.json

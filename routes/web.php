@@ -11,6 +11,8 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DemoApiController;
 use App\Http\Controllers\DemoGuideController;
+use App\Http\Controllers\DemoWorkspaceController;
+use App\Http\Controllers\DeploymentReadinessController;
 use App\Http\Controllers\EndpointController;
 use App\Http\Controllers\EndpointTestBatchController;
 use App\Http\Controllers\EndpointTestRunController;
@@ -37,6 +39,8 @@ use App\Http\Controllers\ReleaseReadinessController;
 use App\Http\Controllers\ReleaseReadinessRuleController;
 use App\Http\Controllers\ReleaseDecisionSnapshotController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RuntimeDiagnosticsController;
+use App\Http\Controllers\SubdomainDeploymentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\UserManagementController;
@@ -44,7 +48,17 @@ use App\Http\Controllers\SafeScanController;
 use App\Http\Middleware\EnsureSetupAccessIsAuthorized;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'landing')->name('landing');
+Route::get('/', function () {
+    $role = strtolower((string) config('aptoria.domain.role', 'local'));
+
+    if ($role === 'demo') {
+        return auth()->check()
+            ? redirect()->route('dashboard')
+            : redirect()->route('login');
+    }
+
+    return view('landing');
+})->name('landing');
 Route::get('/language/{locale}', LanguageController::class)->name('language.switch');
 Route::get('/demo-guide', [DemoGuideController::class, 'public'])->name('demo-guide.public');
 Route::get('/license/invalid', [LicenseController::class, 'invalid'])->name('license.invalid');
@@ -103,6 +117,7 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware(['auth', 'password.changed'])->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/demo-workspace', DemoWorkspaceController::class)->name('demo-workspace');
 
     Route::post('/workspace-mode/{mode}', [ProjectContextController::class, 'mode'])->whereIn('mode', ['live', 'sandbox'])->name('workspace.mode');
     Route::get('/projects/context/clear', [ProjectContextController::class, 'clear'])->name('projects.context.clear');
@@ -266,6 +281,14 @@ Route::middleware(['auth', 'password.changed'])->group(function (): void {
 
     Route::get('/audit-log', AuditLogController::class)->name('audit.index');
     Route::middleware('admin')->group(function (): void {
+        Route::get('/runtime-diagnostics', [RuntimeDiagnosticsController::class, 'index'])->name('runtime-diagnostics.index');
+        Route::get('/runtime-diagnostics.json', [RuntimeDiagnosticsController::class, 'json'])->name('runtime-diagnostics.json');
+        Route::get('/deployment-readiness', [DeploymentReadinessController::class, 'index'])->name('deployment-readiness.index');
+        Route::get('/deployment-readiness.json', [DeploymentReadinessController::class, 'json'])->name('deployment-readiness.json');
+        Route::get('/subdomain-deployment', [SubdomainDeploymentController::class, 'index'])->name('subdomain-deployment.index');
+        Route::get('/subdomain-deployment.json', [SubdomainDeploymentController::class, 'json'])->name('subdomain-deployment.json');
+        Route::get('/subdomain-deployment/results/{id}.json', [SubdomainDeploymentController::class, 'result'])->where('id', '[A-Za-z0-9_.-]+')->name('subdomain-deployment.result');
+        Route::post('/subdomain-deployment/import', [SubdomainDeploymentController::class, 'import'])->name('subdomain-deployment.import');
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
         Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
@@ -277,6 +300,7 @@ Route::middleware(['auth', 'password.changed'])->group(function (): void {
     Route::middleware('admin')->group(function (): void {
         Route::get('/program-settings/license', [LicenseController::class, 'manage'])->name('program-settings.license');
         Route::post('/program-settings/license/package', [LicenseController::class, 'uploadPackage'])->name('program-settings.license.package');
+        Route::post('/program-settings/license/authority/refresh', [LicenseController::class, 'refreshOnlineLease'])->name('program-settings.license.authority.refresh');
         Route::post('/program-settings/license/upload', [LicenseController::class, 'upload'])->name('program-settings.license.upload');
         Route::post('/program-settings/license/public-key', [LicenseController::class, 'storePublicKey'])->name('program-settings.license.public-key');
     });

@@ -2,6 +2,9 @@
 
 use App\Http\Middleware\BlockDangerousDemoActions;
 use App\Http\Middleware\EnforceSessionTimeout;
+use App\Http\Middleware\EnforceDomainRole;
+use App\Http\Middleware\EnforceDemoViewerReadOnly;
+use App\Http\Middleware\EnforceDemoShowcaseGuard;
 use App\Http\Middleware\EnsureAdminUser;
 use App\Http\Middleware\EnsureApplicationIsInstalled;
 use App\Http\Middleware\EnsurePasswordChangeIsCompleted;
@@ -16,17 +19,21 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             SecurityHeaders::class,
+            EnforceDomainRole::class,
             SetLocale::class,
             EnsureApplicationIsInstalled::class,
             EnsureLicenseIsValid::class,
             EnforceSessionTimeout::class,
             BlockDangerousDemoActions::class,
+            EnforceDemoShowcaseGuard::class,
+            EnforceDemoViewerReadOnly::class,
             EnsureProjectAccess::class,
         ]);
 

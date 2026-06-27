@@ -1,18 +1,15 @@
 # Install / update on Windows XAMPP
 
-Use this pattern for local installation. For the clean rebuild phase, delete the old target folder before copying the new ZIP so no old migrations/views remain.
+Use this pattern for local installation or replacement from the ZIP package.
 
 ```powershell
-$ZipPath = "E:\Aptoria\aptoria-0.0.63.zip"
-$TempPath = "E:\Aptoria\_temp_aptoria_0.0.63"
+$ZipPath = "E:\Aptoria\aptoria-0.0.80.zip"
+$TempPath = "E:\Aptoria\_temp_aptoria_0.0.80"
 $ProjectRoot = "C:\xampp\htdocs\aptoria"
 
 Remove-Item $TempPath -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item $ProjectRoot -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $ProjectRoot -Force
-
 Expand-Archive -Path $ZipPath -DestinationPath $TempPath -Force
-Copy-Item "$TempPath\aptoria-0.0.63\*" $ProjectRoot -Recurse -Force
+Copy-Item "$TempPath\aptoria-0.0.80\*" $ProjectRoot -Recurse -Force
 
 cd $ProjectRoot
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
@@ -22,7 +19,10 @@ C:\xampp\php\php.exe artisan optimize:clear
 C:\xampp\php\php.exe artisan view:clear
 C:\xampp\php\php.exe artisan config:clear
 C:\xampp\php\php.exe artisan route:clear
-C:\xampp\php\php.exe artisan migrate --force
+C:\xampp\php\php.exe artisan migrate
+
+C:\xampp\php\php.exe artisan test
+
 C:\xampp\php\php.exe artisan serve
 ```
 
@@ -33,3 +33,21 @@ http://127.0.0.1:8000/setup
 ```
 
 Complete setup. The installer creates `storage/app/installed.lock` after setup.
+
+## Release ZIP exclusions
+
+Do not commit or ship runtime/private files:
+
+```text
+.env
+vendor/
+database/database.sqlite
+storage/app/installed.lock
+storage/app/setup-token.txt
+storage/app/aptoria-license.json
+storage/app/license-*.pem
+storage/app/*lease*.json
+storage/app/license-install-id
+bootstrap/cache/
+public/storage/
+```

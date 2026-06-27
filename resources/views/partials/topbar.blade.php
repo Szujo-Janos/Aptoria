@@ -90,6 +90,10 @@
                                     @endif
                                     <a href="{{ route('program-settings.edit') }}" class="dropdown-item"><i data-lucide="tool" class="me-2 fs-16"></i>{{ __('messages.nav.program_settings') }}</a>
                                     @if (auth()->user()?->isAdmin())
+                                        <a href="{{ route('deployment-readiness.index') }}" class="dropdown-item"><i data-lucide="rocket" class="me-2 fs-16"></i>Deployment readiness</a>
+                                        <a href="{{ route('subdomain-deployment.index') }}" class="dropdown-item"><i data-lucide="network" class="me-2 fs-16"></i>Subdomain deployment</a>
+                                    @endif
+                                    @if (auth()->user()?->isAdmin())
                                         <a href="{{ route('program-settings.license') }}" class="dropdown-item"><i data-lucide="key-round" class="me-2 fs-16"></i>{{ __('messages.nav.license_management') }}</a>
                                     @endif
                                     <a href="{{ route('help.how_it_works') }}" class="dropdown-item"><i data-lucide="sitemap" class="me-2 fs-16"></i>{{ __('messages.nav.how_it_works') }}</a>

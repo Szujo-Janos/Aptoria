@@ -56,7 +56,7 @@ class ProjectAccessService
             'audit.view',
         ],
         ProjectMembership::ROLE_READ_ONLY_VIEWER => [
-            'project.view',
+            'project.view', 'settings.view', 'members.view',
             'environments.view', 'auth_profiles.view', 'endpoints.view', 'scans.view',
             'assertions.view', 'snapshots.view', 'imports.view',
             'qa.view',

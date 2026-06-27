@@ -11,16 +11,23 @@ class BlockDangerousDemoActions
     /** @var list<string> */
     private array $blockedRoutePrefixes = [
         'users.',
-        'program-settings.license',
+        'program-settings.',
         'projects.client-portal.',
         'projects.members.',
     ];
 
     /** @var list<string> */
     private array $blockedRouteNames = [
+        'profile.update',
+        'profile.password.update',
         'program-settings.update',
+        'projects.store',
+        'projects.update',
         'projects.destroy',
         'projects.settings.update',
+        'projects.import-center.store',
+        'projects.import-center.apply',
+        'projects.import-center.undo',
     ];
 
     /** @var list<string> */
@@ -37,7 +44,7 @@ class BlockDangerousDemoActions
 
         $routeName = (string) ($request->route()?->getName() ?? '');
 
-        if ($routeName === '' || in_array($routeName, ['logout', 'login.store', 'profile.password.update'], true)) {
+        if ($routeName === '' || in_array($routeName, ['logout', 'login.store'], true)) {
             return $next($request);
         }
 
@@ -67,6 +74,10 @@ class BlockDangerousDemoActions
         }
 
         if (str_starts_with($routeName, 'projects.') && strtoupper($method) === 'DELETE') {
+            return true;
+        }
+
+        if (str_starts_with($routeName, 'projects.import-center.') && strtoupper($method) !== 'GET') {
             return true;
         }
 

@@ -259,6 +259,20 @@
                         <span class="avatar avatar-xs rounded text-bg-success"><span class="avatar-title"><i data-lucide="check"></i></span></span>
                         <span><span class="d-block text-body">{{ __('messages.program_settings.current_version') }}</span><small class="text-muted">v{{ $aptoriaVersion }}</small></span>
                     </div>
+                    @if (auth()->user()?->isAdmin())
+                        <a href="{{ route('deployment-readiness.index') }}" class="list-group-item list-group-item-action d-flex gap-3">
+                            <span class="avatar avatar-xs rounded text-bg-primary"><span class="avatar-title"><i data-lucide="rocket"></i></span></span>
+                            <span><span class="d-block text-body">Deployment readiness</span><small class="text-muted">Preflight gate before hosting or release</small></span>
+                        </a>
+                        <a href="{{ route('runtime-diagnostics.index') }}" class="list-group-item list-group-item-action d-flex gap-3">
+                            <span class="avatar avatar-xs rounded text-bg-warning"><span class="avatar-title"><i data-lucide="stethoscope"></i></span></span>
+                            <span><span class="d-block text-body">Runtime diagnostics</span><small class="text-muted">Hosting profile validation</small></span>
+                        </a>
+                        <a href="{{ route('subdomain-deployment.index') }}" class="list-group-item list-group-item-action d-flex gap-3">
+                            <span class="avatar avatar-xs rounded text-bg-info"><span class="avatar-title"><i data-lucide="network"></i></span></span>
+                            <span><span class="d-block text-body">Subdomain deployment</span><small class="text-muted">Smoke result import and host boundary status</small></span>
+                        </a>
+                    @endif
                     <a href="{{ route('program-settings.license') }}" class="list-group-item list-group-item-action d-flex gap-3">
                         <span class="avatar avatar-xs rounded text-bg-{{ $licenseStatus['tone'] ?? 'secondary' }}"><span class="avatar-title"><i data-lucide="key-round"></i></span></span>
                         <span><span class="d-block text-body">{{ __('messages.license.admin_card_title') }}</span><small class="text-muted">{{ $licenseStatus['label'] ?? __('messages.common.not_available') }}</small></span>

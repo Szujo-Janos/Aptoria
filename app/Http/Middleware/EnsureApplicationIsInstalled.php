@@ -15,6 +15,9 @@ class EnsureApplicationIsInstalled
 
     public function handle(Request $request, Closure $next): Response
     {
+        if ($this->isLandingOnlyRuntime()) {
+            return $next($request);
+        }
 
         if ($this->setupState->canUseApplication()) {
             return $next($request);
@@ -38,5 +41,10 @@ class EnsureApplicationIsInstalled
     private function isSetupRequest(Request $request): bool
     {
         return $request->is('setup') || $request->is('setup/*') || $request->is('language/*') || $request->is('up');
+    }
+
+    private function isLandingOnlyRuntime(): bool
+    {
+        return strtolower((string) config('aptoria.domain.role', 'local')) === 'landing';
     }
 }

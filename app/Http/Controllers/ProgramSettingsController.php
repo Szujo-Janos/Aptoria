@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProgramSetting;
 use App\Services\AuditLogger;
-use App\Services\ComprehensiveDemoProjectService;
+use App\Services\DemoShowcaseWorkspaceService;
 use App\Services\LiveDemoApiSandboxService;
 use App\Services\WorkspaceModeService;
 use Illuminate\Http\RedirectResponse;
@@ -56,11 +56,11 @@ class ProgramSettingsController extends Controller
         return redirect()->route('program-settings.edit')->with('status', __('messages.program_settings.updated'));
     }
 
-    public function buildDemoProject(ComprehensiveDemoProjectService $demoProjectService): RedirectResponse
+    public function buildDemoProject(DemoShowcaseWorkspaceService $demoProjectService): RedirectResponse
     {
         /** @var \App\Models\User $user */
         $user = request()->user();
-        $result = $demoProjectService->build($user);
+        $result = $demoProjectService->rebuild($user);
 
         session(['workspace_mode' => WorkspaceModeService::SANDBOX, 'current_project_id' => $result['project']->id]);
 

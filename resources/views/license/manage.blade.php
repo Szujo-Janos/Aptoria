@@ -17,11 +17,27 @@
     $publicKeyConfigured = (bool) ($licenseStatus['public_key_configured'] ?? false);
     $onlineAuthority = $licenseStatus['online_authority'] ?? null;
     $licenseMode = $licenseStatus['license_mode'] ?? 'local_package';
+    $onlineAuthorityEnabled = in_array($licenseMode, ['online_authority', 'hybrid'], true);
+    $licenseModeLabel = match ($licenseMode) {
+        'online_authority' => __('messages.license.license_mode_online_authority'),
+        'hybrid' => __('messages.license.license_mode_hybrid'),
+        default => __('messages.license.license_mode_local_package'),
+    };
 @endphp
 
 @if (session('status'))
     <div class="alert alert-success">
         <i data-lucide="check-circle" class="me-1"></i>{{ session('status') }}
+    </div>
+@endif
+@if (session('warning'))
+    <div class="alert alert-warning">
+        <i data-lucide="alert-triangle" class="me-1"></i>{{ session('warning') }}
+    </div>
+@endif
+@if (session('license_online_status'))
+    <div class="alert alert-{{ session('license_online_tone') === 'danger' ? 'danger' : (session('license_online_tone') === 'success' ? 'success' : 'warning') }}">
+        <i data-lucide="cloud-check" class="me-1"></i>{{ session('license_online_status') }}
     </div>
 @endif
 
@@ -69,36 +85,87 @@
                             <span>{{ __('messages.license.binding_mode') }}: {{ $licenseStatus['binding_mode'] ?? 'none' }}</span>
                         </div>
                     </div>
+                    @if ($onlineAuthority)
+                        <div class="col-md-3">
+                            <div class="aptoria-license-mini-stat">
+                                <small>{{ __('messages.license.authority_public_key') }}</small>
+                                <strong>{{ ($onlineAuthority['authority_public_key_configured'] ?? false) ? __('messages.common.yes') : __('messages.common.no') }}</strong>
+                                <span>{{ __('messages.license.license_mode') }}: {{ $licenseMode }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="aptoria-license-mini-stat">
+                                <small>{{ __('messages.license.runtime_lease') }}</small>
+                                <strong>{{ $onlineAuthority['label'] ?? '—' }}</strong>
+                                <span>{{ ! empty($onlineAuthority['valid_until'] ?? null) ? $onlineAuthority['valid_until'] : __('messages.license.runtime_lease_missing') }}</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="aptoria-form-section mt-3">
                     <div class="row g-3 align-items-center">
                         <div class="col-lg-8">
                             <div class="d-flex align-items-start gap-3">
-                                <span class="avatar rounded text-bg-info">
-                                    <span class="avatar-title"><i data-lucide="cloud-check"></i></span>
+                                <span class="avatar rounded {{ $onlineAuthorityEnabled ? 'text-bg-info' : 'text-bg-success' }}">
+                                    <span class="avatar-title"><i data-lucide="{{ $onlineAuthorityEnabled ? 'cloud-check' : 'package-check' }}"></i></span>
                                 </span>
                                 <div>
-                                    <div class="fw-semibold">{{ __('messages.license.online_authority_title') }}</div>
-                                    <div class="text-muted small">{{ __('messages.license.online_authority_copy') }}</div>
+                                    <div class="fw-semibold">
+                                        {{ $onlineAuthorityEnabled ? __('messages.license.online_authority_title') : __('messages.license.activation_mode_title') }}
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ $onlineAuthorityEnabled ? __('messages.license.online_authority_copy') : __('messages.license.activation_mode_local_copy') }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-4 text-lg-end">
-                            <span class="badge badge-soft-{{ $onlineAuthority['tone'] ?? 'secondary' }} badge-label">
-                                {{ $onlineAuthority['label'] ?? $licenseMode }}
+                            <span class="badge badge-soft-{{ $onlineAuthorityEnabled ? ($onlineAuthority['tone'] ?? 'secondary') : 'success' }} badge-label">
+                                {{ $onlineAuthorityEnabled ? ($onlineAuthority['label'] ?? $licenseModeLabel) : $licenseModeLabel }}
                             </span>
                         </div>
                     </div>
-                    @if ($onlineAuthority)
+                    @if ($onlineAuthorityEnabled && $onlineAuthority)
                         <div class="small text-muted mt-2">
                             {{ $onlineAuthority['message'] ?? '' }}
                             @if (! empty($onlineAuthority['valid_until']))
                                 <span class="ms-2">{{ __('messages.license.runtime_lease_valid_until') }}: <code>{{ $onlineAuthority['valid_until'] }}</code></span>
                             @endif
                         </div>
+                        <div class="row g-2 mt-2">
+                            <div class="col-md-6">
+                                <div class="text-muted small">{{ __('messages.license.authority_url') }}</div>
+                                <code class="small text-break d-block">{{ $onlineAuthority['authority_url'] ?? '—' }}</code>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">{{ __('messages.license.authority_public_key_path') }}</div>
+                                <code class="small text-break d-block">{{ $onlineAuthority['authority_public_key_path'] ?? '—' }}</code>
+                            </div>
+                            @if (! empty($onlineAuthority['lease_id']))
+                                <div class="col-md-6">
+                                    <div class="text-muted small">Lease ID</div>
+                                    <code class="small text-break d-block">{{ $onlineAuthority['lease_id'] }}</code>
+                                </div>
+                            @endif
+                            @if (! empty($onlineAuthority['grace_until']))
+                                <div class="col-md-6">
+                                    <div class="text-muted small">Offline grace</div>
+                                    <code class="small text-break d-block">{{ $onlineAuthority['grace_until'] }}</code>
+                                </div>
+                            @endif
+                        </div>
+                        @if (($onlineAuthority['enabled'] ?? false) && $isValid)
+                            <form method="POST" action="{{ route('program-settings.license.authority.refresh') }}" class="mt-3" data-aptoria-form-plugin>
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-light">
+                                    <i data-lucide="refresh-cw" class="me-1"></i>{{ __('messages.license.runtime_lease_refresh') }}
+                                </button>
+                            </form>
+                        @endif
                     @endif
                 </div>
+
 
                 <div class="aptoria-form-section mt-3">
                     <div class="row g-3 align-items-center">
@@ -158,7 +225,7 @@
                         </div>
                         <div class="col-12">
                             <div class="text-muted small">{{ __('messages.license.license_mode') }}</div>
-                            <code class="small text-break d-block">{{ $licenseMode }}</code>
+                            <code class="small text-break d-block">{{ $licenseModeLabel }}</code>
                         </div>
                         @if ($onlineAuthority)
                             <div class="col-md-6">

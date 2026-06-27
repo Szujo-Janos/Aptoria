@@ -8,4 +8,5 @@ composer install
 php artisan key:generate --force
 php artisan optimize:clear
 php artisan migrate --force
+php artisan aptoria:deployment-preflight
 php artisan aptoria:health

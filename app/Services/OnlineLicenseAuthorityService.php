@@ -11,8 +11,9 @@ use Throwable;
 
 class OnlineLicenseAuthorityService
 {
-    public function __construct(private readonly LicenseFingerprintService $fingerprints)
-    {
+    public function __construct(
+        private readonly LicenseFingerprintService $fingerprints,
+    ) {
     }
 
     public function enabled(): bool
@@ -27,11 +28,15 @@ class OnlineLicenseAuthorityService
 
     public function statusFor(array $localStatus): array
     {
+        $authorityUrl = $this->authorityUrl($localStatus);
         $base = [
             'enabled' => $this->enabled(),
             'mode' => $this->mode(),
-            'authority_url' => $this->authorityUrl(),
+            'authority_url' => $authorityUrl,
+            'lease_endpoint_url' => $this->leaseEndpointUrl($localStatus),
             'lease_cache_path' => $this->leaseCachePath(),
+            'authority_public_key_path' => $this->authorityPublicKeyPath(),
+            'authority_public_key_configured' => $this->authorityPublicKeyConfigured(),
             'offline_grace_hours' => $this->offlineGraceHours(),
             'last_checked_at' => null,
             'valid_until' => null,
@@ -109,7 +114,7 @@ class OnlineLicenseAuthorityService
             ];
         }
 
-        $url = $this->leaseEndpointUrl();
+        $url = $this->leaseEndpointUrl($localStatus);
         if ($url === null) {
             return [
                 'state' => 'authority_not_configured',
@@ -120,11 +125,13 @@ class OnlineLicenseAuthorityService
             ];
         }
 
+        $requestPayload = $this->requestPayload($localStatus);
+
         try {
             $response = Http::timeout($this->timeoutSeconds())
                 ->acceptJson()
                 ->asJson()
-                ->post($url, $this->requestPayload($localStatus));
+                ->post($url, $requestPayload);
         } catch (Throwable $exception) {
             return [
                 'state' => 'authority_unreachable',
@@ -146,6 +153,7 @@ class OnlineLicenseAuthorityService
         }
 
         $document = $response->json();
+
         if (! is_array($document)) {
             return [
                 'state' => 'malformed_authority_response',
@@ -166,6 +174,19 @@ class OnlineLicenseAuthorityService
         File::put($path, json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
         return $this->evaluateLeaseDocument($document, $localStatus);
+    }
+
+    public function clearCachedLease(): void
+    {
+        $path = $this->leaseCachePath();
+        if ($path !== '' && File::exists($path)) {
+            File::delete($path);
+        }
+    }
+
+    public function authorityPublicKeyConfigured(): bool
+    {
+        return $this->authorityPublicKey() !== null;
     }
 
     public function requestPayload(array $localStatus): array
@@ -256,7 +277,7 @@ class OnlineLicenseAuthorityService
                 'label' => ucfirst(str_replace('_', ' ', $status)),
                 'lease_id' => $payload['lease_id'] ?? null,
                 'valid_until' => $payload['valid_until'] ?? null,
-                'message' => 'Online license authority returned status: '.$status.'.',
+                'message' => 'Online license authority returned status: '.$status.((string) ($payload['reason'] ?? '') !== '' ? ' — '.$payload['reason'] : '').'.',
             ];
         }
 
@@ -429,20 +450,29 @@ class OnlineLicenseAuthorityService
         return 'sha256:'.hash('sha256', json_encode($hashes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}');
     }
 
-    private function leaseEndpointUrl(): ?string
+
+    private function leaseEndpointUrl(?array $localStatus = null): ?string
     {
-        $base = $this->authorityUrl();
+        $base = $this->authorityUrl($localStatus);
         if ($base === '') {
             return null;
         }
 
-        $endpoint = trim((string) config('aptoria.license.authority.lease_endpoint', '/api/license/runtime-lease'));
+        $payloadEndpoint = trim((string) data_get($localStatus ?? [], 'payload.authority.lease_endpoint', ''));
+        $endpoint = $payloadEndpoint !== ''
+            ? $payloadEndpoint
+            : trim((string) config('aptoria.license.authority.lease_endpoint', '/api/license/runtime-lease'));
 
         return rtrim($base, '/').'/'.ltrim($endpoint, '/');
     }
 
-    private function authorityUrl(): string
+    private function authorityUrl(?array $localStatus = null): string
     {
+        $payloadUrl = rtrim(trim((string) data_get($localStatus ?? [], 'payload.authority.url', '')), '/');
+        if ($payloadUrl !== '') {
+            return $payloadUrl;
+        }
+
         return rtrim(trim((string) config('aptoria.license.authority.url', '')), '/');
     }
 

@@ -34,6 +34,10 @@ class EnsureLicenseIsValid
 
     private function shouldSkip(Request $request): bool
     {
+        if (strtolower((string) config('aptoria.domain.role', 'local')) === 'landing') {
+            return true;
+        }
+
         return $request->is('license/invalid')
             || $request->is('license/activate')
             || $request->is('license/activate/*')

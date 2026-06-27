@@ -53,6 +53,15 @@ class AuthController extends Controller
             return redirect()->route('profile.show')->with('status', __('messages.profile.password_change_required'));
         }
 
+        $showcase = app(\App\Services\DemoShowcaseWorkspaceService::class);
+        if ($showcase->shouldAutoOpenFor($user)) {
+            $result = $showcase->ensureForViewer($user);
+            $request->session()->put('workspace_mode', \App\Services\WorkspaceModeService::SANDBOX);
+            $request->session()->put('current_project_id', $result['project']->id);
+
+            return redirect()->route('projects.show', $result['project']);
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 

@@ -1934,3 +1934,738 @@ html[data-bs-theme="dark"] .aptoria-landing-scene { background: linear-gradient(
 html[data-bs-theme="dark"] .aptoria-license-mini-stat {
     background: rgba(255,255,255,.025);
 }
+
+/* v0.0.72 public landing cleanup */
+.aptoria-landing-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .85rem 1rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    border-radius: 1.1rem;
+    background: rgba(255, 255, 255, .68);
+    box-shadow: 0 18px 46px rgba(30, 64, 175, .08);
+    backdrop-filter: blur(14px);
+}
+.aptoria-landing-nav-brand {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+.aptoria-landing-nav-brand img {
+    height: 38px;
+    width: auto;
+    max-width: 220px;
+}
+.aptoria-landing-nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .45rem;
+    flex-wrap: wrap;
+}
+.aptoria-landing-nav-links a {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: .48rem .82rem;
+    color: #1e3a8a;
+    font-weight: 600;
+    font-size: .88rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+.aptoria-landing-nav-links a:hover {
+    color: #0f172a;
+    border-color: rgba(37, 99, 235, .14);
+    background: rgba(255, 255, 255, .7);
+}
+.aptoria-landing-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+}
+.aptoria-landing-local-actions {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: .55rem .7rem;
+    border: 1px dashed rgba(37, 99, 235, .25);
+    border-radius: .95rem;
+    background: rgba(255, 255, 255, .62);
+    color: #475569;
+    font-size: .86rem;
+}
+.aptoria-landing-local-actions span {
+    font-weight: 700;
+    color: #1e3a8a;
+}
+.aptoria-landing-local-actions a {
+    color: #075985;
+    font-weight: 700;
+    text-decoration: none;
+}
+.aptoria-landing-boundary-card,
+.aptoria-landing-public-section {
+    border-radius: 1.1rem;
+    padding: 1.2rem;
+}
+.aptoria-landing-route-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+.aptoria-landing-route-card {
+    display: flex;
+    flex-direction: column;
+    gap: .42rem;
+    min-height: 132px;
+    padding: .95rem;
+    border-radius: .95rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    background: rgba(255, 255, 255, .62);
+    color: #334155;
+    text-decoration: none;
+}
+.aptoria-landing-route-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, .24);
+    box-shadow: 0 14px 28px rgba(30, 64, 175, .08);
+}
+.aptoria-landing-route-card i {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #2563eb;
+}
+.aptoria-landing-route-card strong {
+    color: #0f172a;
+    font-size: .98rem;
+}
+.aptoria-landing-route-card span {
+    color: #64748b;
+    font-size: .84rem;
+    line-height: 1.45;
+}
+.aptoria-landing-route-card.is-locked i {
+    color: #dc2626;
+}
+.aptoria-landing-route-card.is-api i {
+    color: #0f766e;
+}
+.aptoria-landing-release-card {
+    border: 1px solid rgba(37, 99, 235, .12);
+    border-radius: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, .62);
+}
+.aptoria-landing-release-card i {
+    width: 1.35rem;
+    height: 1.35rem;
+    color: #2563eb;
+    margin-bottom: .65rem;
+}
+.aptoria-landing-release-card strong,
+.aptoria-landing-release-card span {
+    display: block;
+}
+.aptoria-landing-release-card strong {
+    color: #0f172a;
+    font-size: 1rem;
+    margin-bottom: .35rem;
+}
+.aptoria-landing-release-card span {
+    color: #64748b;
+    font-size: .88rem;
+    line-height: 1.5;
+}
+.aptoria-landing-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    color: #64748b;
+    font-size: .88rem;
+    padding: 0 .25rem;
+}
+.aptoria-landing-footer a {
+    color: #075985;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+@media (max-width: 991.98px) {
+    .aptoria-landing-nav {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .aptoria-landing-nav-links {
+        justify-content: flex-start;
+    }
+}
+@media (max-width: 575.98px) {
+    .aptoria-landing-route-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+html[data-bs-theme="dark"] .aptoria-landing-nav,
+html[data-bs-theme="dark"] .aptoria-landing-local-actions,
+html[data-bs-theme="dark"] .aptoria-landing-route-card,
+html[data-bs-theme="dark"] .aptoria-landing-release-card {
+    background: rgba(9, 17, 34, .68) !important;
+    border-color: rgba(148, 163, 184, .16) !important;
+    box-shadow: 0 18px 46px rgba(2, 6, 23, .22) !important;
+}
+html[data-bs-theme="dark"] .aptoria-landing-nav-links a,
+html[data-bs-theme="dark"] .aptoria-landing-local-actions span,
+html[data-bs-theme="dark"] .aptoria-landing-route-card strong,
+html[data-bs-theme="dark"] .aptoria-landing-release-card strong {
+    color: #f8fbff !important;
+}
+html[data-bs-theme="dark"] .aptoria-landing-route-card span,
+html[data-bs-theme="dark"] .aptoria-landing-release-card span,
+html[data-bs-theme="dark"] .aptoria-landing-footer,
+html[data-bs-theme="dark"] .aptoria-landing-local-actions {
+    color: rgba(219, 231, 255, .7) !important;
+}
+
+/* v0.0.80 professional landing + full showcase demo guide */
+.aptoria-landing-body {
+    background: #f7fbff !important;
+    color: #172033 !important;
+}
+
+.aptoria-landing-body .container {
+    max-width: none !important;
+    width: 100% !important;
+    padding-inline: 0 !important;
+}
+
+.aptoria-landing-body .auth-logo,
+.aptoria-landing-body > .container > .card {
+    display: none !important;
+}
+
+.aptoria-landing-scene {
+    position: relative !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f4f9ff 46%, #eaf4ff 100%) !important;
+}
+
+.aptoria-landing-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background-image:
+        linear-gradient(100deg, rgba(255, 255, 255, .98) 0%, rgba(247, 251, 255, .96) 34%, rgba(247, 251, 255, .78) 67%, rgba(247, 251, 255, .56) 100%),
+        url('../images/landing-qa-hero.png') !important;
+    background-size: 100% 100%, min(52vw, 820px) auto !important;
+    background-position: center center, right clamp(16px, 5vw, 88px) top clamp(112px, 15vh, 170px) !important;
+    background-repeat: no-repeat, no-repeat !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+
+.aptoria-landing-grid {
+    position: fixed !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+}
+
+.aptoria-landing-shell {
+    align-items: center;
+}
+
+.aptoria-landing-title {
+    max-width: 12ch;
+    font-weight: 800 !important;
+    letter-spacing: -.05em;
+}
+
+.aptoria-landing-lead {
+    max-width: 690px;
+}
+
+.aptoria-landing-nav,
+.aptoria-landing-value-item,
+.aptoria-landing-stat-card,
+.aptoria-landing-panel,
+.aptoria-capability-card,
+.aptoria-demo-tile,
+.aptoria-demo-alert,
+.aptoria-demo-endpoint,
+.aptoria-demo-artifact,
+.aptoria-integration-logo {
+    backdrop-filter: blur(16px);
+}
+
+.aptoria-landing-integrations-card {
+    border-radius: 1.1rem;
+    padding: 1.2rem;
+}
+
+.aptoria-integration-rail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.aptoria-integration-logo {
+    position: relative;
+    overflow: hidden;
+    min-height: 98px;
+    padding: .9rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, .68);
+    box-shadow: 0 14px 32px rgba(30, 64, 175, .06);
+}
+
+.aptoria-integration-logo::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: -30px;
+    width: 86px;
+    height: 86px;
+    border-radius: 999px;
+    opacity: .16;
+    background: currentColor;
+}
+
+.aptoria-integration-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: .65rem;
+    border-radius: .7rem;
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, .12);
+}
+
+.aptoria-integration-logo strong,
+.aptoria-integration-logo small {
+    display: block;
+}
+
+.aptoria-integration-logo strong {
+    color: #0f172a;
+    font-size: .98rem;
+}
+
+.aptoria-integration-logo small {
+    color: #64748b;
+    font-size: .82rem;
+}
+
+.aptoria-integration-logo.is-postman { color: #ff6c37; }
+.aptoria-integration-logo.is-postman .aptoria-integration-mark { background: #ff6c37; }
+.aptoria-integration-logo.is-newman { color: #1f2937; }
+.aptoria-integration-logo.is-newman .aptoria-integration-mark { background: #1f2937; }
+.aptoria-integration-logo.is-jira { color: #2684ff; }
+.aptoria-integration-logo.is-jira .aptoria-integration-mark { background: #2684ff; }
+.aptoria-integration-logo.is-openapi { color: #6ba539; }
+.aptoria-integration-logo.is-openapi .aptoria-integration-mark { background: #6ba539; }
+.aptoria-integration-logo.is-har { color: #0f766e; }
+.aptoria-integration-logo.is-har .aptoria-integration-mark { background: #0f766e; }
+.aptoria-integration-logo.is-csv { color: #7c3aed; }
+.aptoria-integration-logo.is-csv .aptoria-integration-mark { background: #7c3aed; }
+
+.aptoria-capability-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .85rem;
+}
+
+.aptoria-capability-card {
+    min-height: 150px;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    background: rgba(255, 255, 255, .64);
+    box-shadow: 0 14px 28px rgba(30, 64, 175, .06);
+}
+
+.aptoria-capability-card i {
+    width: 1.35rem;
+    height: 1.35rem;
+    color: #2563eb;
+    margin-bottom: .7rem;
+}
+
+.aptoria-capability-card strong,
+.aptoria-capability-card span {
+    display: block;
+}
+
+.aptoria-capability-card strong {
+    color: #0f172a;
+    margin-bottom: .35rem;
+}
+
+.aptoria-capability-card span {
+    color: #64748b;
+    font-size: .88rem;
+    line-height: 1.52;
+}
+
+.aptoria-demo-guide-scene .aptoria-landing-shell {
+    align-items: flex-start !important;
+}
+
+.aptoria-demo-guide-scene .aptoria-landing-frame {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+}
+
+.aptoria-demo-guide-main {
+    display: grid;
+    gap: 1rem;
+}
+
+.aptoria-demo-guide-hero {
+    padding: clamp(1.5rem, 3vw, 2.8rem);
+    border-radius: 1.25rem;
+}
+
+.aptoria-demo-guide-logo {
+    display: block;
+    width: auto !important;
+    height: auto !important;
+    max-width: 220px !important;
+    max-height: 72px !important;
+    margin: 0 0 1.35rem 0 !important;
+}
+
+.aptoria-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.aptoria-demo-span-4 { grid-column: span 4; }
+.aptoria-demo-span-5 { grid-column: span 5; }
+.aptoria-demo-span-7 { grid-column: span 7; }
+.aptoria-demo-span-8 { grid-column: span 8; }
+.aptoria-demo-span-12 { grid-column: span 12; }
+
+.aptoria-demo-section {
+    padding: 1.15rem;
+    border-radius: 1.15rem;
+    height: 100%;
+}
+
+.aptoria-demo-section-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.aptoria-demo-section-head h2 {
+    margin: 0 0 .25rem;
+    color: #0f172a;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.aptoria-demo-section-head p {
+    margin: 0;
+    color: #64748b;
+    font-size: .9rem;
+    line-height: 1.55;
+}
+
+.aptoria-demo-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.aptoria-demo-card-grid.is-three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aptoria-demo-tile {
+    display: block;
+    min-height: 118px;
+    padding: .95rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    background: rgba(255, 255, 255, .64);
+    color: #334155;
+    text-decoration: none;
+    box-shadow: 0 14px 28px rgba(30, 64, 175, .055);
+}
+
+.aptoria-demo-tile:hover {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, .24);
+    background: rgba(255, 255, 255, .84);
+    box-shadow: 0 16px 32px rgba(30, 64, 175, .08);
+}
+
+.aptoria-demo-tile.is-active {
+    border-color: rgba(37, 99, 235, .35);
+    background: rgba(219, 234, 254, .76);
+}
+
+.aptoria-demo-tile i {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #2563eb;
+    margin-bottom: .55rem;
+}
+
+.aptoria-demo-tile strong,
+.aptoria-demo-tile span {
+    display: block;
+}
+
+.aptoria-demo-tile strong {
+    color: #0f172a;
+    font-size: .96rem;
+    margin-bottom: .25rem;
+}
+
+.aptoria-demo-tile span {
+    color: #64748b;
+    font-size: .84rem;
+    line-height: 1.45;
+}
+
+.aptoria-demo-alert {
+    border-radius: 1.1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(37, 99, 235, .14);
+    background: rgba(255, 255, 255, .72);
+    color: #334155;
+    box-shadow: 0 12px 30px rgba(30, 64, 175, .06);
+}
+
+.aptoria-demo-console {
+    overflow: hidden;
+    border-radius: 1.05rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    background: rgba(255, 255, 255, .68);
+}
+
+.aptoria-demo-console-row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: .75rem;
+    padding: .8rem .9rem;
+    border-bottom: 1px solid rgba(37, 99, 235, .10);
+}
+
+.aptoria-demo-console-row:last-child { border-bottom: 0; }
+.aptoria-demo-console-row small {
+    color: #2563eb;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: .7rem;
+}
+
+.aptoria-demo-console-row code,
+.aptoria-demo-endpoint code {
+    display: inline-block;
+    max-width: 100%;
+    color: #0f2a4d;
+    background: rgba(239, 246, 255, .92);
+    border: 1px solid rgba(37, 99, 235, .13);
+    border-radius: .55rem;
+    padding: .18rem .42rem;
+    word-break: break-word;
+}
+
+.aptoria-demo-endpoint-list {
+    display: grid;
+    gap: .65rem;
+}
+
+.aptoria-demo-endpoint {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+    gap: .75rem;
+    align-items: center;
+    padding: .8rem;
+    border-radius: .95rem;
+    border: 1px solid rgba(37, 99, 235, .11);
+    background: rgba(255, 255, 255, .64);
+    box-shadow: 0 12px 26px rgba(30, 64, 175, .05);
+}
+
+.aptoria-demo-endpoint p {
+    margin: .25rem 0 0;
+    color: #64748b;
+    font-size: .82rem;
+}
+
+.aptoria-demo-artifact-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.aptoria-demo-artifact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .85rem;
+    border-radius: .95rem;
+    border: 1px solid rgba(37, 99, 235, .12);
+    background: rgba(255, 255, 255, .64);
+    color: #0f172a;
+    text-decoration: none;
+    box-shadow: 0 12px 26px rgba(30, 64, 175, .05);
+}
+
+.aptoria-demo-artifact:hover {
+    background: rgba(255, 255, 255, .86);
+    border-color: rgba(37, 99, 235, .24);
+}
+
+.aptoria-demo-artifact i { color: #2563eb; }
+
+@media (max-width: 1199.98px) {
+    .aptoria-demo-span-4,
+    .aptoria-demo-span-5,
+    .aptoria-demo-span-7,
+    .aptoria-demo-span-8 {
+        grid-column: span 12;
+    }
+    .aptoria-demo-card-grid.is-three,
+    .aptoria-capability-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .aptoria-landing-backdrop {
+        background-size: 100% 100%, 78vw auto !important;
+        background-position: center center, right -18vw top 7rem !important;
+    }
+    .aptoria-integration-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .aptoria-landing-backdrop {
+        background-image: linear-gradient(100deg, rgba(255,255,255,.98), rgba(247,251,255,.92)), url('../images/landing-qa-hero.png') !important;
+        background-size: 100% 100%, 92vw auto !important;
+        background-position: center center, right -34vw top 6rem !important;
+        opacity: .92 !important;
+    }
+    .aptoria-demo-card-grid,
+    .aptoria-demo-card-grid.is-three,
+    .aptoria-demo-artifact-list,
+    .aptoria-capability-grid,
+    .aptoria-integration-rail {
+        grid-template-columns: 1fr;
+    }
+    .aptoria-demo-endpoint,
+    .aptoria-demo-console-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* v0.0.80 integration logo image refinement */
+.aptoria-integration-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 72px;
+    object-fit: contain;
+    margin-bottom: .55rem;
+}
+
+/* v0.0.80 landing polish: real logo-style integration cards and GitHub button icon */
+.aptoria-integration-logo {
+    min-height: 122px !important;
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.aptoria-integration-logo::after {
+    opacity: .10 !important;
+}
+
+.aptoria-integration-img {
+    display: block !important;
+    width: 100% !important;
+    max-width: 220px !important;
+    height: 72px !important;
+    object-fit: contain !important;
+    object-position: left center !important;
+    margin: 0 0 .65rem 0 !important;
+}
+
+.aptoria-integration-logo small {
+    color: #5f6f89 !important;
+    font-size: .82rem !important;
+    font-weight: 600 !important;
+}
+
+.aptoria-btn-brand-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    display: inline-block;
+    vertical-align: -0.18rem;
+}
+
+
+/* v0.0.80 hotfix: real external brand logos on landing integration cards */
+.aptoria-integration-logo {
+    min-height: 122px !important;
+}
+
+.aptoria-integration-brand-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: .8rem !important;
+    margin-bottom: .7rem !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.aptoria-integration-img {
+    flex: 0 0 auto !important;
+    width: 2.55rem !important;
+    height: 2.55rem !important;
+    max-width: 2.55rem !important;
+    max-height: 2.55rem !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    margin: 0 !important;
+}
+
+.aptoria-integration-brand-row strong {
+    display: block !important;
+    margin: 0 !important;
+    color: #0f172a !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+}
+
+.aptoria-integration-logo small {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.aptoria-btn-brand-icon {
+    width: 1.2rem !important;
+    height: 1.2rem !important;
+    object-fit: contain !important;
+}

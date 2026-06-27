@@ -52,7 +52,7 @@ class NetworkTargetGuard
 
     private function demoModeRestrictsTargets(): bool
     {
-        return (bool) config('aptoria.demo.mode', false) && count((array) config('aptoria.demo.allowed_targets', [])) > 0;
+        return (bool) config('aptoria.demo.mode', false);
     }
 
     private function isAllowedDemoTarget(string $host): bool

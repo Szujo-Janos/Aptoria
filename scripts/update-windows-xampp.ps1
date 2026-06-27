@@ -65,4 +65,5 @@ if (-not (Test-Path "vendor\autoload.php")) {
 C:\xampp\php\php.exe artisan key:generate --force
 C:\xampp\php\php.exe artisan optimize:clear
 C:\xampp\php\php.exe artisan migrate --force
+C:\xampp\php\php.exe artisan aptoria:deployment-preflight
 C:\xampp\php\php.exe artisan aptoria:health
