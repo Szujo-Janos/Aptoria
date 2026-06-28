@@ -60,42 +60,6 @@ start-aptoria.bat
 get-license-request.bat
 ```
 
-## Not included
-
-This repository does not include generated dependencies, local runtime files or production secrets.
-
-The following types of files are intentionally excluded:
-
-```text
-vendor/
-node_modules/
-.env
-local databases
-runtime cache files
-logs
-compiled views
-private signing keys
-issued license files
-server-specific configuration
-deployment backups
-temporary build artifacts
-```
-
-## License safety
-
-The license manager source is included for transparency and local review, but production signing secrets and issued license files are not included.
-
-Do not commit or publish:
-
-```text
-license-issuer/config.php
-license-issuer/storage/*.json
-license-issuer/storage/*.pem
-storage/app/aptoria-license.json
-storage/app/license-private.pem
-storage/app/license-authority-private.pem
-```
-
 ## Local installation
 
 Requirements:
