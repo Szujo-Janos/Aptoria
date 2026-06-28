@@ -5,141 +5,113 @@
 <h1 align="center">Aptoria</h1>
 
 <p align="center">
-  <strong>Evidence-first API QA and release decision workspace.</strong><br>
-  Turn scattered API review artifacts into structured evidence, findings, release gates and decision packages.
+  <strong>Evidence-first API QA, coverage and release-decision platform.</strong><br>
+  A clean public source package containing the Aptoria app and the license manager only.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.80-blue" alt="Version 0.0.80">
+  <img src="https://img.shields.io/badge/version-1.0.2-blue" alt="Version 1.0.2">
   <img src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white" alt="PHP 8.2+">
-  <img src="https://img.shields.io/badge/SQLite-default-003B57?logo=sqlite&logoColor=white" alt="SQLite default">
   <img src="https://img.shields.io/badge/source--available-review_only-lightgrey" alt="Source available">
 </p>
 
-> [!IMPORTANT]
-> Aptoria is **source-available**, not open-source. Public repository access is provided for review, evaluation, portfolio presentation and controlled local testing. See [`LICENSE`](LICENSE), [`NOTICE.md`](NOTICE.md) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
-
 ---
 
-## What Aptoria does
+## What is included
 
-Aptoria is a self-hosted QA review workspace for API-heavy projects. It helps a QA engineer, reviewer or release owner answer one practical question:
+This GitHub clean package intentionally contains only the product source needed for the application and the license manager:
 
-> What evidence do we have, what is missing, and can this release be approved responsibly?
-
-It does not try to replace Postman, Newman, Jira, OpenAPI documents, HAR captures or existing test tools. Aptoria sits above them as an evidence and decision layer.
-
----
-
-## Core workflow
-
-```mermaid
-flowchart LR
-    A[API endpoints] --> B[Endpoint inventory]
-    B --> C[Safe scan evidence]
-    D[Postman / Newman / Jira / OpenAPI / HAR / CSV] --> E[Import adapter layer]
-    C --> F[Evidence repository]
-    E --> F
-    F --> G[Findings and native tests]
-    G --> H[QA cockpit]
-    H --> I[Release gate]
-    I --> J[Decision package]
+```text
+app/                 Laravel application code
+bootstrap/           Laravel bootstrap files
+config/              Application configuration
+database/            Migrations, factories and seeders
+license-issuer/      Standalone license manager / license authority stub
+public/              Public entry point and assets
+resources/           Blade views, language files and UI resources
+routes/              Web, API and console routes
+storage/             Empty runtime directory structure with .gitkeep files
 ```
 
----
+Essential project files are also included: `artisan`, `composer.json`, `.env.example`, `.gitignore`, `LICENSE`, `NOTICE.md`, `SECURITY.md`, `CHANGELOG.md`, `CREDITS.md`, `THIRD_PARTY_NOTICES.md`, `start-aptoria.bat` and `get-license-request.bat`.
 
-## Main capabilities
+## What is intentionally excluded
 
-| Area | What it gives you |
-| --- | --- |
-| Endpoint Inventory | Release-scope endpoints, environments, auth profiles and scan targets. |
-| Safe Scan Evidence | Non-destructive request checks and response evidence. |
-| Import Adapter Layer | Normalized input from Postman, Newman, Jira, OpenAPI, HAR and CSV artifacts. |
-| Evidence Repository | Checksum-backed evidence records, lifecycle states and exportable proof. |
-| Findings | Severity, status, duplicate handling, merge workflow and risk acceptance context. |
-| Native Test Evidence | Test suites, test cases, runs and linked evidence. |
-| QA Cockpit | Coverage, blind spots, confidence indicators and release readiness signals. |
-| Release Gate | Reviewable go/no-go state with blockers, warnings and decision context. |
-| Reports | HTML/PDF/JSON/Markdown/ZIP decision packages and evidence packs. |
-| Audit Log | Traceable activity history for review and handoff. |
+This package is not a VPS snapshot and not a server backup. It does not include:
 
----
+```text
+vendor/
+node_modules/
+.env
+composer.lock, until generated from a clean Composer environment
+database/database.sqlite
+storage runtime files
+logs, caches and compiled views
+issued license files
+license signing private keys
+production public/private key material
+VPS Nginx / Cloudflare backups
+subdomain deployment smoke output
+old release ZIP files
+large internal planning docs
+GitHub workflow experiments
+```
 
-## Integrations and artifact sources
+## License safety
 
-Aptoria can work with artifacts from tools and formats teams already use:
+The license manager source is included, but no production signing secrets are included.
 
-- Postman collections
-- Newman CI result output
-- Jira issue exports
-- OpenAPI specifications
-- HAR/network captures
-- CSV-based QA records
+Do not commit or publish:
 
-The goal is to keep review evidence in one structured workspace instead of spreading it across screenshots, exported files, chat messages and release notes.
+```text
+license-issuer/config.php
+license-issuer/storage/*.json
+license-issuer/storage/*.pem
+storage/app/aptoria-license.json
+storage/app/license-public.pem
+storage/app/license-private.pem
+storage/app/license-authority-private.pem
+```
 
----
-
-## Local evaluation
+## Local installation
 
 Requirements:
 
-- PHP 8.2+
-- Composer 2+
-- SQLite enabled
-- Node is not required for basic evaluation of the packaged UI assets
+```text
+PHP 8.2+
+Composer
+SQLite extension enabled
+```
 
 Basic setup:
 
 ```bash
-cp .env.example .env
 composer install
+cp .env.example .env
 php artisan key:generate
+mkdir -p database
 touch database/database.sqlite
-php artisan migrate --force
-php artisan serve
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Then open:
+Windows / XAMPP users can also use:
 
-```text
-http://127.0.0.1:8000
+```bat
+start-aptoria.bat
 ```
 
-For Windows/XAMPP usage, see [`docs/INSTALL_WINDOWS_XAMPP.md`](docs/INSTALL_WINDOWS_XAMPP.md).
+To generate a local license request:
 
----
+```bat
+get-license-request.bat
+```
 
-## License activation
+## Public project status
 
-Aptoria includes a license activation flow for distributed/customer builds. Generated license files, key material and runtime activation artifacts must never be committed to a public repository.
+Aptoria v1.0.2 is a source-available public portfolio / review package. It is suitable for code review, local testing and GitHub presentation. It is not a hosted SaaS distribution and does not include production infrastructure secrets.
 
-This repository intentionally does not document private activation operations, key handling, package generation or internal deployment procedures.
+## License
 
----
-
-## Public repository safety
-
-Do not commit:
-
-- `.env`
-- `vendor/` or `node_modules/`
-- SQLite runtime databases
-- generated reports or evidence exports containing customer data
-- license files, public/private key files or activation artifacts
-- real API tokens, bearer tokens, passwords or production request samples
-
-See [`SECURITY.md`](SECURITY.md) for reporting and hygiene guidance.
-
----
-
-## Project owner
-
-GitHub: <https://github.com/Szujo-Janos>
-
----
-
-## Status
-
-Aptoria `0.0.x` is an active evidence-first rebuild line. It should be treated as an MVP/foundation release for review and controlled local testing, not as a hardened enterprise product.
+Aptoria is source-available, not open-source. See `LICENSE`, `NOTICE.md`, `CREDITS.md` and `THIRD_PARTY_NOTICES.md`.

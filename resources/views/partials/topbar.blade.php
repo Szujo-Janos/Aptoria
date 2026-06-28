@@ -51,7 +51,8 @@
                                     <h6 class="dropdown-header px-0">{{ __('messages.topbar.evidence_quality') }}</h6>
                                     @if ($currentProject)
                                         <a href="{{ route('projects.qa-cockpit.show', $currentProject) }}" class="dropdown-item"><i data-lucide="scan-search" class="me-2 fs-16"></i>{{ __('messages.nav.qa_cockpit') }}</a>
-                                        <a href="{{ route('projects.demo-guide.show', $currentProject) }}" class="dropdown-item"><i data-lucide="map" class="me-2 fs-16"></i>{{ __('messages.nav.demo_guide') }}</a>
+                                        @unless (config('aptoria.demo.mode') || config('aptoria.domain.role') === 'demo')
+                                        @endunless
                                         <a href="{{ route('projects.endpoints.index', $currentProject) }}" class="dropdown-item"><i data-lucide="plug-connected" class="me-2 fs-16"></i>{{ __('messages.nav.endpoint_inventory') }}</a>
                                         <a href="{{ route('projects.safe-scans.index', $currentProject) }}" class="dropdown-item"><i data-lucide="radar" class="me-2 fs-16"></i>{{ __('messages.nav.safe_scan') }}</a>
                                         <a href="{{ route('projects.assertions.index', $currentProject) }}" class="dropdown-item"><i data-lucide="checklist" class="me-2 fs-16"></i>{{ __('messages.nav.assertions') }}</a>

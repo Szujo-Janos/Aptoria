@@ -59,6 +59,78 @@ Route::get('/', function () {
 
     return view('landing');
 })->name('landing');
+
+Route::get('/robots.txt', function () {
+    $host = strtolower((string) request()->getHost());
+    $isPublicLanding = in_array($host, ['aptoria.dev', 'www.aptoria.dev'], true);
+
+    $body = $isPublicLanding
+        ? "User-agent: *
+Allow: /
+
+Sitemap: https://aptoria.dev/sitemap.xml
+"
+        : "User-agent: *
+Disallow: /
+";
+
+    $response = response($body, 200)->header('Content-Type', 'text/plain; charset=UTF-8');
+
+    if (! $isPublicLanding) {
+        $response->header('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+
+    return $response;
+})->name('robots');
+
+Route::get('/sitemap.xml', function () {
+    $host = strtolower((string) request()->getHost());
+
+    if (! in_array($host, ['aptoria.dev', 'www.aptoria.dev'], true)) {
+        return response('Not Found', 404)->header('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
+
+    $lastModified = now()->toDateString();
+    $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://aptoria.dev/</loc>
+    <lastmod>{$lastModified}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://aptoria.dev/demo-guide</loc>
+    <lastmod>{$lastModified}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://aptoria.dev/privacy</loc>
+    <lastmod>{$lastModified}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://aptoria.dev/terms</loc>
+    <lastmod>{$lastModified}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>
+XML;
+
+    return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
+})->name('sitemap');
+Route::get('/privacy', function () {
+    return view('legal.privacy');
+})->name('legal.privacy');
+
+Route::get('/terms', function () {
+    return view('legal.terms');
+})->name('legal.terms');
+
 Route::get('/language/{locale}', LanguageController::class)->name('language.switch');
 Route::get('/demo-guide', [DemoGuideController::class, 'public'])->name('demo-guide.public');
 Route::get('/license/invalid', [LicenseController::class, 'invalid'])->name('license.invalid');
@@ -295,17 +367,17 @@ Route::middleware(['auth', 'password.changed'])->group(function (): void {
         Route::post('/users/{user}/temporary-password', [UserManagementController::class, 'resetTemporaryPassword'])->name('users.temporary-password');
     });
 
-    Route::get('/program-settings', [ProgramSettingsController::class, 'edit'])->name('program-settings.edit');
-    Route::put('/program-settings', [ProgramSettingsController::class, 'update'])->name('program-settings.update');
     Route::middleware('admin')->group(function (): void {
+        Route::get('/program-settings', [ProgramSettingsController::class, 'edit'])->name('program-settings.edit');
+        Route::put('/program-settings', [ProgramSettingsController::class, 'update'])->name('program-settings.update');
         Route::get('/program-settings/license', [LicenseController::class, 'manage'])->name('program-settings.license');
         Route::post('/program-settings/license/package', [LicenseController::class, 'uploadPackage'])->name('program-settings.license.package');
         Route::post('/program-settings/license/authority/refresh', [LicenseController::class, 'refreshOnlineLease'])->name('program-settings.license.authority.refresh');
         Route::post('/program-settings/license/upload', [LicenseController::class, 'upload'])->name('program-settings.license.upload');
         Route::post('/program-settings/license/public-key', [LicenseController::class, 'storePublicKey'])->name('program-settings.license.public-key');
+        Route::post('/program-settings/demo-project', [ProgramSettingsController::class, 'buildDemoProject'])->name('program-settings.demo-project');
+        Route::post('/program-settings/demo-api-project', [ProgramSettingsController::class, 'buildDemoApiProject'])->name('program-settings.demo-api-project');
     });
-    Route::post('/program-settings/demo-project', [ProgramSettingsController::class, 'buildDemoProject'])->name('program-settings.demo-project');
-    Route::post('/program-settings/demo-api-project', [ProgramSettingsController::class, 'buildDemoApiProject'])->name('program-settings.demo-api-project');
     Route::get('/help/how-it-works', [HelpController::class, 'howItWorks'])->name('help.how_it_works');
     Route::get('/help', [HelpController::class, 'index'])->name('help.index');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');

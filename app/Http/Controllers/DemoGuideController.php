@@ -5,25 +5,54 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Services\DemoScenarioTemplateService;
 use App\Services\LiveDemoApiSandboxService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DemoGuideController extends Controller
 {
-    public function public(Request $request, LiveDemoApiSandboxService $sandbox, DemoScenarioTemplateService $scenarioTemplates): View
+    public function public(Request $request, LiveDemoApiSandboxService $sandbox, DemoScenarioTemplateService $scenarioTemplates): View|RedirectResponse
     {
+        if ($this->shouldRedirectToPublicLanding($request)) {
+            return $this->redirectToPublicGuide();
+        }
+
         return view('demo_guide.show', $this->payload($request, $sandbox, $scenarioTemplates, null, true));
     }
 
-    public function show(Request $request, Project $project, LiveDemoApiSandboxService $sandbox, DemoScenarioTemplateService $scenarioTemplates): View
+    public function show(Request $request, Project $project, LiveDemoApiSandboxService $sandbox, DemoScenarioTemplateService $scenarioTemplates): RedirectResponse
     {
-        return view('demo_guide.show', $this->payload($request, $sandbox, $scenarioTemplates, $project, false));
+        return $this->redirectToPublicGuide();
+    }
+
+    private function shouldRedirectToPublicLanding(Request $request): bool
+    {
+        $host = strtolower($request->getHost());
+        $landingHost = strtolower(parse_url((string) config('aptoria.domain.landing_url', 'https://aptoria.dev'), PHP_URL_HOST) ?: 'aptoria.dev');
+
+        if ($host !== '' && $host !== $landingHost) {
+            return true;
+        }
+
+        return config('aptoria.domain.role') === 'demo';
+    }
+
+    private function redirectToPublicGuide(): RedirectResponse
+    {
+        $landingUrl = rtrim((string) config('aptoria.domain.landing_url', 'https://aptoria.dev'), '/');
+
+        if ($landingUrl === '') {
+            $landingUrl = 'https://aptoria.dev';
+        }
+
+        return redirect()->away($landingUrl.'/demo-guide', 302);
     }
 
     /** @return array<string,mixed> */
     private function payload(Request $request, LiveDemoApiSandboxService $sandbox, DemoScenarioTemplateService $scenarioTemplates, ?Project $project, bool $public): array
     {
-        $baseUrl = rtrim((string) config('aptoria.demo.api_base_url'), '/');
+        $demoUrl = rtrim((string) config('aptoria.domain.demo_url', 'https://demo.aptoria.dev'), '/');
+        $baseUrl = $public ? $demoUrl.'/demo-api' : rtrim((string) config('aptoria.demo.api_base_url'), '/');
         $endpoints = [
             ['method' => 'GET', 'path' => '/health', 'tone' => 'success', 'purpose' => __('messages.demo_guide.endpoint_health')],
             ['method' => 'GET', 'path' => '/users', 'tone' => 'info', 'purpose' => __('messages.demo_guide.endpoint_json')],
@@ -34,13 +63,14 @@ class DemoGuideController extends Controller
             ['method' => 'GET', 'path' => '/scenarios', 'tone' => 'info', 'purpose' => __('messages.demo_guide.endpoint_scenarios')],
         ];
 
+        $artifactUrl = fn (string $path): string => $public ? $baseUrl.$path : url('/demo-api'.$path);
         $artifacts = [
-            ['label' => 'OpenAPI JSON', 'icon' => 'brackets-contain', 'url' => route('demo-api.artifacts.openapi')],
-            ['label' => 'Postman Collection', 'icon' => 'file-code-2', 'url' => route('demo-api.artifacts.postman')],
-            ['label' => 'QA CSV', 'icon' => 'table-export', 'url' => route('demo-api.artifacts.qa-csv')],
-            ['label' => 'Jira CSV', 'icon' => 'clipboard-search', 'url' => route('demo-api.artifacts.jira-csv')],
-            ['label' => 'HAR', 'icon' => 'scan-eye', 'url' => route('demo-api.artifacts.har')],
-            ['label' => 'Scenario Templates JSON', 'icon' => 'map', 'url' => route('demo-api.artifacts.scenarios')],
+            ['label' => 'OpenAPI JSON', 'icon' => 'brackets-contain', 'url' => $artifactUrl('/artifacts/openapi.json')],
+            ['label' => 'Postman Collection', 'icon' => 'file-code-2', 'url' => $artifactUrl('/artifacts/postman-collection.json')],
+            ['label' => 'QA CSV', 'icon' => 'table-export', 'url' => $artifactUrl('/artifacts/qa-results.csv')],
+            ['label' => 'Jira CSV', 'icon' => 'clipboard-search', 'url' => $artifactUrl('/artifacts/jira-issues.csv')],
+            ['label' => 'HAR', 'icon' => 'scan-eye', 'url' => $artifactUrl('/artifacts/browser-network.har')],
+            ['label' => 'Scenario Templates JSON', 'icon' => 'map', 'url' => $artifactUrl('/artifacts/scenario-templates.json')],
         ];
 
         $scenarios = $scenarioTemplates->all();
@@ -61,6 +91,8 @@ class DemoGuideController extends Controller
             'publicMode' => $public,
             'project' => $project,
             'baseUrl' => $baseUrl,
+            'demoUrl' => $demoUrl,
+            'landingUrl' => rtrim((string) config('aptoria.domain.landing_url', 'https://aptoria.dev'), '/'),
             'demoUserEmail' => $sandbox->demoUserEmail(),
             'demoUserPassword' => $sandbox->demoUserPassword(),
             'demoModeEnabled' => (bool) config('aptoria.demo.mode', false),
@@ -92,5 +124,4 @@ class DemoGuideController extends Controller
             'artifacts' => route('demo-api.artifacts.scenarios'),
         ];
     }
-
 }

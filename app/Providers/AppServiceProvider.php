@@ -42,11 +42,13 @@ class AppServiceProvider extends ServiceProvider
                 $liveProjectCount = $workspaceModeService->applyMode($projectAccess->visibleProjectsQuery(Auth::user()), WorkspaceModeService::LIVE)->count();
                 $sandboxProjectCount = $workspaceModeService->applyMode($projectAccess->visibleProjectsQuery(Auth::user()), WorkspaceModeService::SANDBOX)->count();
 
-                $projectId = request()->session()->get('current_project_id');
+                $projectId = request()->hasSession() ? request()->session()->get('current_project_id') : null;
                 $currentProject = $projectId ? $projectAccess->visibleProjectsQuery(Auth::user())->find($projectId) : null;
 
                 if ($projectId && (! $currentProject || ! $workspaceModeService->matches($currentProject, $currentWorkspaceMode))) {
-                    request()->session()->forget('current_project_id');
+                    if (request()->hasSession()) {
+                        request()->session()->forget('current_project_id');
+                    }
                     $currentProject = null;
                 }
 

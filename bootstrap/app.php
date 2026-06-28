@@ -12,6 +12,8 @@ use App\Http\Middleware\EnsureLicenseIsValid;
 use App\Http\Middleware\EnsureProjectAccess;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Support\DomainRoleRedirector;
+use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -24,9 +26,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(prepend: [
+            EnforceDomainRole::class,
+        ]);
+
         $middleware->web(append: [
             SecurityHeaders::class,
-            EnforceDomainRole::class,
             SetLocale::class,
             EnsureApplicationIsInstalled::class,
             EnsureLicenseIsValid::class,
@@ -36,6 +41,19 @@ return Application::configure(basePath: dirname(__DIR__))
             EnforceDemoViewerReadOnly::class,
             EnsureProjectAccess::class,
         ]);
+
+
+        $middleware->api(prepend: [
+            EnforceDomainRole::class,
+        ]);
+
+        $middleware->api(append: [
+            SecurityHeaders::class,
+        ]);
+
+        $middleware->redirectGuestsTo(function (Request $request): string {
+            return DomainRoleRedirector::unauthenticatedRedirectTo($request);
+        });
 
         $middleware->alias([
             'admin' => EnsureAdminUser::class,

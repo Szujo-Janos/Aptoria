@@ -5012,6 +5012,8 @@ test_result,GET,/v1/customers,List customers smoke test,fail,high,HTTP 200,HTTP 
   'license' => 
   array (
     'dashboard_title' => 'License Guard',
+    'sidebar_title' => 'License',
+    'demo_sidebar_title' => 'Demo license',
     'status_unknown' => 'License status is not available.',
     'admin_card_title' => 'Portable license guard',
     'admin_card_copy' => 'Controls signed license validation and machine/USB binding for portable deployments.',
@@ -5037,6 +5039,7 @@ test_result,GET,/v1/customers,List customers smoke test,fail,high,HTTP 200,HTTP 
     'manage_short' => 'Manage',
     'status_panel_title' => 'Current license status',
     'status_panel_copy' => 'Review the active license, public key, binding mode and runtime fingerprints before enabling portable enforcement.',
+    'licensed_to' => 'Licensed to',
     'license_id' => 'License ID',
     'subject' => 'Subject',
     'edition' => 'Edition',

@@ -1,9 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="220" height="72" viewBox="0 0 220 72" role="img" aria-label="HAR">
-  <rect width="220" height="72" rx="18" fill="#ffffff" fill-opacity="0.92"/>
-  <rect x="20" y="18" width="46" height="36" rx="9" fill="#0F766E"/>
-  <path d="M20 29h46" stroke="#99f6e4" stroke-width="2" opacity=".8"/>
-  <circle cx="30" cy="24" r="2" fill="#99f6e4"/><circle cx="38" cy="24" r="2" fill="#99f6e4"/><circle cx="46" cy="24" r="2" fill="#99f6e4"/>
-  <path d="M31 42h8m0 0 6-6m-6 6 6 6m-1-12h12" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="76" y="34" font-family="Inter, Arial, Helvetica, sans-serif" font-size="20" font-weight="800" fill="#0f172a">HAR</text>
-  <text x="76" y="51" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" font-weight="700" fill="#64748b">browser network</text>
+<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-label="Google Chrome logo for HAR/browser network imports">
+  <title>Google Chrome</title>
+  <path fill="#4285F4" d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0 1 12 6.545h10.691A12 12 0 0 0 12 0zM1.931 5.47A11.943 11.943 0 0 0 0 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 0 1-6.865-2.29zm13.342 2.166a5.446 5.446 0 0 1 1.45 7.09l.002.001h-.002l-5.344 9.257c.206.01.413.016.621.016 6.627 0 12-5.373 12-12 0-1.54-.29-3.011-.818-4.364zM12 16.364a4.364 4.364 0 1 1 0-8.728 4.364 4.364 0 0 1 0 8.728Z"/>
 </svg>

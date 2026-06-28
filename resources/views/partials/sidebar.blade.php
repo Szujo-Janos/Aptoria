@@ -66,14 +66,6 @@
                         <span class="badge badge-label {{ $projectWorkspaceBadgeClass }}">{{ $projectWorkspaceBadgeLabel }}</span>
                     </a>
                 </li>
-                <li class="side-nav-item">
-                    <a href="{{ route('projects.demo-guide.show', $currentProject) }}" class="side-nav-link {{ request()->routeIs('projects.demo-guide.*') ? 'active' : '' }}">
-                        <span class="menu-icon"><i data-lucide="map"></i></span>
-                        <span class="menu-text">{{ __('messages.nav.demo_guide') }}</span>
-                        <span class="badge badge-label {{ $projectWorkspaceInfoBadgeClass }}">{{ $projectWorkspaceBadgeLabel }}</span>
-                    </a>
-                </li>
-
                 <li class="side-nav-title">{{ __('messages.nav.qa_workspace') }}</li>
                 <li class="side-nav-item"><a href="{{ route('projects.environments.index', $currentProject) }}" class="side-nav-link {{ request()->routeIs('projects.environments.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="globe"></i></span><span class="menu-text">{{ __('messages.nav.environments') }}</span><span class="badge badge-label {{ $projectWorkspaceBadgeClass }}">{{ $projectWorkspaceBadgeLabel }}</span></a></li>
                 <li class="side-nav-item"><a href="{{ route('projects.auth-profiles.index', $currentProject) }}" class="side-nav-link {{ request()->routeIs('projects.auth-profiles.*') ? 'active' : '' }}"><span class="menu-icon"><i data-lucide="key-round"></i></span><span class="menu-text">{{ __('messages.nav.auth_profiles') }}</span><span class="badge badge-label {{ $projectWorkspaceBadgeClass }}">{{ $projectWorkspaceBadgeLabel }}</span></a></li>
@@ -122,17 +114,52 @@
 
         @php
             $licenseValid = (bool) ($licenseStatus['valid'] ?? false);
-            $licenseToneClass = $licenseValid ? 'is-valid' : 'is-invalid';
+            $licenseEnforced = (bool) ($licenseStatus['enforced'] ?? false);
+            $licenseState = (string) ($licenseStatus['state'] ?? 'unknown');
+            $licenseTone = (string) ($licenseStatus['tone'] ?? ($licenseValid ? 'success' : 'danger'));
+            $licenseToneClass = in_array($licenseTone, ['success', 'info', 'warning', 'danger', 'secondary'], true) ? 'is-'.$licenseTone : ($licenseValid ? 'is-success' : 'is-danger');
             $licenseStateLabel = $licenseStatus['label'] ?? __('messages.license.status_unknown');
+            $licenseModeLabel = $licenseEnforced ? __('messages.license.enforced') : __('messages.license.not_enforced');
             $licenseStateMessage = $licenseStatus['message'] ?? __('messages.license.status_unknown');
+            $licenseTitle = config('aptoria.demo.mode') ? __('messages.license.demo_sidebar_title') : __('messages.license.sidebar_title');
+            $licenseIsDemoRuntime = strtolower((string) config('aptoria.domain.role', 'local')) === 'demo' || (bool) config('aptoria.demo.mode');
+            $licenseCanManage = ! $licenseIsDemoRuntime && auth()->user()?->isAdmin();
+            $licenseHref = $licenseCanManage ? route('program-settings.license') : null;
+            $licenseIcon = match ($licenseState) {
+                'valid' => 'shield-check',
+                'missing' => 'key-round',
+                'expired', 'invalid_expiry' => 'shield-alert',
+                'malformed', 'missing_required_field', 'product_mismatch', 'missing_public_key', 'bad_signature', 'fingerprint_mismatch' => 'shield-x',
+                default => $licenseValid ? 'shield-check' : 'shield-alert',
+            };
+            $licenseSubject = $licenseStatus['issued_to'] ?? $licenseStatus['subject'] ?? '—';
+            $licenseExpiresAt = $licenseStatus['expires_at'] ?? '—';
+            $licenseTooltipLines = [
+                __('messages.license.licensed_to').': '.$licenseSubject,
+                __('messages.license.expires_at').': '.$licenseExpiresAt,
+                __('messages.license.license_id').': '.($licenseStatus['license_id'] ?? __('messages.license.no_license_id')),
+                __('messages.license.edition').': '.($licenseStatus['edition'] ?? '—'),
+                __('messages.license.state').': '.$licenseStateLabel.' · '.$licenseModeLabel,
+            ];
+            $licenseTooltip = implode('<br>', array_map(static fn ($line) => e($line), $licenseTooltipLines));
+            $licenseGuardAttributes = 'class="aptoria-sidebar-license '.$licenseToneClass.($licenseCanManage ? ' is-clickable' : ' is-readonly').'" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="right" title="'.$licenseTooltip.'" aria-label="'.e($licenseTitle.': '.$licenseStateLabel).'"';
         @endphp
-        <div class="aptoria-sidebar-license mx-3 mt-3 mb-3 {{ $licenseToneClass }}">
-            <div class="aptoria-sidebar-license-head">{{ __('messages.license.dashboard_title') }}</div>
-            <div class="aptoria-sidebar-license-state">
-                <span class="aptoria-sidebar-license-dot"></span>
-                <strong>{{ $licenseStateLabel }}</strong>
-            </div>
-            <small>{{ $licenseStateMessage }}</small>
+        <div class="aptoria-sidebar-license-wrap mx-3 mt-3 mb-3">
+            @if ($licenseCanManage)
+                <a href="{{ $licenseHref }}" {!! $licenseGuardAttributes !!}>
+            @else
+                <div {!! $licenseGuardAttributes !!} role="status" tabindex="0">
+            @endif
+                <span class="aptoria-sidebar-license-icon"><i data-lucide="{{ $licenseIcon }}"></i></span>
+                <span class="aptoria-sidebar-license-copy">
+                    <span class="aptoria-sidebar-license-head">{{ $licenseTitle }}</span>
+                    <span class="aptoria-sidebar-license-state"><span class="aptoria-sidebar-license-dot"></span>{{ $licenseStateLabel }} · {{ $licenseModeLabel }}</span>
+                </span>
+            @if ($licenseCanManage)
+                </a>
+            @else
+                </div>
+            @endif
         </div>
 
     </div>

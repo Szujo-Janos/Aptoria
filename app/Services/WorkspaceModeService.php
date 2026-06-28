@@ -19,13 +19,20 @@ class WorkspaceModeService
 
     public function current(Request $request): string
     {
+        if (! $request->hasSession()) {
+            return self::LIVE;
+        }
+
         return self::normalize($request->session()->get('workspace_mode', self::LIVE));
     }
 
     public function set(Request $request, string $mode): string
     {
         $mode = self::normalize($mode);
-        $request->session()->put('workspace_mode', $mode);
+
+        if ($request->hasSession()) {
+            $request->session()->put('workspace_mode', $mode);
+        }
 
         return $mode;
     }

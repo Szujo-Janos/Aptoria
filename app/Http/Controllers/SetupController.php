@@ -363,6 +363,12 @@ class SetupController extends Controller
     private function guardUnlockedSetup(): void
     {
         abort_if($this->setupState->isLocked(), 403, __('messages.setup.locked'));
+
+        abort_unless(
+            $this->setupAccess->authorizeRequest(request()),
+            403,
+            __('messages.setup.access_denied_title')
+        );
     }
 
 

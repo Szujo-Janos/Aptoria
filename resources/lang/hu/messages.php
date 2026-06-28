@@ -5012,6 +5012,8 @@ test_result,GET,/v1/customers,List customers smoke test,fail,high,HTTP 200,HTTP 
   'license' => 
   array (
     'dashboard_title' => 'Licenc védelem',
+    'sidebar_title' => 'Licenc',
+    'demo_sidebar_title' => 'Demo licenc',
     'status_unknown' => 'A licenc állapota nem elérhető.',
     'admin_card_title' => 'Portable licenc guard',
     'admin_card_copy' => 'Aláírt licencellenőrzés és gép/USB kötés portable telepítésekhez.',
@@ -5037,6 +5039,7 @@ test_result,GET,/v1/customers,List customers smoke test,fail,high,HTTP 200,HTTP 
     'manage_short' => 'Kezelés',
     'status_panel_title' => 'Aktuális licencállapot',
     'status_panel_copy' => 'Ellenőrizd az aktív licencet, public key-t, kötési módot és runtime fingerprintet, mielőtt portable enforcementet kapcsolsz.',
+    'licensed_to' => 'Jogosult',
     'license_id' => 'Licencazonosító',
     'subject' => 'Tárgy / ügyfél',
     'edition' => 'Kiadás',

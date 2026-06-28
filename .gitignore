@@ -60,19 +60,21 @@ yarn-error.log
 # Deployment smoke result runtime imports
 /storage/app/aptoria-deployment/smoke-results/
 /storage/app/aptoria-deployment/*.json
-# Runtime/private Aptoria files
-.env
-.env.*
-!.env.example
-/vendor/
-/node_modules/
-/database/*.sqlite
-/storage/app/installed.lock
-/storage/app/setup-token.txt
-/storage/app/aptoria-license.json
-/storage/app/license-*.pem
-/storage/app/*lease*.json
-/storage/app/aptoria-deployment/
-/public/storage
-/bootstrap/cache/*.php
-/license-request.json
+
+# Public GitHub clean package exclusions
+/composer.lock
+/.github/
+/docs/
+/hosting-profiles/
+/scripts/
+/tests/
+/SERVER_INSTALLER.md
+/TRANSITION_SUMMARY.md
+*.zip
+*.bak
+*.backup
+*.log
+*.sqlite
+*.pem
+*.key
+license-request.json

@@ -7,6 +7,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Aptoria evidence-first API QA and release decision platform.">
+    <meta name="robots" content="noindex,nofollow,noarchive">
     <title>@yield('title', $appName)</title>
     <link rel="shortcut icon" href="{{ asset('assets/aptoria-ui/assets/images/favicon.ico') }}">
     <script src="{{ asset('assets/aptoria-ui/assets/js/config.js') }}"></script>
@@ -15,7 +16,7 @@
     <link href="{{ asset('assets/aptoria-ui/assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('assets/aptoria-ui/assets/plugins/datatables/responsive.bootstrap5.min.css') }}" rel="stylesheet" type="text/css">
     @stack('styles')
-    <link href="{{ asset('assets/aptoria-ui/assets/css/aptoria.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ asset('assets/aptoria-ui/assets/css/aptoria.css') }}?v={{ config('aptoria.version') }}" rel="stylesheet" type="text/css">
     @if ($tablerFontInstalled)
         <link href="{{ asset('assets/aptoria-ui/assets/css/aptoria-tabler-icons.css') }}" rel="stylesheet" type="text/css">
     @endif
@@ -50,7 +51,6 @@
                                 <div class="small">{{ __('messages.workspace_mode.sandbox_banner_copy') }}</div>
                             </div>
                         </div>
-                        <a href="{{ route('demo-guide.public') }}" class="btn btn-sm btn-warning text-nowrap"><i data-lucide="map" class="me-1"></i>{{ __('messages.nav.demo_guide') }}</a>
                     </div>
                 @elseif (config('aptoria.demo.mode'))
                     <div class="alert alert-info mt-3 d-flex align-items-start justify-content-between gap-3 aptoria-demo-mode-banner">
@@ -61,7 +61,6 @@
                                 <div class="small">{{ __('messages.demo_guide.demo_mode_copy') }}</div>
                             </div>
                         </div>
-                        <a href="{{ route('demo-guide.public') }}" class="btn btn-sm btn-info text-nowrap"><i data-lucide="map" class="me-1"></i>{{ __('messages.nav.demo_guide') }}</a>
                     </div>
                 @endif
 
@@ -91,9 +90,9 @@
                 @yield('content')
             </div>
 
-            <footer class="footer">
-                <div class="container-fluid d-flex justify-content-between small text-muted">
-                    <span>© {{ date('Y') }} Aptoria</span>
+            <footer class="footer aptoria-app-footer">
+                <div class="container-fluid d-flex justify-content-between align-items-center flex-wrap gap-2 small text-muted">
+                    <span>Copyright © 2026 Aptoria. All rights reserved.</span>
                     <span>v{{ $aptoriaVersion }} · Evidence-first API QA</span>
                 </div>
             </footer>

@@ -1,6 +1,12 @@
 @extends($layout)
 
-@section('title', 'Aptoria Demo Guide · Full Showcase Workspace')
+@section('title', $publicMode ? 'Aptoria Demo Guide – Public Showcase Workspace' : 'Aptoria Demo Guide · Full Showcase Workspace')
+@section('meta_description', 'Aptoria public demo guide for the full showcase QA workspace, sandbox API endpoints, demo credentials, import artifacts and guided review scenarios.')
+@section('robots', $publicMode ? 'index,follow,max-image-preview:large' : 'noindex,nofollow,noarchive')
+@section('canonical_url', $publicMode ? 'https://aptoria.dev/demo-guide' : url()->current())
+@section('og_title', 'Aptoria Demo Guide – Public Showcase Workspace')
+@section('og_description', 'Walk through Aptoria with a complete prebuilt API QA project, sandbox endpoints, evidence flows, imports and release-readiness examples.')
+@section('og_url', 'https://aptoria.dev/demo-guide')
 @section('page_title', 'Aptoria Demo Guide')
 @section('body_class', $publicMode ? 'aptoria-landing-body min-vh-100' : 'auth-bg min-vh-100 py-4')
 
@@ -13,9 +19,12 @@
 
 @section('content')
 @php
-    $landingUrl = rtrim((string) config('aptoria.domain.landing_url', 'https://aptoria.dev'), '/') ?: 'https://aptoria.dev';
-    $guideRoute = $publicMode ? route('demo-guide.public') : route('projects.demo-guide.show', $project);
-    $workspaceUrl = route('demo-workspace');
+    $landingUrl = rtrim((string) ($landingUrl ?? config('aptoria.domain.landing_url', 'https://aptoria.dev')), '/') ?: 'https://aptoria.dev';
+    $demoUrl = rtrim((string) ($demoUrl ?? config('aptoria.domain.demo_url', 'https://demo.aptoria.dev')), '/') ?: 'https://demo.aptoria.dev';
+    $guideRoute = $publicMode ? $landingUrl.'/demo-guide' : route('projects.demo-guide.show', $project);
+    $workspaceUrl = $publicMode ? $demoUrl.'/demo-workspace' : route('demo-workspace');
+    $loginUrl = $publicMode ? $demoUrl.'/login' : route('login');
+    $apiHealthUrl = $publicMode ? $baseUrl.'/health' : route('demo-api.health');
 
     $demoMap = [
         ['icon' => 'layout-dashboard', 'title' => 'Dashboard', 'copy' => 'Readiness, risk, coverage, blind spots and recent activity.'],
@@ -44,8 +53,8 @@
                     </a>
                     <nav class="aptoria-landing-nav-links" aria-label="Demo navigation">
                         <a href="{{ $guideRoute }}">Demo guide</a>
-                        <a href="{{ route('login') }}">Login</a>
-                        <a href="{{ route('demo-api.health') }}" target="_blank" rel="noopener">API health</a>
+                        <a href="{{ $loginUrl }}">Login</a>
+                        <a href="{{ $apiHealthUrl }}" target="_blank" rel="noopener">API health</a>
                         <a href="{{ $landingUrl }}">Aptoria</a>
                     </nav>
                 </header>
@@ -64,9 +73,9 @@
                             or allowing destructive public actions.
                         </p>
                         <div class="aptoria-landing-cta-row">
-                            <a href="{{ route('login') }}" class="btn btn-primary btn-lg"><i data-lucide="log-in" class="me-1"></i>Sign in</a>
+                            <a href="{{ $loginUrl }}" class="btn btn-primary btn-lg"><i data-lucide="log-in" class="me-1"></i>Sign in</a>
                             <a href="{{ $workspaceUrl }}" class="btn btn-light btn-lg text-dark"><i data-lucide="folder-kanban" class="me-1"></i>Open workspace</a>
-                            <a href="{{ route('demo-api.health') }}" target="_blank" class="btn btn-outline-info btn-lg"><i data-lucide="braces" class="me-1"></i>Try JSON API</a>
+                            <a href="{{ $apiHealthUrl }}" target="_blank" class="btn btn-outline-info btn-lg"><i data-lucide="braces" class="me-1"></i>Try JSON API</a>
                         </div>
                     </section>
 
@@ -146,7 +155,7 @@
                                 <div class="aptoria-demo-console-row"><small>Base URL</small><code>{{ $baseUrl }}</code></div>
                             </div>
                             <div class="mt-3">
-                                <a href="{{ route('login') }}" class="btn btn-primary"><i data-lucide="log-in" class="me-1"></i>Open demo login</a>
+                                <a href="{{ $loginUrl }}" class="btn btn-primary"><i data-lucide="log-in" class="me-1"></i>Open demo login</a>
                             </div>
                         </section>
 
@@ -221,6 +230,8 @@
                         </section>
                     </div>
                 </main>
+
+                @include('partials.public-footer')
             </div>
         </section>
     </div>

@@ -1,6 +1,16 @@
 @extends('layouts.auth')
 
-@section('title', 'Aptoria · QA evidence and release readiness')
+@section('title', 'Aptoria – API QA Evidence & Release Readiness Workspace')
+@section('meta_description', 'Aptoria is a self-hosted QA workspace for API evidence, Postman and Newman imports, Jira QA context, OpenAPI review, finding triage, release gates and audit-ready reports.')
+@section('robots', 'index,follow,max-image-preview:large')
+@section('canonical_url', 'https://aptoria.dev/')
+@section('og_title', 'Aptoria – API QA Evidence & Release Readiness Workspace')
+@section('og_description', 'Turn API testing into release evidence with a self-hosted QA workspace for imports, findings, release gates and audit-ready reports.')
+@section('og_url', 'https://aptoria.dev/')
+@section('og_image', 'https://aptoria.dev/assets/aptoria-ui/assets/images/og-aptoria.png')
+@section('twitter_title', 'Aptoria – API QA Evidence & Release Readiness Workspace')
+@section('twitter_description', 'Self-hosted QA evidence, API finding triage, Postman/Newman imports, release gates and audit-ready reports.')
+@section('twitter_image', 'https://aptoria.dev/assets/aptoria-ui/assets/images/og-aptoria.png')
 @section('body_class', 'aptoria-landing-body min-vh-100')
 
 @php
@@ -26,50 +36,109 @@
 
     $landingUrl = rtrim((string) config('aptoria.domain.landing_url'), '/');
     $demoUrl = rtrim((string) config('aptoria.domain.demo_url'), '/');
-    $docsUrl = 'https://github.com/Szujo-Janos/aptoria/tree/main/docs';
-    $githubUrl = 'https://github.com/Szujo-Janos';
-    $downloadUrl = 'https://github.com/Szujo-Janos/aptoria/releases';
-    $supportUrl = 'https://github.com/Szujo-Janos/aptoria/issues';
-    $githubIconUrl = 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/github.svg';
+    $docsUrl = 'https://github.com/Szujo-Janos/Aptoria/tree/main/docs';
+    $githubUrl = 'https://github.com/Szujo-Janos/Aptoria';
+    $downloadUrl = 'https://github.com/Szujo-Janos/Aptoria/releases';
+    $supportUrl = 'https://github.com/Szujo-Janos/Aptoria/issues';
+    $licenseAuthorityUrl = rtrim((string) config('aptoria.domain.license_url', 'https://license.aptoria.dev'), '/');
+    $securityUrl = 'https://github.com/Szujo-Janos/Aptoria/blob/main/SECURITY.md';
+    $privacyUrl = $isLandingOnly ? ($landingUrl ?: 'https://aptoria.dev').'/privacy' : url('/privacy');
+    $termsUrl = $isLandingOnly ? ($landingUrl ?: 'https://aptoria.dev').'/terms' : url('/terms');
+    $licenseTextUrl = 'https://github.com/Szujo-Janos/Aptoria/blob/main/LICENSE';
+    $changelogUrl = 'https://github.com/Szujo-Janos/Aptoria/blob/main/CHANGELOG.md';
+    $githubIconUrl = asset('assets/aptoria-ui/assets/images/integrations/github.svg');
 
-    $demoGuideUrl = $isLandingOnly ? $demoUrl.'/demo-guide' : route('demo-guide.public');
+    $demoGuideUrl = ($landingUrl ?: 'https://aptoria.dev').'/demo-guide';
+
+    $footerColumns = [
+        [
+            'title' => 'Product',
+            'links' => [
+                ['label' => 'Overview', 'href' => '#platform'],
+                ['label' => 'Demo', 'href' => $demoGuideUrl],
+                ['label' => 'Download', 'href' => $downloadUrl, 'external' => true],
+                ['label' => 'GitHub', 'href' => $githubUrl, 'external' => true],
+                ['label' => 'Changelog', 'href' => $changelogUrl, 'external' => true],
+            ],
+        ],
+        [
+            'title' => 'Use cases',
+            'links' => [
+                ['label' => 'API QA review', 'href' => '#platform'],
+                ['label' => 'Endpoint evidence', 'href' => '#integrations'],
+                ['label' => 'Release readiness', 'href' => '#trust'],
+                ['label' => 'Import validation', 'href' => '#integrations'],
+                ['label' => 'QA reporting', 'href' => '#platform'],
+            ],
+        ],
+        [
+            'title' => 'Resources',
+            'links' => [
+                ['label' => 'How it works', 'href' => $demoGuideUrl],
+                ['label' => 'Help', 'href' => $supportUrl, 'external' => true],
+                ['label' => 'Documentation', 'href' => $docsUrl, 'external' => true],
+                ['label' => 'Installation guide', 'href' => $docsUrl, 'external' => true],
+                ['label' => 'Troubleshooting', 'href' => $supportUrl, 'external' => true],
+            ],
+        ],
+        [
+            'title' => 'Trust',
+            'links' => [
+                ['label' => 'Security', 'href' => $securityUrl, 'external' => true],
+                ['label' => 'License authority', 'href' => $licenseAuthorityUrl, 'external' => true],
+                ['label' => 'Demo environment', 'href' => $demoUrl, 'external' => true],
+                ['label' => 'Data handling', 'href' => '#trust'],
+                ['label' => 'Status', 'href' => $licenseAuthorityUrl.'/license/status.json', 'external' => true],
+            ],
+        ],
+        [
+            'title' => 'Legal',
+            'links' => [
+                ['label' => 'Privacy', 'href' => $privacyUrl],
+                ['label' => 'Terms', 'href' => $termsUrl],
+                ['label' => 'License', 'href' => $licenseTextUrl, 'external' => true],
+                ['label' => 'Cookie settings', 'href' => '#cookie-settings', 'cookie' => true],
+                ['label' => 'Contact', 'href' => $supportUrl, 'external' => true],
+            ],
+        ],
+    ];
 
     $integrations = [
         [
             'name' => 'Postman',
             'label' => 'Collections',
             'class' => 'is-postman',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/postman.svg',
+            'logo' => asset('assets/aptoria-ui/assets/images/integrations/postman.svg'),
         ],
         [
             'name' => 'Newman',
             'label' => 'Postman CLI results',
             'class' => 'is-newman',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/postman.svg',
+            'logo' => asset('assets/aptoria-ui/assets/images/integrations/newman.svg'),
         ],
         [
             'name' => 'Jira',
             'label' => 'Issue CSV',
             'class' => 'is-jira',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/jira.svg',
+            'logo' => asset('assets/aptoria-ui/assets/images/integrations/jira.svg'),
         ],
         [
             'name' => 'OpenAPI',
             'label' => 'Contracts',
             'class' => 'is-openapi',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/openapiinitiative.svg',
+            'logo' => asset('assets/aptoria-ui/assets/images/integrations/openapi.svg'),
         ],
         [
             'name' => 'HAR',
             'label' => 'Browser network',
             'class' => 'is-har',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/googlechrome.svg',
+            'logo' => asset('assets/aptoria-ui/assets/images/integrations/har.svg'),
         ],
         [
             'name' => 'CSV',
             'label' => 'Manual QA imports',
             'class' => 'is-csv',
-            'logo' => 'https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/microsoftexcel.svg',
+            'logo' => asset('assets/aptoria-ui/assets/images/integrations/csv.svg'),
         ],
     ];
 
@@ -81,7 +150,63 @@
         ['icon' => 'shield-check', 'title' => 'Release readiness', 'copy' => 'Evaluate rules, profiles, blockers, warnings and release decision packages before handoff.'],
         ['icon' => 'history', 'title' => 'Audit trail', 'copy' => 'Preserve who did what, what changed, which evidence was used and why a decision was made.'],
     ];
+
+    $trustCards = [
+        [
+            'icon' => 'check-circle-2',
+            'title' => 'What Aptoria is',
+            'copy' => 'A downloadable QA review workspace that connects API checks, imported artifacts, findings, evidence packs and release decisions.',
+        ],
+        [
+            'icon' => 'ban',
+            'title' => 'What it is not',
+            'copy' => 'It is not a public attack scanner, not an exploit tool and not a replacement for responsible manual QA review.',
+        ],
+        [
+            'icon' => 'clipboard-check',
+            'title' => 'Why evidence-first matters',
+            'copy' => 'A release decision is easier to defend when every finding, warning and accepted risk points back to reviewable evidence.',
+        ],
+    ];
+
+
+    $organizationSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => 'Aptoria',
+        'url' => 'https://aptoria.dev/',
+        'logo' => 'https://aptoria.dev/assets/aptoria-ui/assets/images/logo-color.svg',
+        'sameAs' => ['https://github.com/Szujo-Janos/Aptoria'],
+        'founder' => [
+            '@type' => 'Person',
+            'name' => 'János Szujó',
+            'url' => 'https://github.com/Szujo-Janos/Aptoria',
+        ],
+    ];
+
+    $softwareSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'SoftwareApplication',
+        'name' => 'Aptoria',
+        'applicationCategory' => 'DeveloperApplication',
+        'operatingSystem' => 'Windows, Linux, macOS',
+        'url' => 'https://aptoria.dev/',
+        'downloadUrl' => 'https://github.com/Szujo-Janos/Aptoria/releases',
+        'softwareVersion' => config('aptoria.version'),
+        'description' => 'A self-hosted QA workspace for API evidence, Postman and Newman imports, Jira QA context, OpenAPI review, finding triage, release gates and audit-ready reports.',
+        'creator' => [
+            '@type' => 'Person',
+            'name' => 'János Szujó',
+            'url' => 'https://github.com/Szujo-Janos/Aptoria',
+        ],
+        'sameAs' => ['https://github.com/Szujo-Janos/Aptoria'],
+    ];
 @endphp
+
+@push('head')
+    <script type="application/ld+json">{!! json_encode($organizationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($softwareSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
 
 @section('content')
 <div class="aptoria-landing-scene">
@@ -96,6 +221,7 @@
                 </a>
                 <nav class="aptoria-landing-nav-links" aria-label="Aptoria navigation">
                     <a href="#platform">Platform</a>
+                    <a href="#trust">Trust layer</a>
                     <a href="#integrations">Integrations</a>
                     <a href="{{ $demoGuideUrl }}">Demo</a>
                     <a href="{{ $docsUrl }}" target="_blank" rel="noopener">Docs</a>
@@ -241,7 +367,8 @@
                             <h2 class="h4 mb-2">Bring existing API and QA work into one reviewable system.</h2>
                             <p class="mb-3 text-muted">
                                 Aptoria is not trying to replace every tool. It collects their output, normalizes it,
-                                links it to evidence and turns it into release-readiness context.
+                                links it to evidence and turns it into release-readiness context. Import Postman collections,
+                                Newman CLI results, Jira issue exports, OpenAPI contracts, browser HAR files and CSV-based QA evidence into one reviewable workspace.
                             </p>
                             <div class="aptoria-integration-rail">
                                 @foreach ($integrations as $integration)
@@ -276,7 +403,32 @@
                 </div>
             </div>
 
-            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4 mt-xl-5">
+
+            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4 mt-xl-5" id="trust">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-4">
+                        <small class="aptoria-landing-eyebrow">Public trust layer</small>
+                        <h2 class="h3 mb-2">Clear scope, no fake magic.</h2>
+                        <p class="mb-0 text-muted">
+                            Aptoria is a review and decision workspace. It helps organize evidence instead of pretending that automation alone is proof.
+                        </p>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="aptoria-capability-grid">
+                            @foreach ($trustCards as $card)
+                                <div class="aptoria-capability-card">
+                                    <i data-lucide="{{ $card['icon'] }}"></i>
+                                    <strong>{{ $card['title'] }}</strong>
+                                    <span>{{ $card['copy'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <section class="aptoria-landing-panel aptoria-landing-public-section mt-4">
                 <div class="row g-4 align-items-start">
                     <div class="col-lg-4">
                         <small class="aptoria-landing-eyebrow">Platform coverage</small>
@@ -338,9 +490,34 @@
                 </div>
             </section>
 
-            <footer class="aptoria-landing-footer mt-4">
-                <span>Aptoria turns QA activity into reviewable release evidence.</span>
-                <a href="{{ $supportUrl }}" target="_blank" rel="noopener">Contact / issues</a>
+            <footer class="aptoria-landing-footer mt-4 mt-xl-5" aria-label="Aptoria footer">
+                <div class="aptoria-landing-footer-main">
+                    <div class="aptoria-landing-footer-brand">
+                        <a href="{{ $landingUrl ?: url('/') }}" class="aptoria-landing-footer-logo" aria-label="Aptoria home">
+                            <img src="{{ asset('assets/aptoria-ui/assets/images/logo-color.svg') }}" alt="Aptoria">
+                        </a>
+                        <p>
+                            Evidence-first API QA workspace for endpoint review, imported artifacts,
+                            evidence packs, release readiness and audit-ready QA decisions.
+                        </p>
+                    </div>
+
+                    <div class="aptoria-landing-footer-nav">
+                        @foreach ($footerColumns as $column)
+                            <div class="aptoria-landing-footer-column">
+                                <strong>{{ $column['title'] }}</strong>
+                                @foreach ($column['links'] as $link)
+                                    <a href="{{ $link['href'] }}" @if($link['cookie'] ?? false) class="aptoria-cookie-settings-link" @endif @if($link['external'] ?? false) target="_blank" rel="noopener" @endif>{{ $link['label'] }}</a>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="aptoria-landing-footer-bottom">
+                    <span>© 2026 Aptoria. All rights reserved.</span>
+                    <span>Evidence-first API QA · v{{ config('aptoria.version') }}</span>
+                </div>
             </footer>
         </div>
     </section>

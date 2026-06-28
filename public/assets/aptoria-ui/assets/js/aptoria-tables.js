@@ -53,28 +53,69 @@
         };
     }
 
+
+
+    function updateScrollShell(shell) {
+        if (!shell) { return; }
+
+        window.requestAnimationFrame(function () {
+            try {
+                var delta = shell.scrollWidth - shell.clientWidth;
+                var active = delta > 8;
+
+                shell.classList.toggle('aptoria-table-scroll-active', active);
+                shell.classList.toggle('aptoria-table-scroll-idle', !active);
+
+                if (!active && shell.scrollLeft) {
+                    shell.scrollLeft = 0;
+                }
+            } catch (error) {
+                // Scrollbar state must never break table rendering.
+            }
+        });
+    }
+
+    function updateTableScrollState(table) {
+        if (!table) { return; }
+
+        updateScrollShell(table.closest('.table-responsive'));
+
+        var container = table.closest('.dt-container');
+        if (container) {
+            container.querySelectorAll('.dt-scroll-body').forEach(function (shell) {
+                updateScrollShell(shell);
+            });
+        }
+    }
+
+    function refreshAllScrollStates(scope) {
+        scope = scope || document;
+        scope.querySelectorAll('.table-responsive, .dt-scroll-body').forEach(function (shell) {
+            updateScrollShell(shell);
+        });
+    }
+
     function safeAdjust(api) {
         if (!api) { return; }
-        window.setTimeout(function () {
+
+        function adjustNow() {
             try {
                 api.columns.adjust();
                 if (api.responsive && typeof api.responsive.recalc === 'function') {
                     api.responsive.recalc();
+                }
+                if (api.table && typeof api.table === 'function') {
+                    updateTableScrollState(api.table().node());
                 }
             } catch (error) {
                 // Layout adjustment must never break the page.
             }
+            refreshAllScrollStates(document);
             refreshIcons();
-        }, 0);
-        window.setTimeout(function () {
-            try {
-                api.columns.adjust();
-                if (api.responsive && typeof api.responsive.recalc === 'function') {
-                    api.responsive.recalc();
-                }
-            } catch (error) {}
-            refreshIcons();
-        }, 150);
+        }
+
+        window.setTimeout(adjustNow, 0);
+        window.setTimeout(adjustNow, 150);
     }
 
     function tableOptions(table) {
@@ -162,6 +203,7 @@
         }
 
         normalizeActionColumn(table);
+        updateTableScrollState(table);
     }
 
     function initAptoriaTables(scope) {
@@ -183,11 +225,14 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         initAptoriaTables(document);
+        refreshAllScrollStates(document);
     });
 
     window.addEventListener('resize', function () {
+        refreshAllScrollStates(document);
         if (!window.DataTable) { return; }
         document.querySelectorAll('table[data-tables]').forEach(function (table) {
+            updateTableScrollState(table);
             if (window.DataTable.isDataTable && window.DataTable.isDataTable(table)) {
                 try { safeAdjust(new window.DataTable(table)); } catch (error) {}
             }
@@ -196,6 +241,7 @@
 
     document.addEventListener('shown.bs.modal', function (event) {
         initAptoriaTables(event.target);
+        refreshAllScrollStates(event.target);
         refreshIcons();
     });
 

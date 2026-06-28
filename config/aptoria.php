@@ -14,7 +14,7 @@ return [
     'ui_asset_path' => 'assets/aptoria-ui/assets',
     'domain' => [
         'role' => strtolower((string) env('APTORIA_DOMAIN_ROLE', 'local')),
-        'landing_url' => rtrim((string) env('APTORIA_LANDING_URL', env('APP_URL', 'http://127.0.0.1:8000')), '/'),
+        'landing_url' => rtrim((string) env('APTORIA_LANDING_URL', 'https://aptoria.dev'), '/'),
         'demo_url' => rtrim((string) env('APTORIA_DEMO_URL', 'https://demo.aptoria.dev'), '/'),
         'admin_url' => rtrim((string) env('APTORIA_ADMIN_URL', 'https://admin.aptoria.dev'), '/'),
         'license_url' => rtrim((string) env('APTORIA_LICENSE_URL', 'https://license.aptoria.dev'), '/'),
@@ -24,10 +24,10 @@ return [
         'csp_report_only' => (bool) env('APTORIA_CSP_REPORT_ONLY', true),
     ],
     'links' => [
-        'github_url' => rtrim((string) env('APTORIA_GITHUB_URL', 'https://github.com/Szujo-Janos'), '/'),
-        'download_url' => rtrim((string) env('APTORIA_DOWNLOAD_URL', 'https://github.com/Szujo-Janos/aptoria/releases'), '/'),
-        'docs_url' => rtrim((string) env('APTORIA_DOCS_URL', 'https://github.com/Szujo-Janos/aptoria/tree/main/docs'), '/'),
-        'support_url' => rtrim((string) env('APTORIA_SUPPORT_URL', 'https://github.com/Szujo-Janos/aptoria/issues'), '/'),
+        'github_url' => rtrim((string) env('APTORIA_GITHUB_URL', 'https://github.com/Szujo-Janos/Aptoria'), '/'),
+        'download_url' => rtrim((string) env('APTORIA_DOWNLOAD_URL', 'https://github.com/Szujo-Janos/Aptoria/releases'), '/'),
+        'docs_url' => rtrim((string) env('APTORIA_DOCS_URL', 'https://github.com/Szujo-Janos/Aptoria/tree/main/docs'), '/'),
+        'support_url' => rtrim((string) env('APTORIA_SUPPORT_URL', 'https://github.com/Szujo-Janos/Aptoria/issues'), '/'),
     ],
     'license' => [
         'required' => filter_var(env('APTORIA_LICENSE_REQUIRED', false), FILTER_VALIDATE_BOOL),
